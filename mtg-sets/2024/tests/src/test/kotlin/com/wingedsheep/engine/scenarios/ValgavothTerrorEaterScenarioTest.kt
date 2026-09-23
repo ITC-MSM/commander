@@ -23,6 +23,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Valgavoth, Terror Eater (Duskmourn #120):
@@ -62,7 +63,7 @@ class ValgavothTerrorEaterScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // bolt resolves, the 2/2 dies into the opponent's graveyard
 
         driver.getGraveyard(opp) shouldNotContain victim
@@ -93,9 +94,9 @@ class ValgavothTerrorEaterScenarioTest : FunSpec({
         driver.removeSummoningSickness(rat)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(rat), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(rat), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(defender, mapOf(valgavoth to listOf(rat))).isSuccess shouldBe true
+        driver.declareBlockers(defender, mapOf(valgavoth to listOf(rat))).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.END_COMBAT)
 
         // Deathtouch kills the 9/9 (CR 704.5h) while its 9 damage kills the 1/1 (CR 704.5g).
@@ -116,7 +117,7 @@ class ValgavothTerrorEaterScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, targets = listOf(mine)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, targets = listOf(mine)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getGraveyard(you) shouldContain mine
@@ -146,7 +147,7 @@ class ValgavothTerrorEaterScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, targets = listOf(stolen)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, targets = listOf(stolen)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Goes to the opponent's graveyard (its owner), NOT exiled — you controlled it.
@@ -169,7 +170,7 @@ class ValgavothTerrorEaterScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // Grizzly Bears dies → exiled with Valgavoth
 
         driver.getExile(opp) shouldContain victim
@@ -178,7 +179,7 @@ class ValgavothTerrorEaterScenarioTest : FunSpec({
         driver.getLifeTotal(you) shouldBe 20
         driver.submit(
             CastSpell(playerId = you, cardId = victim, paymentStrategy = PaymentStrategy.AutoPay)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // the creature spell resolves onto your battlefield
 
         driver.getLifeTotal(you) shouldBe 18
@@ -205,7 +206,7 @@ class ValgavothTerrorEaterScenarioTest : FunSpec({
         )
 
         driver.getLifeTotal(you) shouldBe 20
-        driver.playLand(you, land).isSuccess shouldBe true
+        driver.playLand(you, land).outcome shouldBe Outcome.Done
 
         driver.findPermanent(you, "Forest") shouldNotBe null
         driver.getController(land) shouldBe you

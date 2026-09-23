@@ -17,6 +17,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Borne Upon a Wind ({1}{U} Instant): "You may cast spells this turn as though they had
@@ -89,7 +91,7 @@ class BorneUponAWindTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = sorcery, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("the flash grant does not survive into the next turn (CR 514.2)") {
@@ -121,6 +123,6 @@ class BorneUponAWindTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = sorcery, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

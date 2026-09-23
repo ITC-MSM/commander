@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Vedalken Archmage (MRD #55) — "Whenever you cast an artifact spell, draw a card."
@@ -41,7 +42,7 @@ class VedalkenArchmageScenarioTest : FunSpec({
         val handBefore = d.getHand(me).size
 
         d.giveColorlessMana(me, 1)
-        d.castSpell(me, bonesplitter).isSuccess shouldBe true
+        d.castSpell(me, bonesplitter).outcome shouldBe Outcome.Done
         resolveStack(d)
 
         withClue("Bonesplitter left the hand (-1) and the trigger drew one (+1)") {
@@ -59,7 +60,7 @@ class VedalkenArchmageScenarioTest : FunSpec({
         val handBefore = d.getHand(me).size
 
         d.giveMana(me, Color.RED, 1)
-        d.castSpell(me, bolt, listOf(d.player2)).isSuccess shouldBe true
+        d.castSpell(me, bolt, listOf(d.player2)).outcome shouldBe Outcome.Done
         resolveStack(d)
 
         withClue("the filter is artifacts only — the hand just shrinks by the Bolt") {
@@ -81,7 +82,7 @@ class VedalkenArchmageScenarioTest : FunSpec({
         val handBefore = d.getHand(me).size
 
         d.giveColorlessMana(d.player2, 1)
-        d.castSpell(d.player2, theirs).isSuccess shouldBe true
+        d.castSpell(d.player2, theirs).outcome shouldBe Outcome.Done
         resolveStack(d)
 
         withClue("'whenever YOU cast' — the Archmage's controller, not any player") {

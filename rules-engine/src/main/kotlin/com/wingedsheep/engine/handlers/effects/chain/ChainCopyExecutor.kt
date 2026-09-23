@@ -65,7 +65,7 @@ class ChainCopyExecutor(
         // Step 4: Inner action completed (success or error) — pop the unused after-action continuation
         val (_, stateAfterPop) = actionResult.state.popContinuation()
 
-        if (!actionResult.isSuccess) {
+        if (actionResult.outcome !is Outcome.Done) {
             return actionResult.copy(state = stateAfterPop)
         }
 

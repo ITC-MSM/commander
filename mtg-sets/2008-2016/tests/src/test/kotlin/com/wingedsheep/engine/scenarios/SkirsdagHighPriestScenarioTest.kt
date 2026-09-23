@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Skirsdag High Priest (ISD) — {1}{B} Creature — Human Cleric 1/2
@@ -71,7 +72,7 @@ class SkirsdagHighPriestScenarioTest : FunSpec({
         // Something dies this turn — morbid is now satisfied.
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(fodder)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(fodder)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.getGraveyardCardNames(me).contains("Goblin Guide") shouldBe true
 

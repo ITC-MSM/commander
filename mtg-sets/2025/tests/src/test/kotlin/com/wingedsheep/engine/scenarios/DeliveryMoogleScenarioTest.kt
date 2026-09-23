@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Delivery Moogle (FIN #15).
@@ -43,7 +44,7 @@ class DeliveryMoogleScenarioTest : FunSpec({
         driver.giveMana(active, Color.WHITE, 1)
         driver.giveColorlessMana(active, 3)
 
-        driver.castSpell(active, moogle).isSuccess shouldBe true
+        driver.castSpell(active, moogle).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature; ETB trigger goes on the stack
 
         driver.bothPass() // resolve the ETB trigger -> presents the multi-zone search

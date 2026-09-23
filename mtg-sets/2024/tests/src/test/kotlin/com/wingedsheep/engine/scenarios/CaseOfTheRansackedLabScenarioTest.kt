@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Case of the Ransacked Lab — {2}{U} Enchantment — Case.
@@ -80,7 +81,7 @@ class CaseOfTheRansackedLabScenarioTest : FunSpec({
     fun GameTestDriver.castCantrip() {
         val spell = putCardInHand(player1, "Test Cantrip")
         giveMana(player1, Color.BLUE, 1)
-        castSpell(player1, spell).isSuccess shouldBe true
+        castSpell(player1, spell).outcome shouldBe Outcome.Done
         settle()
     }
 
@@ -129,7 +130,7 @@ class CaseOfTheRansackedLabScenarioTest : FunSpec({
         val tonic = driver.putCardInHand(driver.player1, "Test Tonic") // {2}{U}
         driver.giveMana(driver.player1, Color.BLUE, 1)
         driver.giveColorlessMana(driver.player1, 1)
-        driver.castSpell(driver.player1, tonic).isSuccess shouldBe true
+        driver.castSpell(driver.player1, tonic).outcome shouldBe Outcome.Done
         driver.settle()
     }
 

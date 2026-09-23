@@ -33,6 +33,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Gift mechanic: "You may promise AN OPPONENT a gift as you cast this spell."
@@ -118,7 +119,7 @@ class GiftChosenOpponentTest : FunSpec({
                 origin = sourceRef, source = sourceRef, resolutionKey = "gift-recipient-fixture"))
         val execResult = registry2.execute(withSource, ChooseOpponentForSourceEffect(), context)
 
-        execResult.isPaused shouldBe true
+        (execResult.outcome is Outcome.Paused) shouldBe true
         val decision = execResult.state.pendingDecision
         decision.shouldNotBeNull()
         decision.shouldBeInstanceOf<ChooseOptionDecision>()
@@ -136,7 +137,7 @@ class GiftChosenOpponentTest : FunSpec({
             )
         ).result
 
-        afterChoice.isSuccess shouldBe true
+        afterChoice.outcome shouldBe Outcome.Done
         fun chosen(s: GameState) = s.getEntity(sourceId)?.chosenOpponent()
         chosen(afterChoice.newState) shouldBe players[2]
     }

@@ -321,7 +321,7 @@ class ManaPaymentContinuationResumer(
             .execute(state, discardEffect, discardContext)
             .toExecutionResult()
         if (discardResult.error != null) return discardResult
-        if (discardResult.isPaused) return discardResult
+        if (discardResult.outcome is Outcome.Paused) return discardResult
 
         chargeNextWardPartOrNull(
             discardResult.newState, discardResult.events.toList(),
@@ -508,7 +508,7 @@ class ManaPaymentContinuationResumer(
             .execute(state, countersEffect, countersContext)
             .toExecutionResult()
         if (countersResult.error != null) return countersResult
-        if (countersResult.isPaused) {
+        if (countersResult.outcome is Outcome.Paused) {
             // AddCountersExecutor asks the payer nothing, so this is unreachable today. If it ever
             // does pause, the pause carries no `remainingWardParts` with it — with none left to
             // charge that is harmless, but an enclosing Composite's unpaid components would
@@ -812,7 +812,7 @@ class ManaPaymentContinuationResumer(
             ).toExecutionResult()
 
         if (next.error != null) return next
-        return if (next.isPaused) {
+        return if (next.outcome is Outcome.Paused) {
             ExecutionResult.propagatePause(next.state, priorEvents + next.events)
         } else {
             checkForMore(next.state, priorEvents + next.events)
@@ -847,7 +847,7 @@ class ManaPaymentContinuationResumer(
             .execute(state, onPaid, riderContext)
             .toExecutionResult()
         if (riderResult.error != null) return riderResult
-        if (riderResult.isPaused) {
+        if (riderResult.outcome is Outcome.Paused) {
             return ExecutionResult.propagatePause(
                 riderResult.state,
                 priorEvents + riderResult.events
@@ -942,7 +942,7 @@ class ManaPaymentContinuationResumer(
 
             val effectResult = services.effectExecutorRegistry.execute(currentState, continuation.effect, continuation.effectContext).toExecutionResult()
             if (effectResult.error != null) return effectResult
-            if (effectResult.isPaused) return effectResult
+            if (effectResult.outcome is Outcome.Paused) return effectResult
             return checkForMore(effectResult.state, effectResult.events)
         }
 
@@ -1020,7 +1020,7 @@ class ManaPaymentContinuationResumer(
                 ?: return checkForMore(state, emptyList())
             val otherwiseResult = services.effectExecutorRegistry
                 .execute(state, otherwise, continuation.effectContext).toExecutionResult()
-            if (otherwiseResult.error != null || otherwiseResult.isPaused) return otherwiseResult
+            if (otherwiseResult.error != null || otherwiseResult.outcome is Outcome.Paused) return otherwiseResult
             return checkForMore(otherwiseResult.state, otherwiseResult.events)
         }
 
@@ -1108,7 +1108,7 @@ class ManaPaymentContinuationResumer(
         // Execute the inner effect
         val effectResult = services.effectExecutorRegistry.execute(currentState, continuation.effect, continuation.effectContext).toExecutionResult()
         if (effectResult.error != null) return effectResult
-        if (effectResult.isPaused) return effectResult
+        if (effectResult.outcome is Outcome.Paused) return effectResult
 
         val allEvents = events + effectResult.events
         return checkForMore(effectResult.state, allEvents)
@@ -1280,7 +1280,7 @@ class ManaPaymentContinuationResumer(
         if (effectResult.error != null) {
             return effectResult
         }
-        if (effectResult.isPaused) return effectResult
+        if (effectResult.outcome is Outcome.Paused) return effectResult
 
         val allEvents = events + effectResult.events
         return checkForMore(effectResult.state, allEvents)
@@ -1388,7 +1388,7 @@ class ManaPaymentContinuationResumer(
         // Proceed to target selection
         val result = services.triggerProcessor.processTargetedTrigger(currentState, unwrappedTrigger, continuation.targetRequirement)
 
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             // Target selection is needed - return paused with accumulated events
             return ExecutionResult.propagatePause(
                 result.state,
@@ -1396,7 +1396,7 @@ class ManaPaymentContinuationResumer(
             )
         }
 
-        if (!result.isSuccess) {
+        if (result.outcome !is Outcome.Done) {
             return result
         }
 

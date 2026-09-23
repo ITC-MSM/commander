@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
-import { QRCodeSVG } from 'qrcode.react'
+import { Suspense, lazy, useEffect, useState } from 'react'
+
+// The QR encoder only matters once the modal opens; keep it out of the lobby's initial bundle.
+const QRCodeSVG = lazy(() => import('qrcode.react').then(({ QRCodeSVG }) => ({ default: QRCodeSVG })))
 
 /**
  * A compact "QR" button that opens a modal showing a scannable QR code for a lobby join link.
@@ -61,7 +63,9 @@ export function JoinQrModal({ url }: { url: string }) {
             <h2 style={styles.title}>Scan to join</h2>
             <p style={styles.subtitle}>Point another phone's camera at the code to jump into this lobby.</p>
             <div style={styles.qrCard}>
-              <QRCodeSVG value={url} size={232} level="M" marginSize={2} bgColor="#ffffff" fgColor="#0a0a0f" />
+              <Suspense fallback={<div style={{ width: 232, height: 232 }} />}>
+                <QRCodeSVG value={url} size={232} level="M" marginSize={2} bgColor="#ffffff" fgColor="#0a0a0f" />
+              </Suspense>
             </div>
             <div style={styles.urlRow}>
               <span style={styles.url}>{url}</span>

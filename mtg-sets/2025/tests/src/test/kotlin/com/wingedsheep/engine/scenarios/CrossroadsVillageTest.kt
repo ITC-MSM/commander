@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Crossroads Village — Land — Town
@@ -50,7 +51,7 @@ class CrossroadsVillageTest : FunSpec({
         // Untap and tap it for mana of the chosen color (green).
         driver.untapPermanent(village)
         val ability = CrossroadsVillage.activatedAbilities[0].id
-        driver.submit(ActivateAbility(playerId = p1, sourceId = village, abilityId = ability)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(playerId = p1, sourceId = village, abilityId = ability)).outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(p1)?.get<ManaPoolComponent>()!!
         pool.green shouldBe 1

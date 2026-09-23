@@ -15,6 +15,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Flame Fusillade — {3}{R} Sorcery (Ravnica: City of Guilds #123)
@@ -59,7 +60,7 @@ class FlameFusilladeScenarioTest : FunSpec({
                 abilityId = grantedAbilityId,
                 targets = listOf(ChosenTarget.Player(d.player2))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("\"permanents you control\" includes lands, and {T} isn't gated by summoning sickness") {
@@ -90,7 +91,7 @@ class FlameFusilladeScenarioTest : FunSpec({
                 abilityId = grantedAbilityId,
                 targets = listOf(ChosenTarget.Permanent(theirs))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("1 damage is lethal to a 1/1, so the damage demonstrably landed") {
@@ -106,7 +107,7 @@ class FlameFusilladeScenarioTest : FunSpec({
                     abilityId = grantedAbilityId,
                     targets = listOf(ChosenTarget.Player(d.player1))
                 )
-            ).isSuccess shouldBe false
+            ).outcome shouldNotBe Outcome.Done
             d.getLifeTotal(d.player1) shouldBe 20
         }
     }
@@ -135,7 +136,7 @@ class FlameFusilladeScenarioTest : FunSpec({
                 abilityId = grantedAbilityId,
                 targets = listOf(ChosenTarget.Player(d.player2))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
         d.getLifeTotal(d.player2) shouldBe 20
     }
 })

@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.effects.StormCopyEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Prismari, the Inspiration: "Instant and sorcery spells you cast have storm." The grant is a
@@ -37,7 +38,7 @@ class PrismariTheInspirationScenarioTest : FunSpec({
         driver.putLandOnBattlefield(caster, "Mountain")
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
 
-        driver.castSpell(caster, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val triggers = stormTriggers(driver)
         triggers.size shouldBe 1
@@ -53,13 +54,16 @@ class PrismariTheInspirationScenarioTest : FunSpec({
         val caster = driver.activePlayer!!
         val opponent = driver.getOpponent(caster)
 
+        // Prismari is legendary: a second copy needs a waiver, or the legend rule (CR 704.5j)
+        // removes one before the storm triggers are put on the stack.
+        driver.putPermanentOnBattlefield(caster, "Legend Rule Waiver")
         driver.putCreatureOnBattlefield(caster, "Prismari, the Inspiration")
         driver.putCreatureOnBattlefield(caster, "Prismari, the Inspiration")
         driver.replaceState(driver.state.copy(spellsCastThisTurn = 1))
         driver.putLandOnBattlefield(caster, "Mountain")
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
 
-        driver.castSpell(caster, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
 
         stormTriggers(driver).size shouldBe 2
     }
@@ -77,7 +81,7 @@ class PrismariTheInspirationScenarioTest : FunSpec({
         driver.putLandOnBattlefield(caster, "Mountain")
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
 
-        driver.castSpell(caster, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
 
         stormTriggers(driver).size shouldBe 0
     }

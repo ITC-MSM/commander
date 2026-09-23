@@ -1316,6 +1316,24 @@ object Triggers {
     )
 
     /**
+     * Whenever you activate a loyalty ability (CR 606) — Way of the Paradox, Ajani Unrelenting.
+     */
+    val YouActivateLoyaltyAbility: TriggerSpec = TriggerSpec(
+        event = AbilityActivatedEvent(player = Player.You, requireLoyalty = true),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * Whenever an opponent activates a loyalty ability (CR 606) — Gideon the Oathless. "That
+     * player" in the effect is [com.wingedsheep.sdk.scripting.targets.EffectTarget.PlayerRef] of
+     * `Player.TriggeringPlayer`, the activating opponent.
+     */
+    val OpponentActivatesLoyaltyAbility: TriggerSpec = TriggerSpec(
+        event = AbilityActivatedEvent(player = Player.EachOpponent, requireLoyalty = true),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Whenever [player] activates an ability *of a permanent matching [sourceFilter]* — the
      * source-scoped sibling of [YouActivateAbility].
      *

@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bender's Waterskin — {3} Artifact.
@@ -46,7 +47,7 @@ class BendersWaterskinScenarioTest : FunSpec({
         val waterskin = d.putPermanentOnBattlefield(you, "Bender's Waterskin")
 
         val result = d.submit(ActivateAbility(playerId = you, sourceId = waterskin, abilityId = manaAbilityId))
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
         val decision = d.pendingDecision as ChooseColorDecision
         d.submitDecision(you, ColorChosenResponse(decision.id, Color.BLUE))
 

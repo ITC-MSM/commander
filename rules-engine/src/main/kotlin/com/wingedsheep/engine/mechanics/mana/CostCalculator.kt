@@ -243,6 +243,7 @@ class CostCalculator(
                     matchesCardDefinition(cardDef, target.filter, sourceId, state, state.projectedState)
             }
             is SpellCostTarget.AnyCaster -> matchesCardDefinition(cardDef, target.filter, sourceId, state, state.projectedState)
+            is SpellCostTarget.OpponentsCast -> opponentsCastMatches(target, cardDef, casterId, sourceId, state)
             is SpellCostTarget.OpponentsCastTargeting ->
                 opponentsCastTargetingMatches(state, casterId, sourceId, target.targetFilter, chosenTargets)
             is SpellCostTarget.OpponentsCastFromZones -> {
@@ -267,6 +268,22 @@ class CostCalculator(
             SpellCostTarget.FaceDownYouCast -> false
             SpellCostTarget.MorphActivation -> false
         }
+    }
+
+    /**
+     * [SpellCostTarget.OpponentsCast]: the source is controlled by an opponent of the caster and
+     * the card matches the filter. Shared by the ordinary and the alternative-base cost paths.
+     */
+    private fun opponentsCastMatches(
+        target: SpellCostTarget.OpponentsCast,
+        cardDef: CardDefinition,
+        casterId: EntityId,
+        sourceId: EntityId,
+        state: GameState,
+    ): Boolean {
+        val sourceController = state.projectedState.getController(sourceId) ?: return false
+        if (sourceController == casterId) return false
+        return matchesCardDefinition(cardDef, target.filter, sourceId, state, state.projectedState)
     }
 
     /**
@@ -344,6 +361,7 @@ class CostCalculator(
     private fun filterForGating(target: SpellCostTarget) = when (target) {
         is SpellCostTarget.YouCast -> target.filter
         is SpellCostTarget.AnyCaster -> target.filter
+        is SpellCostTarget.OpponentsCast -> target.filter
         else -> null  // Gating requires a filter to know what "of type" means.
     }
 
@@ -1732,35 +1750,35 @@ class CostCalculator(
      *
      * Note: Self-reduction (`SpellCostTarget.SelfCast`) and Affinity are NOT applied to
      * alternative costs, since those modify the card's own mana cost. Only
-     * battlefield-sourced AnyCaster increases apply.
+     * battlefield-sourced AnyCaster and OpponentsCast increases apply (CR 118.9d).
      */
     fun calculateEffectiveCostWithAlternativeBase(
         state: GameState,
         cardDef: CardDefinition,
         alternativeCost: ManaCost,
-        casterId: EntityId? = null
+        casterId: EntityId,
     ): ManaCost {
         var totalIncrease = 0
         for ((sourceId, ability) in scanBattlefieldModifySpellCost(state)) {
-            val target = ability.target
-            if (target !is SpellCostTarget.AnyCaster) continue
-            if (!matchesCardDefinition(cardDef, target.filter, sourceId, state, state.projectedState)) continue
+            val applies = when (val target = ability.target) {
+                is SpellCostTarget.AnyCaster ->
+                    matchesCardDefinition(cardDef, target.filter, sourceId, state, state.projectedState)
+                is SpellCostTarget.OpponentsCast ->
+                    opponentsCastMatches(target, cardDef, casterId, sourceId, state)
+                else -> false
+            }
+            if (!applies) continue
             when (val mod = ability.modification) {
                 is CostModification.IncreaseGeneric -> totalIncrease += mod.amount
-                is CostModification.IncreaseGenericBy -> {
-                    if (casterId != null) {
-                        totalIncrease += evaluateReduction(
-                            state, mod.source, casterId, abilitySourceId = sourceId
-                        )
-                    }
-                }
+                is CostModification.IncreaseGenericBy ->
+                    totalIncrease += evaluateReduction(
+                        state, mod.source, casterId, abilitySourceId = sourceId
+                    )
                 is CostModification.IncreaseGenericPerOtherSpellThisTurn -> {
-                    if (casterId != null) {
-                        val spellsCast = state.playerSpellsCastThisTurn[casterId] ?: 0
-                        totalIncrease += spellsCast * mod.amountPerSpell
-                    }
+                    val spellsCast = state.playerSpellsCastThisTurn[casterId] ?: 0
+                    totalIncrease += spellsCast * mod.amountPerSpell
                 }
-                else -> { /* AnyCaster reductions don't apply to alternative casting costs. */ }
+                else -> { /* Battlefield reductions don't apply to alternative casting costs. */ }
             }
         }
         return increaseGenericCost(alternativeCost, totalIncrease)

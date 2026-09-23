@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Blood Spatter Analysis — the bloodstain fuse and the reflexive buy-back.
@@ -46,7 +47,7 @@ class BloodSpatterAnalysisScenarioTest : FunSpec({
     fun GameTestDriver.boltAndSettle(caster: EntityId, victim: EntityId) {
         val bolt = putCardInHand(caster, "Lightning Bolt")
         giveMana(caster, Color.RED, 1)
-        castSpell(caster, bolt, listOf(victim)).isSuccess shouldBe true
+        castSpell(caster, bolt, listOf(victim)).outcome shouldBe Outcome.Done
         var guard = 0
         while (!isPaused && state.stack.isNotEmpty() && guard++ < 20) bothPass()
     }
@@ -64,7 +65,7 @@ class BloodSpatterAnalysisScenarioTest : FunSpec({
         val analysis = driver.putCardInHand(you, "Blood Spatter Analysis")
         driver.giveMana(you, Color.BLACK, 1)
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, analysis).isSuccess shouldBe true
+        driver.castSpell(you, analysis).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the enchantment; its enters trigger goes on the stack
         if (driver.state.pendingDecision != null) {
             driver.submitTargetSelection(you, listOf(courser))

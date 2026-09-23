@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Strongarm Tactics.
@@ -47,7 +48,7 @@ class StrongarmTacticsTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 2)
 
         val castResult = driver.castSpell(activePlayer, strongarm)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve
         driver.bothPass()
@@ -86,7 +87,7 @@ class StrongarmTacticsTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 2)
 
         val castResult = driver.castSpell(activePlayer, strongarm)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve
         driver.bothPass()
@@ -131,7 +132,7 @@ class StrongarmTacticsTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 2)
 
         val castResult = driver.castSpell(activePlayer, strongarm)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve
         driver.bothPass()

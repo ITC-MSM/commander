@@ -275,6 +275,14 @@ object Costs {
         AbilityCost.Atom(CostAtom.ExileFrom(Zone.GRAVEYARD, filter, count))
 
     /**
+     * "Exile another [filter] card from your graveyard" — the graveyard exile cost of an ability
+     * activated *from* that graveyard, where the activating card itself can't pay (Gallia, Tragic
+     * Host).
+     */
+    fun ExileAnotherFromGraveyard(count: Int = 1, filter: GameObjectFilter = GameObjectFilter.Any): AbilityCost =
+        AbilityCost.Atom(CostAtom.ExileFrom(Zone.GRAVEYARD, filter, count, excludeSelf = true))
+
+    /**
      * Exile [count] cards matching [filter] from a *single* graveyard — any player's, but all
      * from the same one (Night Soil). The pool is every graveyard; the constraint is that the
      * chosen cards share an owner.

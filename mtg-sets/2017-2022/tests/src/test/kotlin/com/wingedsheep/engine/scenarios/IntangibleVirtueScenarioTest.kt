@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /** Scenario tests for Intangible Virtue. */
 class IntangibleVirtueScenarioTest : ScenarioTestBase() {
@@ -28,7 +29,7 @@ class IntangibleVirtueScenarioTest : ScenarioTestBase() {
 
                 val haunting = game.findCardsInHand(1, "Midnight Haunting").first()
                 game.execute(CastSpell(game.player1Id, haunting, emptyList(), faceIndex = 0))
-                    .isSuccess shouldBe true
+                    .outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val spirit = game.findPermanent("Spirit Token")!!
@@ -64,7 +65,7 @@ class IntangibleVirtueScenarioTest : ScenarioTestBase() {
 
                 val haunting = game.findCardsInHand(2, "Midnight Haunting").first()
                 game.execute(CastSpell(game.player2Id, haunting, emptyList(), faceIndex = 0))
-                    .isSuccess shouldBe true
+                    .outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val spirit = game.findPermanent("Spirit Token")!!

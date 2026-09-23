@@ -15,6 +15,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Shipwreck Sentry (LCI) — {1}{U} Human Pirate 3/3, Defender.
@@ -77,7 +78,7 @@ class ShipwreckSentryScenarioTest : FunSpec({
         // Cast Ornithopter ({0}) from hand so it enters via the real zone-transition path,
         // recording an artifact ETB under your control this turn.
         val thopter = driver.putCardInHand(you, "Ornithopter")
-        driver.castSpell(you, thopter).isSuccess shouldBe true
+        driver.castSpell(you, thopter).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Ornithopter — the artifact enters the battlefield
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
@@ -130,7 +131,7 @@ class ShipwreckSentryScenarioTest : FunSpec({
         }
 
         val thopter = driver.putCardInHand(you, "Ornithopter")
-        driver.castSpell(you, thopter).isSuccess shouldBe true
+        driver.castSpell(you, thopter).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Ornithopter — an artifact enters under your control this turn
 
         // Still the precombat main phase — the reveal happens here, not only at declare-attackers.

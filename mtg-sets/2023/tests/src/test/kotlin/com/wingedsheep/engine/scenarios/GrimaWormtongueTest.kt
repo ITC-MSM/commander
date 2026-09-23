@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Gríma Wormtongue (LTR).
@@ -74,7 +75,7 @@ class GrimaWormtongueTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(fodder))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.getLifeTotal(opp) shouldBe (oppLifeBefore - 1)
@@ -107,7 +108,7 @@ class GrimaWormtongueTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(fodder))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // Damage applied

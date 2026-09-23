@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Blazing Bomb (FIN #130) — {R} 1/1 Elemental.
@@ -51,7 +52,7 @@ class BlazingBombScenarioTest : FunSpec({
         val zap = d.putCardInHand(me, "Zap")
         d.giveMana(me, Color.RED, 1)
         d.giveColorlessMana(me, 2)
-        d.castSpell(me, zap, listOf(foe)).isSuccess shouldBe true
+        d.castSpell(me, zap, listOf(foe)).outcome shouldBe Outcome.Done
         resolveStack(d)
         d.state.projectedState.getPower(bomb) shouldBe 1 // still 1/1 — trigger did not fire
 
@@ -59,7 +60,7 @@ class BlazingBombScenarioTest : FunSpec({
         val lavaAxe = d.putCardInHand(me, "Lava Axe")
         d.giveMana(me, Color.RED, 1)
         d.giveColorlessMana(me, 4)
-        d.castSpell(me, lavaAxe, listOf(foe)).isSuccess shouldBe true
+        d.castSpell(me, lavaAxe, listOf(foe)).outcome shouldBe Outcome.Done
         resolveStack(d)
         d.state.projectedState.getPower(bomb) shouldBe 2 // now a 2/2
     }
@@ -76,7 +77,7 @@ class BlazingBombScenarioTest : FunSpec({
         val lavaAxe = d.putCardInHand(me, "Lava Axe")
         d.giveMana(me, Color.RED, 1)
         d.giveColorlessMana(me, 4)
-        d.castSpell(me, lavaAxe, listOf(foe)).isSuccess shouldBe true
+        d.castSpell(me, lavaAxe, listOf(foe)).outcome shouldBe Outcome.Done
         resolveStack(d)
         d.state.projectedState.getPower(bomb) shouldBe 2
 

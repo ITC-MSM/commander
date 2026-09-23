@@ -12,6 +12,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Nullpriest of Oblivion (ZNR #118, reprinted in FDN #611) — {1}{B} 2/1 Vampire Cleric with
@@ -48,7 +49,7 @@ class NullpriestOfOblivionScenarioTest : FunSpec({
                 declaredCostSlot = ChoiceSlot.KICKED,
                 paymentStrategy = PaymentStrategy.AutoPay,
             ),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass() // resolve the creature; the kicked ETB trigger goes on the stack and wants a target
 
         val courser = d.getGraveyard(you).first {
@@ -78,7 +79,7 @@ class NullpriestOfOblivionScenarioTest : FunSpec({
                 declaredCostSlot = null,
                 paymentStrategy = PaymentStrategy.AutoPay,
             ),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass() // resolve the creature; the intervening "if" is false, so nothing triggers
 
         d.pendingDecision.shouldBeNull()

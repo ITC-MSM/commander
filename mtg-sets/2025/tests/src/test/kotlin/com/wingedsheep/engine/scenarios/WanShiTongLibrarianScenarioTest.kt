@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Wan Shi Tong, Librarian (TLA #78) — {X}{U}{U} Legendary Bird Spirit, 1/1.
@@ -49,7 +50,7 @@ class WanShiTongLibrarianScenarioTest : FunSpec({
         d.giveColorlessMana(active, 4) // X = 4 → {4}{U}{U}
         val handBeforeCast = d.getHandSize(active)
 
-        d.castXSpell(active, wan, xValue = 4).isSuccess shouldBe true
+        d.castXSpell(active, wan, xValue = 4).outcome shouldBe Outcome.Done
         // Resolve the cast + its ETB trigger, then STOP as soon as the stack is empty — do not keep
         // passing priority into the cleanup step (which would discard the freshly drawn cards back
         // down to the max hand size).
@@ -75,7 +76,7 @@ class WanShiTongLibrarianScenarioTest : FunSpec({
         d.giveColorlessMana(active, 3) // X = 3 → {3}{U}{U}
         val handBeforeCast = d.getHandSize(active)
 
-        d.castXSpell(active, wan, xValue = 3).isSuccess shouldBe true
+        d.castXSpell(active, wan, xValue = 3).outcome shouldBe Outcome.Done
         // Resolve the cast + its ETB trigger, then STOP as soon as the stack is empty — do not keep
         // passing priority into the cleanup step (which would discard the freshly drawn cards back
         // down to the max hand size).
@@ -103,7 +104,7 @@ class WanShiTongLibrarianScenarioTest : FunSpec({
         d.giveMana(searcher, Color.GREEN, 1)
         val myHandBefore = d.getHandSize(me)
 
-        d.castSpell(searcher, lay).isSuccess shouldBe true
+        d.castSpell(searcher, lay).outcome shouldBe Outcome.Done
         // Resolve the cast, its library search, and any resulting trigger, then STOP at an empty
         // stack — passing further would advance into the next turn's draw step and inflate the count.
         var guard = 0
@@ -127,7 +128,7 @@ class WanShiTongLibrarianScenarioTest : FunSpec({
         d.giveMana(active, Color.GREEN, 1)
         val handBefore = d.getHandSize(active)
 
-        d.castSpell(active, lay).isSuccess shouldBe true
+        d.castSpell(active, lay).outcome shouldBe Outcome.Done
         // Resolve the cast, its library search, and any resulting trigger, then STOP at an empty
         // stack — passing further would advance into the next turn's draw step and inflate the count.
         var guard = 0

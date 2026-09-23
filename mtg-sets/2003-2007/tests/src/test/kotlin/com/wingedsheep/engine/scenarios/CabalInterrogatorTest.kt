@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Cabal Interrogator.
@@ -62,7 +63,7 @@ class CabalInterrogatorTest : FunSpec({
                 xValue = 1
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Only 2 swamps should be tapped (1 for {B} + 1 for X=1)
         val tappedSwamps = swamps.count { driver.isTapped(it) }
@@ -104,7 +105,7 @@ class CabalInterrogatorTest : FunSpec({
                 xValue = 0
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val tappedSwamps = swamps.count { driver.isTapped(it) }
         tappedSwamps shouldBe 1
@@ -146,7 +147,7 @@ class CabalInterrogatorTest : FunSpec({
                 xValue = 4
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val tappedSwamps = swamps.count { driver.isTapped(it) }
         tappedSwamps shouldBe 5

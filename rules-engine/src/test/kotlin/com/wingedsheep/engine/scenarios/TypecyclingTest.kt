@@ -20,6 +20,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for TypecycleCardHandler via the Swampcycling ability on Twisted Abomination.
@@ -51,7 +52,7 @@ class TypecyclingTest : FunSpec({
         driver.giveColorlessMana(activePlayer, 2)
 
         val result = driver.submit(TypecycleCard(playerId = activePlayer, cardId = abomination))
-        (result.isSuccess || result.isPaused).shouldBeTrue()
+        (result.outcome is Outcome.Done || result.outcome is Outcome.Paused).shouldBeTrue()
 
         // Abomination was discarded into the graveyard.
         driver.getGraveyardCardNames(activePlayer) shouldContain "Twisted Abomination"
@@ -84,7 +85,7 @@ class TypecyclingTest : FunSpec({
         val abomination = driver.putCardInHand(activePlayer, "Twisted Abomination")
 
         val result = driver.submit(TypecycleCard(playerId = activePlayer, cardId = abomination))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         // Card is still in hand.
         driver.findCardInHand(activePlayer, "Twisted Abomination") shouldNotBe null
     }
@@ -104,7 +105,7 @@ class TypecyclingTest : FunSpec({
         driver.giveColorlessMana(activePlayer, 2)
 
         val result = driver.submit(TypecycleCard(playerId = activePlayer, cardId = abomination))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("swampcycling is prevented while Stabilizer is on the battlefield") {
@@ -124,7 +125,7 @@ class TypecyclingTest : FunSpec({
         driver.giveColorlessMana(activePlayer, 2)
 
         val result = driver.submit(TypecycleCard(playerId = activePlayer, cardId = abomination))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.findCardInHand(activePlayer, "Twisted Abomination") shouldNotBe null
     }
 
@@ -146,7 +147,7 @@ class TypecyclingTest : FunSpec({
         val abomination = driver.putCardInHand(activePlayer, "Twisted Abomination")
 
         val result = driver.submit(TypecycleCard(playerId = activePlayer, cardId = abomination))
-        (result.isSuccess || result.isPaused).shouldBeTrue()
+        (result.outcome is Outcome.Done || result.outcome is Outcome.Paused).shouldBeTrue()
 
         driver.isTapped(m1) shouldBe true
         driver.isTapped(m2) shouldBe true
@@ -171,7 +172,7 @@ class TypecyclingTest : FunSpec({
 
         val handSizeBefore = driver.getHandSize(activePlayer)
         val result = driver.submit(TypecycleCard(playerId = activePlayer, cardId = abomination))
-        (result.isSuccess || result.isPaused).shouldBeTrue()
+        (result.outcome is Outcome.Done || result.outcome is Outcome.Paused).shouldBeTrue()
 
         // Card is discarded.
         driver.getGraveyardCardNames(activePlayer) shouldContain "Twisted Abomination"
@@ -204,7 +205,7 @@ class TypecyclingTest : FunSpec({
         driver.giveColorlessMana(activePlayer, 2)
 
         val r = driver.submit(TypecycleCard(playerId = activePlayer, cardId = abomination))
-        (r.isSuccess || r.isPaused).shouldBeTrue()
+        (r.outcome is Outcome.Done || r.outcome is Outcome.Paused).shouldBeTrue()
 
         val decision = driver.pendingDecision
         decision.shouldBeInstanceOf<SelectCardsDecision>()

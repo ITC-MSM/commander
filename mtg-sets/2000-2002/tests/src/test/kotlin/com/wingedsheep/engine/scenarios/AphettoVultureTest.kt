@@ -24,6 +24,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Aphetto Vulture:
@@ -64,7 +65,7 @@ class AphettoVultureTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 1)
         val bolt = driver.putCardInHand(activePlayer, "Lightning Bolt")
         val castResult = driver.castSpellWithTargets(activePlayer, bolt, listOf(ChosenTarget.Permanent(vulture)))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the bolt - vulture takes 3 damage and dies
         driver.bothPass()
@@ -106,7 +107,7 @@ class AphettoVultureTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 1)
         val bolt = driver.putCardInHand(activePlayer, "Lightning Bolt")
         val castResult = driver.castSpellWithTargets(activePlayer, bolt, listOf(ChosenTarget.Permanent(vulture)))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve bolt - vulture dies
         driver.bothPass()

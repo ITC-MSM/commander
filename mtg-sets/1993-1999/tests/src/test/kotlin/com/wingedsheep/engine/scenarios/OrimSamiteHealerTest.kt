@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Orim, Samite Healer — auto-generated from the mtgish IR by mtgish-tooling
@@ -51,7 +52,7 @@ class OrimSamiteHealerTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Player(opponent))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // First Lightning Bolt (3): the 3-damage shield prevents all of it.

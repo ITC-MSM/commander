@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.mechanics.layers.StateProjector
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Prairie Dog — {1}{W} 2/2 Creature — Squirrel
@@ -93,7 +94,7 @@ class PrairieDogScenarioTest : FunSpec({
         val abilityId = PrairieDog.activatedAbilities.first().id
         driver.giveMana(me, Color.WHITE, 5)
         val result = driver.submit(ActivateAbility(playerId = me, sourceId = dog, abilityId = abilityId))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the ability -> installs the modifier
         driver.state.activeCounterPlacementModifiers.size shouldBe 1
 

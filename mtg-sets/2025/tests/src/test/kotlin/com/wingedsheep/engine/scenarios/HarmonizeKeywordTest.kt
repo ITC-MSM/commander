@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.AlternativePaymentChoice
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Harmonize (Tarkir: Dragonstorm): an alternative cost to cast an instant/sorcery from
@@ -56,7 +57,7 @@ class HarmonizeKeywordTest : FunSpec({
 
         driver.submit(
             CastSpell(player, spell, useAlternativeCost = true, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Drew a card and the spell was exiled (not returned to the graveyard).
@@ -81,7 +82,7 @@ class HarmonizeKeywordTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool,
                 alternativePayment = AlternativePaymentChoice(harmonizeCreature = bears)
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isTapped(bears) shouldBe true
@@ -141,7 +142,7 @@ class HarmonizeKeywordTest : FunSpec({
                 useAlternativeCost = true,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getLifeTotal(opponent) shouldBe 18
@@ -163,7 +164,7 @@ class HarmonizeKeywordTest : FunSpec({
                 useAlternativeCost = true,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // +3/+0 and haste applied; the spell is exiled (harmonize), not back in the graveyard.
@@ -183,7 +184,7 @@ class HarmonizeKeywordTest : FunSpec({
 
         driver.submit(
             CastSpell(player, spell, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Cast from hand (not graveyard) — Harmonize's exile clause does not apply.

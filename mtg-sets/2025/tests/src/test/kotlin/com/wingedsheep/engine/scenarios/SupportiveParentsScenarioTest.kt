@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Supportive Parents (SPM #119) — {2}{G} Creature — Human Citizen 3/3
@@ -92,6 +94,6 @@ class SupportiveParentsScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(tappedPermanents = listOf(a))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

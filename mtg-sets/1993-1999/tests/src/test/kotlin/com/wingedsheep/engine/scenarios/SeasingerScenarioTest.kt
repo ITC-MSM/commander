@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.Duration
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Seasinger (Fallen Empires).
@@ -94,7 +96,7 @@ class SeasingerScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(target))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 
     test("control returns when Seasinger untaps") {

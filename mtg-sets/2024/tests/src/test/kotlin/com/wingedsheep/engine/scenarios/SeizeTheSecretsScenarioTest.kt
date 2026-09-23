@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Seize the Secrets:
@@ -63,7 +64,7 @@ class SeizeTheSecretsScenarioTest : FunSpec({
         // Cast Lightning Bolt at the opponent's creature → commits a crime.
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(victim)).outcome shouldBe Outcome.Done
 
         driver.state.playersWhoCommittedCrimeThisTurn.contains(you) shouldBe true
 

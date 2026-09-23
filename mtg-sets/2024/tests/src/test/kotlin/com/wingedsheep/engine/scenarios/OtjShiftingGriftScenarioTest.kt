@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Shifting Grift — {U}{U} Sorcery, Spree.
@@ -66,7 +67,7 @@ class OtjShiftingGriftScenarioTest : FunSpec({
                 ),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Control is exchanged: I now control their Lions, they control my Courser.
@@ -98,7 +99,7 @@ class OtjShiftingGriftScenarioTest : FunSpec({
                 ),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.projectedState.getController(theirs) shouldBe me
@@ -135,7 +136,7 @@ class OtjShiftingGriftScenarioTest : FunSpec({
                 ),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.projectedState.getController(theirCreature) shouldBe me

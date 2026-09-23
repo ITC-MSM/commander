@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The Master of Lake-town {1}{B}{B} — Legendary Creature — Human Advisor 3/2
@@ -39,7 +40,7 @@ class TheMasterOfLakeTownScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
         driver.bothPass() // Lightning Bolt: opponent 20 -> 17
         driver.bothPass() // the mill trigger
 
@@ -58,7 +59,7 @@ class TheMasterOfLakeTownScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, listOf(you)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(you)).outcome shouldBe Outcome.Done
         driver.bothPass() // Lightning Bolt: you 20 -> 17
         driver.bothPass() // the mill trigger
 
@@ -84,7 +85,7 @@ class TheMasterOfLakeTownScenarioTest : FunSpec({
         driver.giveMana(you, Color.RED, 1)
         val handBefore = driver.getHandSize(you)
         driver.castSpell(you, bolt, listOf(driver.findPermanent(you, "The Master of Lake-town")!!))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass() // 3 damage kills the 3/2
         driver.bothPass() // the dies trigger
 
@@ -104,7 +105,7 @@ class TheMasterOfLakeTownScenarioTest : FunSpec({
         driver.giveMana(you, Color.RED, 1)
         val handBefore = driver.getHandSize(you)
         driver.castSpell(you, bolt, listOf(driver.findPermanent(you, "The Master of Lake-town")!!))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 

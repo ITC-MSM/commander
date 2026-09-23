@@ -16,6 +16,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Urban Retreat (SPM #187) — Land.
@@ -52,7 +53,7 @@ class UrbanRetreatScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val landInHand = driver.putCardInHand(p1, "Urban Retreat")
-        driver.playLand(p1, landInHand).isSuccess shouldBe true
+        driver.playLand(p1, landInHand).outcome shouldBe Outcome.Done
 
         val permanent = driver.findPermanent(p1, "Urban Retreat")
         permanent.shouldNotBeNull()

@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Memories Returning.
@@ -69,7 +70,7 @@ class MemoriesReturningScenarioTest : FunSpec({
         val card = driver.putCardInHand(activePlayer, "Memories Returning")
         driver.giveMana(activePlayer, Color.BLUE, 2)
         driver.giveColorlessMana(activePlayer, 2)
-        driver.castSpell(activePlayer, card, emptyList()).isSuccess shouldBe true
+        driver.castSpell(activePlayer, card, emptyList()).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 1) You put one into your hand.

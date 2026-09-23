@@ -15,6 +15,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Lo and Li, Twin Tutors (TLA #108) — {4}{B} Legendary Creature — Human Advisor, 2/2.
@@ -54,7 +55,7 @@ class LoAndLiTwinTutorsScenarioTest : FunSpec({
         val loAndLi = d.putCardInHand(active, "Lo and Li, Twin Tutors")
         d.giveMana(active, Color.BLACK, 1)
         d.giveColorlessMana(active, 4)
-        d.castSpell(active, loAndLi).isSuccess shouldBe true
+        d.castSpell(active, loAndLi).outcome shouldBe Outcome.Done
 
         // Resolve the cast + its ETB trigger until the library-search decision pauses execution.
         var guard = 0
@@ -148,7 +149,7 @@ class LoAndLiTwinTutorsScenarioTest : FunSpec({
         d.giveColorlessMana(me, 2)
         val lifeBefore = d.getLifeTotal(me)
 
-        d.castSpell(me, ozai, targets = listOf(opp)).isSuccess shouldBe true
+        d.castSpell(me, ozai, targets = listOf(opp)).outcome shouldBe Outcome.Done
         var guard = 0
         while ((d.pendingDecision != null || d.stackSize > 0) && guard++ < 30) {
             if (d.pendingDecision != null) d.autoResolveDecision() else d.bothPass()

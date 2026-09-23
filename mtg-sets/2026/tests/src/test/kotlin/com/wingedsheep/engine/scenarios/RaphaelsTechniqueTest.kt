@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Raphael's Technique (TMT #105) — "Each player may discard their hand and draw seven cards."
@@ -27,7 +28,7 @@ class RaphaelsTechniqueTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         driver.giveMana(player, Color.RED, 6) // {4}{R}{R}
-        driver.castSpell(player, raph, emptyList()).isSuccess shouldBe true
+        driver.castSpell(player, raph, emptyList()).outcome shouldBe Outcome.Done
 
         // Resolve the spell, accepting each per-player "may" prompt.
         var guard = 0

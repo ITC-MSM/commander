@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Sahagin (FIN #71).
@@ -54,7 +55,7 @@ class SahaginScenarioTest : FunSpec({
             active,
             stoke,
             listOf(entityIdToChosenTarget(driver.state, opponent)),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         // Resolve Sahagin's trigger (on top of the stack), then the spell.
         driver.bothPass()
         driver.bothPass()
@@ -79,7 +80,7 @@ class SahaginScenarioTest : FunSpec({
             active,
             bolt,
             listOf(entityIdToChosenTarget(driver.state, opponent)),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 

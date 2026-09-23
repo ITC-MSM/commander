@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * [DynamicAmount.SpellsCastThisTurn] — counts the spells a player has cast this turn,
@@ -98,7 +99,7 @@ class SpellsCastThisTurnAmountTest : FunSpec({
 
         val salvo = driver.putCardInHand(you, "Other Spells Salvo")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, salvo, listOf(sponge)).isSuccess shouldBe true
+        driver.castSpell(you, salvo, listOf(sponge)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the salvo
 
         // records = [salvo]; excludeSelf drops it → 0 other → damage = 2.
@@ -119,9 +120,9 @@ class SpellsCastThisTurnAmountTest : FunSpec({
         val salvo = driver.putCardInHand(you, "Other Spells Salvo")
         driver.giveMana(you, Color.RED, 3)
 
-        driver.castSpell(you, bolt1, listOf(you)).isSuccess shouldBe true
-        driver.castSpell(you, bolt2, listOf(you)).isSuccess shouldBe true
-        driver.castSpell(you, salvo, listOf(sponge)).isSuccess shouldBe true
+        driver.castSpell(you, bolt1, listOf(you)).outcome shouldBe Outcome.Done
+        driver.castSpell(you, bolt2, listOf(you)).outcome shouldBe Outcome.Done
+        driver.castSpell(you, salvo, listOf(sponge)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the salvo (top of stack), bolts remain beneath
 
         // records = [bolt1, bolt2, salvo]; excludeSelf drops salvo → 2 others → damage = 2 + 2 = 4.
@@ -138,7 +139,7 @@ class SpellsCastThisTurnAmountTest : FunSpec({
 
         val counter = driver.putCardInHand(you, "Noncreature Count")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, counter, listOf(sponge)).isSuccess shouldBe true
+        driver.castSpell(you, counter, listOf(sponge)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // records = [counter] (an instant = noncreature); includes itself → 1.
@@ -159,10 +160,10 @@ class SpellsCastThisTurnAmountTest : FunSpec({
         driver.giveMana(you, Color.GREEN, 6)
         driver.giveMana(you, Color.RED, 6)
 
-        driver.castSpell(you, courser, emptyList()).isSuccess shouldBe true
+        driver.castSpell(you, courser, emptyList()).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature so it isn't left blocking the stack
-        driver.castSpell(you, bolt, listOf(you)).isSuccess shouldBe true
-        driver.castSpell(you, counter, listOf(sponge)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(you)).outcome shouldBe Outcome.Done
+        driver.castSpell(you, counter, listOf(sponge)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Noncreature Count
 
         // noncreature records = [bolt, counter] (courser is a creature) → 2.

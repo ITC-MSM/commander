@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Impossible Inferno (DSK #140) — {4}{R} Instant.
@@ -39,7 +40,7 @@ class ImpossibleInfernoScenarioTest : FunSpec({
         val exileBefore = driver.getExile(driver.player1).size
 
         driver.giveMana(driver.player1, Color.RED, 5)
-        driver.castSpell(driver.player1, inferno, listOf(target)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, inferno, listOf(target)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(driver.player2, "Grizzly Bears") shouldBe null
@@ -63,7 +64,7 @@ class ImpossibleInfernoScenarioTest : FunSpec({
         val exileBefore = driver.getExile(driver.player1).size
 
         driver.giveMana(driver.player1, Color.RED, 5)
-        driver.castSpell(driver.player1, inferno, listOf(target)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, inferno, listOf(target)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(driver.player2, "Grizzly Bears") shouldBe null
@@ -87,7 +88,7 @@ class ImpossibleInfernoScenarioTest : FunSpec({
         val exileBefore = driver.getExile(driver.player1).size
 
         driver.giveMana(driver.player1, Color.RED, 5)
-        driver.castSpell(driver.player1, inferno, listOf(target)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, inferno, listOf(target)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getExile(driver.player1).size shouldBe exileBefore

@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for conditional mana (mana with spending restrictions).
@@ -119,7 +120,7 @@ class ConditionalManaTest : FunSpec({
                     abilityId = arcanistAbilityId
                 )
             )
-            activateResult.isSuccess shouldBe true
+            activateResult.outcome shouldBe Outcome.Done
 
             // Check that the mana pool has restricted mana
             val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
@@ -157,7 +158,7 @@ class ConditionalManaTest : FunSpec({
                     paymentStrategy = PaymentStrategy.FromPool
                 )
             )
-            castResult.isSuccess shouldBe true
+            castResult.outcome shouldBe Outcome.Done
 
             // Restricted mana should be spent
             val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
@@ -186,7 +187,7 @@ class ConditionalManaTest : FunSpec({
                     paymentStrategy = PaymentStrategy.FromPool
                 )
             )
-            castResult.isSuccess shouldBe false
+            castResult.outcome shouldNotBe Outcome.Done
         }
 
         test("AutoPay solver excludes restricted-only sources for ineligible spells") {
@@ -212,7 +213,7 @@ class ConditionalManaTest : FunSpec({
                     paymentStrategy = PaymentStrategy.AutoPay
                 )
             )
-            castResult.isSuccess shouldBe false
+            castResult.outcome shouldNotBe Outcome.Done
         }
 
         test("AutoPay solver USES restricted source for eligible spells") {
@@ -238,7 +239,7 @@ class ConditionalManaTest : FunSpec({
                     paymentStrategy = PaymentStrategy.AutoPay
                 )
             )
-            castResult.isSuccess shouldBe true
+            castResult.outcome shouldBe Outcome.Done
         }
     }
 
@@ -267,7 +268,7 @@ class ConditionalManaTest : FunSpec({
                     paymentStrategy = PaymentStrategy.AutoPay
                 )
             )
-            castResult.isSuccess shouldBe true
+            castResult.outcome shouldBe Outcome.Done
         }
     }
 
@@ -331,7 +332,7 @@ class ConditionalManaTest : FunSpec({
                     paymentStrategy = PaymentStrategy.AutoPay
                 )
             )
-            castResult.isSuccess shouldBe false
+            castResult.outcome shouldNotBe Outcome.Done
         }
 
         test("restricted colored mana CAN be used for eligible spells from mixed source") {
@@ -356,7 +357,7 @@ class ConditionalManaTest : FunSpec({
                     paymentStrategy = PaymentStrategy.AutoPay
                 )
             )
-            castResult.isSuccess shouldBe true
+            castResult.outcome shouldBe Outcome.Done
         }
 
         test("unrestricted colorless from mixed source can still pay generic costs") {
@@ -381,7 +382,7 @@ class ConditionalManaTest : FunSpec({
                     paymentStrategy = PaymentStrategy.AutoPay
                 )
             )
-            castResult.isSuccess shouldBe true
+            castResult.outcome shouldBe Outcome.Done
         }
     }
 })

@@ -72,7 +72,7 @@ class CombatContinuationResumer(
             continuation.effect,
             continuation.effectContext
         )
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             return ExecutionResult.propagatePause(result.state, result.events)
         }
         return checkForMore(result.state, result.events)
@@ -287,8 +287,9 @@ class CombatContinuationResumer(
                     continuation.sourceId
                 )
 
-                if (!result.isSuccess) {
-                    return ExecutionResult(newState, events, result.error)
+                // Dealing damage never asks a question, so the only other outcome is a rejection.
+                if (result.outcome is Outcome.Rejected) {
+                    return ExecutionResult(newState, events, result.outcome)
                 }
 
                 newState = result.state

@@ -152,6 +152,9 @@ class FlourishingBloomKinScenarioTest : FunSpec({
         val player = driver.activePlayer!!
 
         val bloomKin = castFaceDown(driver, player)
+        // Face up it is a 0/0 that counts Forests: with none out, the state-based check (CR 704.3)
+        // would kill it before its own trigger resolves.
+        driver.putLandOnBattlefield(player, "Forest")
         val landsBefore = driver.getLands(player).size
         val handBefore = driver.getHandSize(player)
 
@@ -185,8 +188,8 @@ class FlourishingBloomKinScenarioTest : FunSpec({
             driver.getHandSize(player) shouldBe handBefore + 1
             driver.getHand(player).contains(forests[1]) shouldBe true
         }
-        withClue("the Bloom-Kin is now a 1/1 off the Forest it just put onto the battlefield") {
-            driver.state.projectedState.getPower(bloomKin) shouldBe 1
+        withClue("the Bloom-Kin grows to 2/2 off the Forest it just put onto the battlefield") {
+            driver.state.projectedState.getPower(bloomKin) shouldBe 2
         }
     }
 

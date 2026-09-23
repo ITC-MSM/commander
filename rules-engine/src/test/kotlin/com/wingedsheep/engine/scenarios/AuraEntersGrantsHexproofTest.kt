@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Regression test for Rule 608.2b as it applies to hexproof granted by an Aura's
@@ -80,14 +81,14 @@ class AuraEntersGrantsHexproofTest : FunSpec({
         val removal = driver.putCardInHand(p2, "Test Doom Blade")
         driver.giveMana(p2, Color.BLACK, 2)
         driver.castSpellWithTargets(p2, removal, listOf(ChosenTarget.Permanent(creature)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         // P2 passes → P1 gets priority, responds with the flash Aura on own creature.
         driver.passPriority(p2)
         val aura = driver.putCardInHand(p1, "Test Hexproof Aura")
         driver.giveMana(p1, Color.BLUE, 2)
         driver.castSpellWithTargets(p1, aura, listOf(ChosenTarget.Permanent(creature)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         // Stack: [destroy (bottom), aura (top)]. Both pass → aura resolves first.
         driver.stackSize shouldBe 2

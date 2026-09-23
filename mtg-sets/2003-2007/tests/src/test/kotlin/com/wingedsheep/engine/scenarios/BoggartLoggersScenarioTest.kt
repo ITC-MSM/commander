@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Boggart Loggers (LRW #103) — "Forestwalk. {2}{B}, Sacrifice this creature: Destroy target
@@ -41,7 +42,7 @@ class BoggartLoggersScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, loggers, destroyAbility, targets = listOf(ChosenTarget.Permanent(forest)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("The Forest should be destroyed by the subtype-union target") {
@@ -61,7 +62,7 @@ class BoggartLoggersScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, loggers, destroyAbility, targets = listOf(ChosenTarget.Permanent(oak)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.state.getBattlefield().contains(oak) shouldBe false

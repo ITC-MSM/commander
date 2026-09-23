@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.ExileTopCardContestEffect
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for [ExileTopCardContestEffect].
@@ -60,7 +61,7 @@ class ExileTopCardContestExecutor : EffectExecutor<ExileTopCardContestEffect> {
                 val card = currentState.getEntity(topCardId)?.get<CardComponent>()
                 val moveResult = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
                     .moveCardToZone(currentState, topCardId, Zone.EXILE)
-                if (!moveResult.isSuccess) continue
+                if (moveResult.outcome !is Outcome.Done) continue
                 currentState = moveResult.state
                 events.addAll(moveResult.events)
                 allExiled.add(topCardId)

@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for ReselectTargetRandomlyExecutor via Grip of Chaos.
@@ -137,7 +138,7 @@ class GripOfChaosTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 1)
         val study = driver.putCardInHand(activePlayer, "Careful Study")
         val cast = driver.castSpell(activePlayer, study)
-        (cast.isSuccess || cast.isPaused) shouldBe true
+        (cast.outcome is Outcome.Done || cast.outcome is Outcome.Paused) shouldBe true
 
         // Drain the stack (spell + trigger). There should be no reselection event at all.
         while (driver.state.stack.isNotEmpty()) {

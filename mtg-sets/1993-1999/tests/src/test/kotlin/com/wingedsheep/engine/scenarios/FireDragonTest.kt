@@ -13,6 +13,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Fire Dragon's ETB triggered ability.
@@ -59,7 +60,7 @@ class FireDragonTest : FunSpec({
 
         // Cast Fire Dragon (no targets needed for the spell itself)
         val castResult = driver.castSpell(activePlayer, fireDragon)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the spell resolve (both players pass priority)
         driver.bothPass()
@@ -81,7 +82,7 @@ class FireDragonTest : FunSpec({
 
         // Submit the target selection (choose Force of Nature)
         val targetResult = driver.submitTargetSelection(activePlayer, listOf(targetCreature))
-        targetResult.isSuccess shouldBe true
+        targetResult.outcome shouldBe Outcome.Done
 
         // The ability should now be on the stack - resolve it
         driver.stackSize shouldBe 1

@@ -1,4 +1,4 @@
-const backgroundModules = import.meta.glob('../assets/backgrounds/*.jpeg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
+const backgroundModules = import.meta.glob('../assets/backgrounds/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
 const backgroundUrls = Object.values(backgroundModules)
 
 function pickBackground(): string {

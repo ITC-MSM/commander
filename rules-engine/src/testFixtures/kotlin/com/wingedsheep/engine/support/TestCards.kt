@@ -694,11 +694,25 @@ object TestCards {
         )
     )
 
+    /**
+     * "The legend rule doesn't apply to permanents you control." A test needing two copies of a
+     * legendary permanent under one controller puts this out first. Otherwise the legend rule
+     * (CR 704.5j) removes one copy the next time a player would receive priority.
+     */
+    val LegendRuleWaiver = com.wingedsheep.sdk.dsl.card("Legend Rule Waiver") {
+        manaCost = "{3}"
+        typeLine = "Artifact"
+        staticAbility {
+            ability = LegendRuleDoesNotApplyTo(GameObjectFilter.Permanent)
+        }
+    }
+
     // =========================================================================
     // All Test Cards
     // =========================================================================
 
     private val testOnlyCards: List<CardDefinition> = listOf(
+        LegendRuleWaiver,
         // Creatures
         CentaurCourser,
         ForceOfNature,

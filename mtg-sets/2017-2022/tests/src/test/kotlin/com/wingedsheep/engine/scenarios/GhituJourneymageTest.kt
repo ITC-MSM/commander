@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Ghitu Journeymage.
@@ -48,7 +49,7 @@ class GhituJourneymageTest : FunSpec({
 
         val ghitu = driver.putCardInHand(p1, "Ghitu Journeymage")
         driver.giveMana(p1, Color.RED, 3)
-        driver.castSpell(p1, ghitu).isSuccess shouldBe true
+        driver.castSpell(p1, ghitu).outcome shouldBe Outcome.Done
         driver.bothPass() // Ghitu resolves and enters; ETB trigger goes on the stack
         driver.bothPass() // ETB trigger resolves
 
@@ -65,7 +66,7 @@ class GhituJourneymageTest : FunSpec({
         // Only Ghitu itself is a Wizard — the "another Wizard" condition is not met.
         val ghitu = driver.putCardInHand(p1, "Ghitu Journeymage")
         driver.giveMana(p1, Color.RED, 3)
-        driver.castSpell(p1, ghitu).isSuccess shouldBe true
+        driver.castSpell(p1, ghitu).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 
@@ -85,7 +86,7 @@ class GhituJourneymageTest : FunSpec({
 
         val ghitu = driver.putCardInHand(p1, "Ghitu Journeymage")
         driver.giveMana(p1, Color.RED, 3)
-        driver.castSpell(p1, ghitu).isSuccess shouldBe true
+        driver.castSpell(p1, ghitu).outcome shouldBe Outcome.Done
         driver.bothPass() // Ghitu enters; ETB trigger on the stack, p1 has priority
 
         // In response, use Imagecrafter to turn Ghitu into a Goblin (no longer a Wizard).
@@ -96,7 +97,7 @@ class GhituJourneymageTest : FunSpec({
                 abilityId = imagecrafterAbilityId,
                 targets = listOf(ChosenTarget.Permanent(ghitu))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Imagecrafter's ability -> pause for the creature-type choice
         val decision = driver.pendingDecision
         decision.shouldBeInstanceOf<ChooseOptionDecision>()

@@ -68,6 +68,7 @@ import com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PutCounterOnCreatureThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedArtifactThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent
+import com.wingedsheep.engine.state.components.player.ScriedOrSurveiledThisTurnComponent
 import com.wingedsheep.engine.state.components.player.WasDealtCombatDamageByLegendaryCreatureThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CombatDamageReceivedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.WasDealtCombatDamageThisTurnComponent
@@ -784,6 +785,9 @@ class CleanupPhaseManager(
                 }
                 if (result.has<SacrificedFoodThisTurnComponent>()) {
                     result = result.without<SacrificedFoodThisTurnComponent>()
+                }
+                if (result.has<ScriedOrSurveiledThisTurnComponent>()) {
+                    result = result.without<ScriedOrSurveiledThisTurnComponent>()
                 }
                 if (result.has<SacrificedArtifactThisTurnComponent>()) {
                     result = result.without<SacrificedArtifactThisTurnComponent>()

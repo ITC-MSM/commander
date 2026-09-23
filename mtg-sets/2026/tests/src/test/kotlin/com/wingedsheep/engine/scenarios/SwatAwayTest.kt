@@ -19,6 +19,8 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Swat Away.
@@ -76,7 +78,7 @@ class SwatAwayTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 1
     }
 
@@ -102,7 +104,7 @@ class SwatAwayTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("targeting a creature on the battlefield — owner chooses top of library") {
@@ -126,7 +128,7 @@ class SwatAwayTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(attacker)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Swat Away; top-or-bottom decision pauses execution.
 
         val decision = driver.pendingDecision
@@ -195,7 +197,7 @@ class SwatAwayTest : FunSpec({
                 targets = listOf(ChosenTarget.Player(p1)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         val boltOnStack = driver.getTopOfStack()!!
         driver.stackSize shouldBe 1
 
@@ -215,7 +217,7 @@ class SwatAwayTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 2
 
         // Resolve Swat Away — Lightning Bolt's owner (p2) gets the top/bottom choice.

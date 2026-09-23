@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.effects.ForEachEffect
 import com.wingedsheep.sdk.scripting.effects.IterationSpace
 import com.wingedsheep.sdk.scripting.references.Player
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for [ForEachCapturedControllerEffect].
@@ -120,7 +121,7 @@ class ForEachCapturedControllerExecutor(
 
             val result = executeSubEffects(stateForExecution, effect.effects, perIterationContext)
 
-            if (result.isPaused) {
+            if (result.outcome is Outcome.Paused) {
                 return EffectResult.propagatePause(
                     result.state,
                     allEvents + result.events
@@ -163,7 +164,7 @@ class ForEachCapturedControllerExecutor(
 
             val result = effectExecutor(stateForExecution, subEffect, currentContext)
 
-            if (!result.isSuccess && !result.isPaused) {
+            if (result.outcome !is Outcome.Done && result.outcome !is Outcome.Paused) {
                 currentState = if (remainingEffects.isNotEmpty()) {
                     val (_, stateWithoutCont) = result.state.popContinuation()
                     stateWithoutCont
@@ -174,7 +175,7 @@ class ForEachCapturedControllerExecutor(
                 continue
             }
 
-            if (result.isPaused) {
+            if (result.outcome is Outcome.Paused) {
                 return EffectResult.propagatePause(
                     result.state,
                     allEvents + result.events

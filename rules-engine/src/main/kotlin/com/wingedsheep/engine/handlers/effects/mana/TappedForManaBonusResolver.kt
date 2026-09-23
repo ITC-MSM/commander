@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.scripting.AdditionalManaOnTap
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.values.ManaColorSet
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Resolves "additional one mana of any color" tap bonuses from [AdditionalManaOnTap] auras with
@@ -130,7 +131,7 @@ class TappedForManaBonusResolver(
         )
         val added = manaExecutor.addManaToPool(state, bonusEffect(item.amount), contextFor(state, item.auraId, item.controllerId), response.color, available)
         val driveResult = drive(added.state, continuation.remaining, added.events.toList())
-        if (driveResult.isPaused) return driveResult
+        if (driveResult.outcome is Outcome.Paused) return driveResult
         return checkForMore(driveResult.state, driveResult.events)
     }
 

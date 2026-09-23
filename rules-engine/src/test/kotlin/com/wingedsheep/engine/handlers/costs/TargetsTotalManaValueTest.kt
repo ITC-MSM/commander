@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * [ContextPropertyKey.TARGETS_TOTAL_MANA_VALUE] — "the total mana value of the permanents this spell
@@ -74,7 +75,7 @@ class TargetsTotalManaValueTest : FunSpec({
         val cast = driver.submit(
             CastSpell(me, spell, targets = listOf(ChosenTarget.Permanent(elemental)))
         )
-        withClue("cast should succeed: ${cast.error}") { cast.isSuccess shouldBe true }
+        withClue("cast should succeed: ${cast.error}") { cast.outcome shouldBe Outcome.Done }
         driver.bothPass()
 
         // -1 for the spell leaving hand, +5 drawn.
@@ -93,7 +94,7 @@ class TargetsTotalManaValueTest : FunSpec({
         val cast = driver.submit(
             CastSpell(me, spell, targets = listOf(ChosenTarget.Player(opp)))
         )
-        withClue("cast should succeed: ${cast.error}") { cast.isSuccess shouldBe true }
+        withClue("cast should succeed: ${cast.error}") { cast.outcome shouldBe Outcome.Done }
         driver.bothPass()
 
         driver.getHandSize(me) shouldBe handBefore - 1

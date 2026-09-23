@@ -17,6 +17,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dauntless Dismantler (LCI) — {1}{W} Creature — Human Artificer 1/4
@@ -92,7 +93,7 @@ class DauntlessDismantlerScenarioTest : FunSpec({
         // Player2 casts Sol Ring ({1}, MV 1) from hand — they are an opponent of player1.
         val solRingId = d.putCardInHand(active, "Sol Ring")
         d.giveColorlessMana(active, 1)
-        d.castSpell(active, solRingId).isSuccess shouldBe true
+        d.castSpell(active, solRingId).outcome shouldBe Outcome.Done
         // Resolve the stack (Sol Ring resolves; no further triggered abilities expected).
         repeat(10) { if (d.pendingDecision != null) d.autoResolveDecision() else d.bothPass() }
 
@@ -116,7 +117,7 @@ class DauntlessDismantlerScenarioTest : FunSpec({
         // Player1 (Dismantler's controller) casts their own Sol Ring.
         val solRingId = d.putCardInHand(active, "Sol Ring")
         d.giveColorlessMana(active, 1)
-        d.castSpell(active, solRingId).isSuccess shouldBe true
+        d.castSpell(active, solRingId).outcome shouldBe Outcome.Done
         repeat(10) { if (d.pendingDecision != null) d.autoResolveDecision() else d.bothPass() }
 
         // Sol Ring belongs to Dismantler's controller → NOT tapped.
@@ -155,7 +156,7 @@ class DauntlessDismantlerScenarioTest : FunSpec({
         val abilityId = DauntlessDismantler.activatedAbilities.first().id
         // Bare activation (no pre-filled xValue) — engine pauses to ask for X.
         val res = d.submit(ActivateAbility(playerId = active, sourceId = dismantler, abilityId = abilityId))
-        res.isPaused shouldBe true
+        (res.outcome is Outcome.Paused) shouldBe true
         d.pendingDecision.shouldBeInstanceOf<ChooseNumberDecision>()
 
         // Choose X = 1.
@@ -195,7 +196,7 @@ class DauntlessDismantlerScenarioTest : FunSpec({
         // Player2 casts the {0} maker; its ETB creates a Map token under player2 (an opponent of
         // Dismantler's controller).
         val makerId = d.putCardInHand(active, "Map Maker (test)")
-        d.castSpell(active, makerId).isSuccess shouldBe true
+        d.castSpell(active, makerId).outcome shouldBe Outcome.Done
         repeat(12) { if (d.pendingDecision != null) d.autoResolveDecision() else d.bothPass() }
 
         val map = d.findPermanent(active, "Map")!!
@@ -216,7 +217,7 @@ class DauntlessDismantlerScenarioTest : FunSpec({
         d.putCreatureOnBattlefield(dismantlerOwner, "Dauntless Dismantler")
 
         val makerId = d.putCardInHand(active, "Construct Maker (test)")
-        d.castSpell(active, makerId).isSuccess shouldBe true
+        d.castSpell(active, makerId).outcome shouldBe Outcome.Done
         repeat(12) { if (d.pendingDecision != null) d.autoResolveDecision() else d.bothPass() }
 
         val construct = d.findPermanent(active, "Construct Token")!!
@@ -236,7 +237,7 @@ class DauntlessDismantlerScenarioTest : FunSpec({
         d.putCreatureOnBattlefield(active, "Dauntless Dismantler")
 
         val makerId = d.putCardInHand(active, "Map Maker (test)")
-        d.castSpell(active, makerId).isSuccess shouldBe true
+        d.castSpell(active, makerId).outcome shouldBe Outcome.Done
         repeat(12) { if (d.pendingDecision != null) d.autoResolveDecision() else d.bothPass() }
 
         val map = d.findPermanent(active, "Map")!!

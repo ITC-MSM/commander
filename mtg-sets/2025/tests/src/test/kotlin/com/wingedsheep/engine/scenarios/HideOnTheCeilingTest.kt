@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Hide on the Ceiling.
@@ -62,7 +63,7 @@ class HideOnTheCeilingTest : FunSpec({
             xValue = 2,
             targets = listOf(creature, artifact)
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         // Resolve the spell.
         driver.bothPass()
@@ -106,7 +107,7 @@ class HideOnTheCeilingTest : FunSpec({
             xValue = 0,
             targets = emptyList()
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

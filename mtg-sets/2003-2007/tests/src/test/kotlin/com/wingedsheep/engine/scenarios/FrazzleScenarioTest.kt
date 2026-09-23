@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Frazzle: Counter target nonblue spell. The notColor(BLUE) filter must let a nonblue spell on the
@@ -53,13 +55,13 @@ class FrazzleScenarioTest : FunSpec({
         // Active player casts a red spell (Lightning Bolt) at the opponent, retains priority.
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpellWithTargets(player, bolt, listOf(ChosenTarget.Player(opponent))).isSuccess shouldBe true
+        driver.castSpellWithTargets(player, bolt, listOf(ChosenTarget.Player(opponent))).outcome shouldBe Outcome.Done
         val boltOnStack = spellOnStackNamed(driver, "Lightning Bolt")
 
         // ...and responds with Frazzle, countering the nonblue Bolt.
         val frazzle = driver.putCardInHand(player, "Frazzle")
         driver.giveMana(player, Color.BLUE, 4) // {3}{U}
-        driver.castSpellWithTargets(player, frazzle, listOf(ChosenTarget.Spell(boltOnStack))).isSuccess shouldBe true
+        driver.castSpellWithTargets(player, frazzle, listOf(ChosenTarget.Spell(boltOnStack))).outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.bothPass()
@@ -76,12 +78,12 @@ class FrazzleScenarioTest : FunSpec({
         // Active player casts a blue instant, retains priority.
         val blue = driver.putCardInHand(player, "Azure Gainer")
         driver.giveMana(player, Color.BLUE, 1)
-        driver.castSpell(player, blue).isSuccess shouldBe true
+        driver.castSpell(player, blue).outcome shouldBe Outcome.Done
         val blueOnStack = spellOnStackNamed(driver, "Azure Gainer")
 
         val frazzle = driver.putCardInHand(player, "Frazzle")
         driver.giveMana(player, Color.BLUE, 4)
         val result = driver.castSpellWithTargets(player, frazzle, listOf(ChosenTarget.Spell(blueOnStack)))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

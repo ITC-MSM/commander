@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Lobelia Sackville-Baggins (LTR) — ETB target "creature card from an opponent's graveyard
@@ -56,7 +57,7 @@ class LobeliaSackvilleBagginsTest : FunSpec({
         val lobelia = driver.putCardInHand(active, "Lobelia Sackville-Baggins")
         driver.giveMana(active, Color.BLACK, 1)
         driver.giveColorlessMana(active, 2)
-        driver.castSpell(active, lobelia).isSuccess shouldBe true
+        driver.castSpell(active, lobelia).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lobelia → ETB pauses for target selection
 
         driver.submitTargetSelection(active, listOf(oppBear))

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 import { selectGameState } from '@/store/selectors.ts'
 import type { EntityId } from '@/types'
@@ -170,12 +170,21 @@ export function SoulbondBonds() {
   /** When each pair key was first seen, in performance.now() ms — drives the forming flourish. */
   const firstSeenRef = useRef(new Map<string, number>())
 
+  // Soulbond is rare: skip the 10 Hz re-measure entirely unless a paired creature is in play.
+  const hasPairs = useMemo(
+    () => !!cards && Object.values(cards).some(
+      (card) => card.pairedWithId && card.zone?.zoneType === ZoneType.BATTLEFIELD,
+    ),
+    [cards],
+  )
+
   useEffect(() => {
+    if (!cards || !hasPairs) {
+      firstSeenRef.current.clear()
+      setBonds((prev) => (prev.length === 0 ? prev : []))
+      return
+    }
     const measure = () => {
-      if (!cards) {
-        setBonds([])
-        return
-      }
       const now = performance.now()
       const next: BondData[] = []
       const seen = new Set<string>()
@@ -208,13 +217,13 @@ export function SoulbondBonds() {
         if (!seen.has(key)) firstSeenRef.current.delete(key)
       }
 
-      setBonds(next)
+      setBonds((prev) => (prev.length === 0 && next.length === 0 ? prev : next))
     }
 
     measure()
     const interval = setInterval(measure, 100)
     return () => clearInterval(interval)
-  }, [cards])
+  }, [cards, hasPairs])
 
   // Drive the drift/breathe animation. Only runs while something is actually paired.
   useEffect(() => {

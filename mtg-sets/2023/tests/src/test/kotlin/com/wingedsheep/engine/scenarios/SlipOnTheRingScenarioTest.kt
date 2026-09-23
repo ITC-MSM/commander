@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Slip On the Ring — "Exile target creature you own, then return it to the battlefield under your
@@ -34,7 +35,7 @@ class SlipOnTheRingScenarioTest : FunSpec({
         val slip = d.putCardInHand(you, "Slip On the Ring")
         d.giveMana(you, Color.WHITE, 2) // {1}{W}
 
-        d.castSpell(you, slip, listOf(before)).isSuccess shouldBe true
+        d.castSpell(you, slip, listOf(before)).outcome shouldBe Outcome.Done
         d.bothPass() // resolve: exile → return → pause to choose a Ring-bearer
 
         // The creature returned to the battlefield under your control, and is a legal Ring-bearer

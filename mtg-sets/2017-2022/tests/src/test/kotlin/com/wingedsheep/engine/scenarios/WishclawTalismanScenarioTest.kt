@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Wishclaw Talisman (ELD #110, canonical printing) — {1}{B} Artifact.
@@ -98,7 +99,7 @@ class WishclawTalismanScenarioTest : FunSpec({
             ActivateAbility(playerId = you, sourceId = talisman, abilityId = abilityId)
         )
         withClue("Activating the tutor ability during your own turn should succeed") {
-            result.isSuccess shouldBe true
+            result.outcome shouldBe Outcome.Done
         }
 
         // Resolve until the library-search selection pauses.

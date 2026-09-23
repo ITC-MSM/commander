@@ -9,6 +9,7 @@ import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.MulliganStateComponent
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Handler for the TakeMulligan action.
@@ -39,7 +40,7 @@ class TakeMulliganHandler(
 
     override fun execute(state: GameState, action: TakeMulligan): ExecutionResult {
         val result = mulliganHandler.handleTakeMulligan(state, action)
-        if (!result.isSuccess) return result
+        if (result.outcome !is Outcome.Done) return result
         return checkMulliganCompletion(result.newState, result.events)
     }
 

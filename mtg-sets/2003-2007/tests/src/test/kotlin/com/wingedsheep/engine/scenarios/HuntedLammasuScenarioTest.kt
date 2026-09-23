@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Hunted Lammasu (RAV #22) — {2}{W}{W} Creature — Lammasu 5/5.
@@ -32,7 +33,7 @@ class HuntedLammasuScenarioTest : ScenarioTestBase() {
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                game.castSpell(1, "Hunted Lammasu").isSuccess shouldBe true
+                game.castSpell(1, "Hunted Lammasu").outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val lammasu = game.findPermanent("Hunted Lammasu")!!

@@ -15,6 +15,8 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Targeting regression guards for three BLB oracle-text fixes:
@@ -115,13 +117,13 @@ class BloomburrowTargetingFixesTest : FunSpec({
             active, mettle,
             listOf(ChosenTarget.Permanent(lions), ChosenTarget.Permanent(lions))
         )
-        sameTwice.isSuccess shouldBe false
+        sameTwice.outcome shouldNotBe Outcome.Done
 
         // Two different creatures is legal.
         val differing = driver.castSpellWithTargets(
             active, mettle,
             listOf(ChosenTarget.Permanent(lions), ChosenTarget.Permanent(bear))
         )
-        differing.isSuccess shouldBe true
+        differing.outcome shouldBe Outcome.Done
     }
 })

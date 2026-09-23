@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Blood Hustler — {1}{B} 1/1 Creature — Vampire Rogue
@@ -82,7 +83,7 @@ class BloodHustlerScenarioTest : FunSpec({
                 targets = listOf(entityIdToChosenTarget(driver.state, opp))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Activating an ability that targets an opponent is itself a crime, so Blood Hustler's
         // own counter trigger also goes on the stack above the drain ability. Resolve both.
         driver.bothPass() // resolve the once-per-turn counter trigger

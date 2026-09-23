@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.AlternativePaymentChoice
 import com.wingedsheep.sdk.scripting.ConvokePayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Reproduces a user-reported flow: casting Sun-Dappled Celebrant ({4}{W}{W}, Convoke)
@@ -148,7 +149,7 @@ class SunDappledCelebrantConvokeTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("LegalActionEnumerator surfaces Sun-Dappled Celebrant as castable") {
@@ -186,8 +187,8 @@ class SunDappledCelebrantConvokeTest : FunSpec({
         val plainsAbilityId = driver.cardRegistry.requireCard("Plains").activatedAbilities[0].id
 
         // Float 1G + 1W by tapping a plain Forest + the Plains.
-        driver.submit(ActivateAbility(caster, forestPlain1, forestAbilityId)).isSuccess shouldBe true
-        driver.submit(ActivateAbility(caster, plains, plainsAbilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(caster, forestPlain1, forestAbilityId)).outcome shouldBe Outcome.Done
+        driver.submit(ActivateAbility(caster, plains, plainsAbilityId)).outcome shouldBe Outcome.Done
         val pool = driver.state.getEntity(caster)!!.get<ManaPoolComponent>()!!
         pool.green shouldBe 1
         pool.white shouldBe 1
@@ -209,7 +210,7 @@ class SunDappledCelebrantConvokeTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("FromPool + convoke: float lands first, then cast Sun-Dappled Celebrant") {
@@ -227,7 +228,7 @@ class SunDappledCelebrantConvokeTest : FunSpec({
             val cardName = driver.state.getEntity(landId)
                 ?.get<CardComponent>()?.name
             val abilityId = if (cardName == "Plains") plainsAbilityId else forestAbilityId
-            driver.submit(ActivateAbility(caster, landId, abilityId)).isSuccess shouldBe true
+            driver.submit(ActivateAbility(caster, landId, abilityId)).outcome shouldBe Outcome.Done
         }
 
         // Pool: enchanted Forest gave 2G (override no-op + Shimmerwilds bonus G),
@@ -248,7 +249,7 @@ class SunDappledCelebrantConvokeTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Convoke covered one {W}, pool paid {4}{W}: 4 generic from 4G, 1W from
         // the Plains. One green should remain.

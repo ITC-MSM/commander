@@ -16,6 +16,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Phantom Interference — {U} Instant, Spree
@@ -49,7 +51,7 @@ class PhantomInterferenceScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(emptyList()),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.isPaused shouldBe false
 
@@ -90,7 +92,7 @@ class PhantomInterferenceScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Spell(boltOnStack))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Give the opponent enough floating mana that they *could* pay {2}, so the
         // counter prompts a real pay-or-counter decision (rather than auto-countering).
@@ -133,7 +135,7 @@ class PhantomInterferenceScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(emptyList(), listOf(ChosenTarget.Spell(boltOnStack))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Opponent could pay {2} but will decline.
         driver.giveColorlessMana(opponent, 2)
@@ -164,6 +166,6 @@ class PhantomInterferenceScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

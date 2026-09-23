@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Cerebral Confiscation (MKM #81) — {2}{B} Sorcery.
@@ -50,7 +51,7 @@ class CerebralConfiscationScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Player(opponent))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 

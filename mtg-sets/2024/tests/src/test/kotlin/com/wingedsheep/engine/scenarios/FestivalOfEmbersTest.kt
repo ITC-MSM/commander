@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 class FestivalOfEmbersTest : FunSpec({
 
@@ -51,7 +52,7 @@ class FestivalOfEmbersTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.passPriority(p1)
         driver.passPriority(driver.player2)
@@ -86,7 +87,7 @@ class FestivalOfEmbersTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.passPriority(p1)
         driver.passPriority(p2)
@@ -117,7 +118,7 @@ class FestivalOfEmbersTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.passPriority(p1)
         driver.passPriority(driver.player2)

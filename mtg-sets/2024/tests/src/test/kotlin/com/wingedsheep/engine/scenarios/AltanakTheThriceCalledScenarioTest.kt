@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Altanak, the Thrice-Called (DSK #166) — {5}{G}{G} 9/9 Legendary Creature — Insect Beast.
@@ -38,7 +39,7 @@ class AltanakTheThriceCalledScenarioTest : FunSpec({
 
         val handBefore = driver.getHand(controller).size
 
-        driver.castSpell(caster, doomBlade, targets = listOf(altanak)).isSuccess shouldBe true
+        driver.castSpell(caster, doomBlade, targets = listOf(altanak)).outcome shouldBe Outcome.Done
         // The targeting trigger goes on the stack above Doom Blade; resolve everything.
         driver.bothPass()
 
@@ -59,7 +60,7 @@ class AltanakTheThriceCalledScenarioTest : FunSpec({
 
         val handBefore = driver.getHand(player).size
 
-        driver.castSpell(player, giantGrowth, targets = listOf(altanak)).isSuccess shouldBe true
+        driver.castSpell(player, giantGrowth, targets = listOf(altanak)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // No draw — the trigger only fires for an opponent's spell/ability. The hand only shrinks
@@ -90,7 +91,7 @@ class AltanakTheThriceCalledScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(graveLand, player, Zone.GRAVEYARD)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

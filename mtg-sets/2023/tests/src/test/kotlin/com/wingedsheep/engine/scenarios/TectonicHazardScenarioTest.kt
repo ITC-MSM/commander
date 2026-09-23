@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tectonic Hazard (LCI #169) — {R} Sorcery.
@@ -44,7 +45,7 @@ class TectonicHazardScenarioTest : FunSpec({
 
         val hazard = driver.putCardInHand(me, "Tectonic Hazard")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, hazard).isSuccess shouldBe true
+        driver.castSpell(me, hazard).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Opponent (the only opponent) took 1 damage; caster untouched.

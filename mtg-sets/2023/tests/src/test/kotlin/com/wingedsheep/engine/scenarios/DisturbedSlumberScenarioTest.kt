@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Disturbed Slumber (LCI #182).
@@ -43,7 +45,7 @@ class DisturbedSlumberScenarioTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 2)
 
         val castResult = driver.castSpell(activePlayer, spell, targets = listOf(forest))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -78,20 +80,20 @@ class DisturbedSlumberScenarioTest : FunSpec({
         val spell = driver.putCardInHand(p1, "Disturbed Slumber")
         driver.giveMana(p1, Color.GREEN, 2)
 
-        driver.castSpell(p1, spell, targets = listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(p1, spell, targets = listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The animated land has haste, so it can attack the turn it was animated.
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(forest), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(forest), p2).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         // p2 controls a Grizzly Bears that can block, so declaring no blockers is illegal.
-        driver.declareBlockers(p2, emptyMap()).isSuccess shouldBe false
+        driver.declareBlockers(p2, emptyMap()).outcome shouldNotBe Outcome.Done
 
         // Blocking the animated land is legal.
         val bears = driver.findPermanent(p2, "Grizzly Bears")!!
-        driver.declareBlockers(p2, mapOf(bears to listOf(forest))).isSuccess shouldBe true
+        driver.declareBlockers(p2, mapOf(bears to listOf(forest))).outcome shouldBe Outcome.Done
     }
 
     test("two must-be-blocked attackers, one blocker — blocking either is legal (Rule 509.1c)") {
@@ -113,22 +115,22 @@ class DisturbedSlumberScenarioTest : FunSpec({
         val spell2 = driver.putCardInHand(p1, "Disturbed Slumber")
         driver.giveMana(p1, Color.GREEN, 4)
 
-        driver.castSpell(p1, spell1, targets = listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(p1, spell1, targets = listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()
-        driver.castSpell(p1, spell2, targets = listOf(swamp)).isSuccess shouldBe true
+        driver.castSpell(p1, spell2, targets = listOf(swamp)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(forest, swamp), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(forest, swamp), p2).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         val bears = driver.findPermanent(p2, "Grizzly Bears")!!
 
         // Declining to block is still illegal — the Bears must block one of them.
-        driver.declareBlockers(p2, emptyMap()).isSuccess shouldBe false
+        driver.declareBlockers(p2, emptyMap()).outcome shouldNotBe Outcome.Done
 
         // One blocker can only satisfy one requirement: blocking either attacker is legal.
-        driver.declareBlockers(p2, mapOf(bears to listOf(forest))).isSuccess shouldBe true
+        driver.declareBlockers(p2, mapOf(bears to listOf(forest))).outcome shouldBe Outcome.Done
     }
 
     test("two must-be-blocked attackers, two blockers — both must be blocked") {
@@ -151,25 +153,25 @@ class DisturbedSlumberScenarioTest : FunSpec({
         val spell2 = driver.putCardInHand(p1, "Disturbed Slumber")
         driver.giveMana(p1, Color.GREEN, 4)
 
-        driver.castSpell(p1, spell1, targets = listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(p1, spell1, targets = listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()
-        driver.castSpell(p1, spell2, targets = listOf(swamp)).isSuccess shouldBe true
+        driver.castSpell(p1, spell2, targets = listOf(swamp)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(forest, swamp), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(forest, swamp), p2).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         // Both requirements can be satisfied, so leaving one attacker unblocked is illegal —
         // whether by blocking only one attacker or by stacking both blockers on one.
-        driver.declareBlockers(p2, mapOf(bears1 to listOf(forest))).isSuccess shouldBe false
-        driver.declareBlockers(p2, mapOf(bears1 to listOf(forest), bears2 to listOf(forest))).isSuccess shouldBe false
+        driver.declareBlockers(p2, mapOf(bears1 to listOf(forest))).outcome shouldNotBe Outcome.Done
+        driver.declareBlockers(p2, mapOf(bears1 to listOf(forest), bears2 to listOf(forest))).outcome shouldNotBe Outcome.Done
 
         // Covering both attackers is legal.
         driver.declareBlockers(
             p2,
             mapOf(bears1 to listOf(forest), bears2 to listOf(swamp))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
     }
 
     test("animated land reverts to a non-creature land at end of turn") {

@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Marketback Walker (DFT #235).
@@ -53,7 +54,7 @@ class MarketbackWalkerScenarioTest : FunSpec({
         // {X}{X} with X=3 → 3 + 3 = 6 generic mana.
         driver.giveMana(player, Color.RED, 6)
 
-        driver.castXSpell(player, walker, xValue = 3).isSuccess shouldBe true
+        driver.castXSpell(player, walker, xValue = 3).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getZone(ZoneKey(player, Zone.BATTLEFIELD)).contains(walker) shouldBe true
@@ -94,7 +95,7 @@ class MarketbackWalkerScenarioTest : FunSpec({
 
         val handBefore = driver.getHand(player).size
 
-        driver.castXSpell(player, walker, xValue = 0).isSuccess shouldBe true
+        driver.castXSpell(player, walker, xValue = 0).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 0/0 with no counters — SBAs bin it the moment it lands (CR 704.5f).
@@ -115,7 +116,7 @@ class MarketbackWalkerScenarioTest : FunSpec({
         // 4 to cast at X=2, then 4 more for the activated ability, then {R} for the Bolt.
         driver.giveMana(player, Color.RED, 9)
 
-        driver.castXSpell(player, walker, xValue = 2).isSuccess shouldBe true
+        driver.castXSpell(player, walker, xValue = 2).outcome shouldBe Outcome.Done
         driver.bothPass()
         plusOneCounters(driver, walker) shouldBe 2
 
@@ -128,14 +129,14 @@ class MarketbackWalkerScenarioTest : FunSpec({
                 abilityId = addCounter,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         plusOneCounters(driver, walker) shouldBe 3
 
         val handBefore = driver.getHand(player).size
 
         // 3 damage to a 3/3 is lethal.
-        driver.castSpell(player, bolt, targets = listOf(walker)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, targets = listOf(walker)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getZone(ZoneKey(player, Zone.GRAVEYARD)).contains(walker) shouldBe true

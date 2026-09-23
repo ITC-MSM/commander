@@ -26,6 +26,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 class DashMechanicTest : FunSpec({
 
@@ -89,7 +90,7 @@ class DashMechanicTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 1
     }
 
@@ -212,7 +213,7 @@ class DashMechanicTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(dashed)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val returned = driver.findPermanent(player, "Dash Test Creature")
@@ -406,7 +407,7 @@ class DashMechanicTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val permanent = driver.findPermanent(player, "Dash X Creature")
@@ -465,7 +466,7 @@ class DashMechanicTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val recastPermanent = driver.findPermanent(player, "Dash Test Creature")
@@ -496,7 +497,7 @@ class DashMechanicTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.getGraveyardCardNames(player).contains("Dash Test Creature") shouldBe true
         driver.findPermanent(player, "Dash Test Creature") shouldBe null
     }
@@ -535,7 +536,7 @@ class DashMechanicTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.state.getExile(player).contains(cardId) shouldBe true
         driver.findPermanent(player, "Dash Test Creature") shouldBe null
     }

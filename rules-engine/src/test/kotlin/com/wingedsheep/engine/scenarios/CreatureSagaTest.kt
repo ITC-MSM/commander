@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Engine coverage for **Summon Sagas** — "Enchantment Creature — Saga" permanents (FIN), which are
@@ -172,6 +173,6 @@ class CreatureSagaTest : FunSpec({
         driver.removeSummoningSickness(saga)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS, maxPasses = 100)
-        driver.declareAttackers(active, listOf(saga), opponent).isSuccess shouldBe true
+        driver.declareAttackers(active, listOf(saga), opponent).outcome shouldBe Outcome.Done
     }
 })

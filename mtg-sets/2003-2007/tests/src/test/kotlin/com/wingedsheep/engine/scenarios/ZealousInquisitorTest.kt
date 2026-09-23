@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Zealous Inquisitor's partial damage redirection.
@@ -57,7 +58,7 @@ class ZealousInquisitorTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(hillGiant))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Cast Lightning Bolt at Inquisitor (3 damage)
@@ -103,7 +104,7 @@ class ZealousInquisitorTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(hillGiant))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Cast Spark Spray at Inquisitor (1 damage)
@@ -145,7 +146,7 @@ class ZealousInquisitorTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(hillGiant))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.submit(
@@ -155,7 +156,7 @@ class ZealousInquisitorTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(hillGiant))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Two shields should be active

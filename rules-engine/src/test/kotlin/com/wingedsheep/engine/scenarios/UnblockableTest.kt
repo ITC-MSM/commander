@@ -7,6 +7,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for unblockable creatures.
@@ -65,7 +67,7 @@ class UnblockableTest : FunSpec({
 
         // Declare Phantom Warrior as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(phantomWarrior), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -79,7 +81,7 @@ class UnblockableTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "can't be blocked"
     }
 
@@ -101,7 +103,7 @@ class UnblockableTest : FunSpec({
 
         // Declare Phantom Warrior as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(phantomWarrior), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -115,7 +117,7 @@ class UnblockableTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "can't be blocked"
     }
 
@@ -137,7 +139,7 @@ class UnblockableTest : FunSpec({
 
         // Declare Grizzly Bears as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(attackingBears), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -149,6 +151,6 @@ class UnblockableTest : FunSpec({
             mapOf(blockingBears to listOf(attackingBears))
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

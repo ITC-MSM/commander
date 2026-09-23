@@ -10,6 +10,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Lay Waste.
@@ -48,7 +49,7 @@ class LayWasteTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 4)
 
         val castResult = driver.castSpell(activePlayer, layWaste, listOf(forest))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -75,7 +76,7 @@ class LayWasteTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 4)
 
         val castResult = driver.castSpell(activePlayer, layWaste, listOf(creature))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
 
         driver.findPermanent(opponent, "Grizzly Bears") shouldNotBe null
     }

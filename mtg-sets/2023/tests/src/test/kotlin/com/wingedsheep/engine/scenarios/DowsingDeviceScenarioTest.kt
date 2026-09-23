@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dowsing Device // Geode Grotto (LCI #146).
@@ -64,7 +65,7 @@ class DowsingDeviceScenarioTest : FunSpec({
     fun castDowsing(driver: GameTestDriver, p1: EntityId, creature: EntityId?): EntityId {
         val dowsing = driver.putCardInHand(p1, "Dowsing Device")
         driver.giveMana(p1, Color.RED, 2) // {1}{R}
-        driver.castSpell(p1, dowsing).isSuccess shouldBe true
+        driver.castSpell(p1, dowsing).outcome shouldBe Outcome.Done
 
         var guard = 0
         var handledTarget = false

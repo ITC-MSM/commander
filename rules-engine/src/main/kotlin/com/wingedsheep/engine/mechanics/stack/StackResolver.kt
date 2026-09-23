@@ -854,7 +854,8 @@ class StackResolver(
         emitActivationEvent: Boolean = true,
         costsTap: Boolean = false,
         isExhaust: Boolean = false,
-        cantBeCopied: Boolean = false
+        cantBeCopied: Boolean = false,
+        isLoyalty: Boolean = false,
     ): ExecutionResult {
         val (abilityId, stateWithId) = state.newEntity()
 
@@ -888,6 +889,7 @@ class StackResolver(
                     costsTap = costsTap,
                     isManaAbility = false,
                     isExhaust = isExhaust,
+                    isLoyalty = isLoyalty,
                 )
             )
         }
@@ -1012,7 +1014,7 @@ class StackResolver(
         if (isPermanent) {
             // Put permanent on battlefield
             val permanentResult = resolvePermanentSpell(newState, spellId, spellComponent, cardComponent)
-            if (permanentResult.isPaused) {
+            if (permanentResult.outcome is Outcome.Paused) {
                 return ExecutionResult.propagatePause(
                     permanentResult.state,
                     events + permanentResult.events
@@ -1037,7 +1039,7 @@ class StackResolver(
                 resolvedTargets,
                 alignedResolvedTargets
             )
-            if (effectResult.isPaused) {
+            if (effectResult.outcome is Outcome.Paused) {
                 // The spell remains on the stack until its final continuation completes.
                 val allEvents = events + effectResult.events
                 return ExecutionResult.propagatePause(
@@ -1864,25 +1866,32 @@ class StackResolver(
         }
 
         // Sneak (CR 702.190b / 506.3a): a permanent spell whose sneak cost was paid enters
-        // tapped and attacking the same player or planeswalker the returned unblocked creature
-        // was attacking. A non-creature permanent can't attack, so it just enters tapped (506.3a).
+        // tapped and attacking the same player, planeswalker, or battle the returned unblocked
+        // creature was attacking. A non-creature permanent can't attack, so it just enters tapped
+        // (506.3a).
         if (spellComponent.wasSneaked) {
             newState = newState.updateEntity(spellId) { c -> c.with(TappedComponent) }
             val projected = newState.projectedState
-            // CR 506.3c: the creature only enters attacking if the carried defender is still a
-            // legal attack target — an opponent still in the game, or an opponent's planeswalker
-            // still on the battlefield (mirrors the defender check in AttackPhaseManager). If it's
+            // CR 506.3c / 508.4a: the creature only enters attacking if the carried defender is
+            // still a legal attack target — an opponent still in the game, an opponent's
+            // planeswalker still on the battlefield, or a battle still on the battlefield and
+            // protected by an opponent (mirrors the defender check in AttackPhaseManager). If it's
             // no longer valid, the creature enters but is never attacking — no redirect.
+            val opponents = newState.getOpponents(controllerId).toSet()
             val legalDefender = spellComponent.sneakAttackDefenderId?.takeIf { d ->
                 (d in newState.turnOrder && d != controllerId) ||
                     (projected.isPlaneswalker(d) &&
                         d in newState.getBattlefield() &&
-                        projected.getController(d) != controllerId)
+                        projected.getController(d) != controllerId) ||
+                    (projected.isBattle(d) &&
+                        d in newState.getBattlefield() &&
+                        com.wingedsheep.engine.mechanics.battle.Battles.canBeAttackedBy(newState, d, controllerId, opponents))
             }
             if (legalDefender != null && projected.isCreature(spellId)) {
                 newState = newState.updateEntity(spellId) { c ->
                     c.with(AttackingComponent(legalDefender))
                 }
+                newState = com.wingedsheep.engine.mechanics.combat.AttackedPermanents.markAttacked(newState, legalDefender)
             }
         }
 
@@ -2202,7 +2211,7 @@ class StackResolver(
 
             // Main spell done and nothing paused — pop the pre-pushed frame and run the spliced text
             // inline, so the whole resolution stays one ExecutionResult.
-            if (spliceEntries.isNotEmpty() && !effectResult.isPaused && effectResult.error == null) {
+            if (spliceEntries.isNotEmpty() && effectResult.outcome !is Outcome.Paused && effectResult.error == null) {
                 val (_, afterPop) = effectResult.state.popContinuation()
                 val tail = processPreTargetedEffectQueue(
                     state = afterPop,
@@ -2222,7 +2231,7 @@ class StackResolver(
                 effectResult = tail
             }
 
-            if (effectResult.isPaused) {
+            if (effectResult.outcome is Outcome.Paused) {
                 // The finalizer is below all effect and splice frames; no zone change yet.
                 return ExecutionResult.propagatePause(effectResult.state, events + effectResult.events)
             }
@@ -2717,8 +2726,8 @@ class StackResolver(
                 sourceId = abilityComponent.sourceId,
                 targetingSourceType = TargetingSourceType.ABILITY,
                 xValue = abilityComponent.xValue,
-                triggeringEntityId = abilityComponent.triggeringEntityId,
-                triggeringPlayerId = abilityComponent.triggeringPlayerId,
+                triggeringEntityId = abilityComponent.triggerContext?.triggeringEntityId,
+                triggeringPlayerId = abilityComponent.triggerContext?.triggeringPlayerId,
                 targetEntryStamps = targetsComponent.targetEntryStamps,
                 storedCollections = abilityComponent.carriedPipeline?.storedCollections ?: emptyMap(),
             )
@@ -2752,7 +2761,7 @@ class StackResolver(
 
         // If effect is paused awaiting a decision, return paused state
         // The ability entity stays removed (it's off the stack), but the decision must resolve
-        if (effectResult.isPaused) {
+        if (effectResult.outcome is Outcome.Paused) {
             val pausedState = effectResult.state.removeEntity(abilityId)
             return ExecutionResult.propagatePause(
                 pausedState,
@@ -2878,7 +2887,7 @@ class StackResolver(
 
         // If effect is paused awaiting a decision, return paused state
         // The ability entity stays removed (it's off the stack), but the decision must resolve
-        if (effectResult.isPaused) {
+        if (effectResult.outcome is Outcome.Paused) {
             val pausedState = effectResult.state.removeEntity(abilityId)
             return ExecutionResult.propagatePause(
                 pausedState,
@@ -3414,6 +3423,9 @@ class StackResolver(
             triggeringPlayerId = triggeringPlayerId,
             storedCollections = storedCollections,
             targets = targets,
+            // A filter bound to an earlier named target ("target creature that player controls",
+            // Ravager of the Fells) re-checks against the same choice at resolution.
+            namedTargets = EffectContext.buildNamedTargets(targetRequirements, targets),
         )
 
         return targets.filterIndexed { index, target ->

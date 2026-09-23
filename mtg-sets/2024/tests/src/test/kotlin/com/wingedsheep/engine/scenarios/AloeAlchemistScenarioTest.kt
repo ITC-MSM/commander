@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Aloe Alchemist (OTJ #152) — {1}{G} Plant Warlock, 3/2, Trample, Plot {1}{G}.
@@ -43,7 +44,7 @@ class AloeAlchemistScenarioTest : FunSpec({
         driver.state.projectedState.getToughness(target) shouldBe 2
 
         // Plotting pauses for the "becomes plotted" trigger's target choice (CR 603.3d).
-        driver.submit(PlotCard(player, aloe)).isPaused shouldBe true
+        (driver.submit(PlotCard(player, aloe)).outcome is Outcome.Paused) shouldBe true
         driver.submitTargetSelection(player, listOf(target))
         driver.bothPass() // resolve the trigger
 
@@ -65,7 +66,7 @@ class AloeAlchemistScenarioTest : FunSpec({
         val aloe = driver.putCardInHand(player, "Aloe Alchemist")
         driver.giveMana(player, Color.GREEN, 2)
 
-        driver.submit(PlotCard(player, aloe)).isPaused shouldBe true
+        (driver.submit(PlotCard(player, aloe)).outcome is Outcome.Paused) shouldBe true
         driver.submitTargetSelection(player, listOf(target))
         driver.bothPass()
 

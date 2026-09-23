@@ -25,6 +25,7 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Mechanic-level tests for Vanishing N (CR 702.62).
@@ -91,7 +92,7 @@ class VanishingKeywordTest : FunSpec({
         val result = driver.submit(
             CastSpell(player, cardId, targets.map { ChosenTarget.Permanent(it) })
         )
-        if (!result.isSuccess) throw AssertionError("cast of $cardName failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast of $cardName failed: ${result.error}")
         driver.bothPass()
     }
 

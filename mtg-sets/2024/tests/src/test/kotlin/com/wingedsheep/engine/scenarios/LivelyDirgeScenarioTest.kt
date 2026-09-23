@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Lively Dirge — {1}{B} Sorcery, Spree
@@ -50,7 +52,7 @@ class LivelyDirgeScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(emptyList()),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve -> pause for the search selection
 
         driver.isPaused shouldBe true
@@ -88,7 +90,7 @@ class LivelyDirgeScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(emptyList()),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve -> pause for the up-to-two selection
 
         driver.isPaused shouldBe true
@@ -130,7 +132,7 @@ class LivelyDirgeScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(emptyList(), emptyList()),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve -> pause for the search selection
 
         driver.isPaused shouldBe true
@@ -176,6 +178,6 @@ class LivelyDirgeScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

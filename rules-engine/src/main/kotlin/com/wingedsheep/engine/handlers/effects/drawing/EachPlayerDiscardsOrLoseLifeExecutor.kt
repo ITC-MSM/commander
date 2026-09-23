@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.EachPlayerDiscardsOrLoseLifeEffect
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for EachPlayerDiscardsOrLoseLifeEffect.
@@ -100,11 +101,11 @@ class EachPlayerDiscardsOrLoseLifeExecutor(
                     discardedCreature = newDiscardedCreature,
                     lifeLoss = lifeLoss
                 )
-                EffectResult(nextResult.state, events + nextResult.events, nextResult.error)
+                EffectResult(nextResult.state, events + nextResult.events, nextResult.outcome)
             } else {
                 // All done, apply life loss
                 val lifeLossResult = applyLifeLoss(newState, newDiscardedCreature, lifeLoss)
-                EffectResult(lifeLossResult.state, events + lifeLossResult.events, lifeLossResult.error)
+                EffectResult(lifeLossResult.state, events + lifeLossResult.events, lifeLossResult.outcome)
             }
         }
 

@@ -50,6 +50,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the shared [AbilityIdentity] key (backlog/stack-collapse-and-batch-decisions.md §C.2).
@@ -146,8 +147,8 @@ class AbilityIdentityTest : FunSpec({
 
         // Activating a non-mana ability keeps priority with the activator, so both can go on the
         // stack back-to-back without an intervening pass.
-        driver.submit(ActivateAbility(playerId = player, sourceId = pinger1, abilityId = pingerAbilityId)).isSuccess shouldBe true
-        driver.submit(ActivateAbility(playerId = player, sourceId = pinger2, abilityId = pingerAbilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(playerId = player, sourceId = pinger1, abilityId = pingerAbilityId)).outcome shouldBe Outcome.Done
+        driver.submit(ActivateAbility(playerId = player, sourceId = pinger2, abilityId = pingerAbilityId)).outcome shouldBe Outcome.Done
 
         val activatedOnStack = driver.state.stack.mapNotNull {
             driver.state.getEntity(it)?.get<ActivatedAbilityOnStackComponent>()
@@ -186,7 +187,7 @@ class AbilityIdentityTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = receiver, abilityId = grantedId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val onStack = driver.state.getEntity(driver.state.stack.last())
             ?.get<ActivatedAbilityOnStackComponent>()
@@ -227,7 +228,7 @@ class AbilityIdentityTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = receiver, abilityId = grantedId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val onStack = driver.state.getEntity(driver.state.stack.last())
             ?.get<ActivatedAbilityOnStackComponent>()
@@ -265,7 +266,7 @@ class AbilityIdentityTest : FunSpec({
                     GrantedActivatedAbility(receiver, ability, Duration.Permanent)
                 ))
             })
-            driver.submit(ActivateAbility(player, receiver, ability.id)).isSuccess shouldBe true
+            driver.submit(ActivateAbility(player, receiver, ability.id)).outcome shouldBe Outcome.Done
             driver.state.getEntity(driver.state.stack.last())
                 ?.get<ActivatedAbilityOnStackComponent>()?.abilityIdentity shouldBe null
 
@@ -279,7 +280,7 @@ class AbilityIdentityTest : FunSpec({
                 ?.get<CardComponent>()
                 ?.name shouldBe "Identity Pinger"
             driver.state.grantedActivatedAbilities.single { it.entityId == receiver }.ability shouldBe ability
-            driver.submit(ActivateAbility(player, receiver, ability.id)).isSuccess shouldBe true
+            driver.submit(ActivateAbility(player, receiver, ability.id)).outcome shouldBe Outcome.Done
         }
     }
 
@@ -309,7 +310,7 @@ class AbilityIdentityTest : FunSpec({
             controllerId = copyController,
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         val copied = result.newState.getEntity(result.newState.stack.last())
             ?.get<ActivatedAbilityOnStackComponent>()
             .shouldNotBeNull()
@@ -385,7 +386,7 @@ class AbilityIdentityTest : FunSpec({
         val levelUpId = AbilityId.classLevelUp(2)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = source, abilityId = levelUpId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val onStack = driver.state.getEntity(driver.state.stack.last())
             ?.get<ActivatedAbilityOnStackComponent>()
@@ -405,9 +406,9 @@ class AbilityIdentityTest : FunSpec({
         val forest = driver.putLandOnBattlefield(player, "Forest")
         val intrinsicId = AbilityId.intrinsicMana(Color.GREEN.symbol)
 
-        driver.submit(
+        (driver.submit(
             ActivateAbility(playerId = player, sourceId = forest, abilityId = intrinsicId)
-        ).isPaused shouldBe true
+        ).outcome is Outcome.Paused) shouldBe true
 
         val continuation = driver.state.peekContinuation()
             .shouldBeInstanceOf<Suspension>().answer
@@ -430,7 +431,7 @@ class AbilityIdentityTest : FunSpec({
 
         driver.giveColorlessMana(player, 1)
         val bear = driver.putCardInHand(player, "Identity Bear")
-        driver.castSpell(player, bear).isSuccess shouldBe true
+        driver.castSpell(player, bear).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the bear; it enters and both Soul Wardens trigger
 
         val soulWardenTriggers = driver.state.stack.mapNotNull {

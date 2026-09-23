@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for False Cure.
@@ -50,7 +51,7 @@ class FalseCureTest : FunSpec({
         // Cast False Cure
         val falseCure = driver.putCardInHand(activePlayer, "False Cure")
         driver.giveMana(activePlayer, Color.BLACK, 2)
-        driver.castSpell(activePlayer, falseCure).isSuccess shouldBe true
+        driver.castSpell(activePlayer, falseCure).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve False Cure
 
         driver.state.globalGrantedTriggeredAbilities.size shouldBe 1
@@ -58,7 +59,7 @@ class FalseCureTest : FunSpec({
         // Active player casts Healing Salve to gain 4 life
         val salve = driver.putCardInHand(activePlayer, "Healing Salve")
         driver.giveMana(activePlayer, Color.WHITE, 1)
-        driver.castSpell(activePlayer, salve).isSuccess shouldBe true
+        driver.castSpell(activePlayer, salve).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Healing Salve — gains 4 life, trigger fires
         driver.bothPass() // resolve the triggered ability (lose 8 life)
 

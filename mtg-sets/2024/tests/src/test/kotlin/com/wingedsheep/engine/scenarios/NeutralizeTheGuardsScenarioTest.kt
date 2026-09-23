@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Neutralize the Guards — {2}{B} Instant
@@ -54,7 +55,7 @@ class NeutralizeTheGuardsScenarioTest : FunSpec({
         val spell = driver.putCardInHand(me, "Neutralize the Guards")
         driver.giveMana(me, Color.BLACK, 1)
         driver.giveColorlessMana(me, 2)
-        driver.castSpell(me, spell, targets = listOf(opp)).isSuccess shouldBe true
+        driver.castSpell(me, spell, targets = listOf(opp)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the spell -> applies debuff, then pauses for surveil
 
         // The opponent's 3/3 is now a 2/2.

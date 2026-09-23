@@ -13,6 +13,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for the persist keyword (CR 702.79).
@@ -53,7 +54,7 @@ class PersistScenarioTest : FunSpec({
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
         driver.giveMana(caster, Color.RED, 1)
 
-        driver.castSpell(caster, bolt, listOf(elite)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(elite)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lightning Bolt (3 damage → lethal)
 
         // The persist trigger should now be on the stack.
@@ -93,7 +94,7 @@ class PersistScenarioTest : FunSpec({
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
         driver.giveMana(caster, Color.RED, 1)
 
-        driver.castSpell(caster, bolt, listOf(elite)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(elite)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lightning Bolt
 
         // No persist trigger should fire. Safehold Elite stays in the graveyard.
@@ -114,7 +115,7 @@ class PersistScenarioTest : FunSpec({
         // First kill — persist fires.
         val bolt1 = driver.putCardInHand(caster, "Lightning Bolt")
         driver.giveMana(caster, Color.RED, 1)
-        driver.castSpell(caster, bolt1, listOf(elite)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt1, listOf(elite)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lightning Bolt
         driver.bothPass() // resolve persist trigger
 
@@ -124,7 +125,7 @@ class PersistScenarioTest : FunSpec({
         // Second kill — persist does NOT fire (now has a -1/-1 counter).
         val bolt2 = driver.putCardInHand(caster, "Lightning Bolt")
         driver.giveMana(caster, Color.RED, 1)
-        driver.castSpell(caster, bolt2, listOf(returned)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt2, listOf(returned)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lightning Bolt
 
         driver.findPermanent(caster, "Safehold Elite") shouldBe null
@@ -149,7 +150,7 @@ class PersistScenarioTest : FunSpec({
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
         driver.giveMana(caster, Color.RED, 1)
 
-        driver.castSpell(caster, bolt, listOf(tokenId)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(tokenId)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lightning Bolt
 
         // The token should be gone — 704.5s removed it from the graveyard, and persist

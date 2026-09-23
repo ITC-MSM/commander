@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Anzrag, the Quake-Mole (MKM #186) — {2}{R}{G} 8/4 Legendary Creature — Mole God.
@@ -129,7 +130,7 @@ class AnzragTheQuakeMoleScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = driver.player1, sourceId = anzrag, abilityId = mustBeBlockedAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val requirement = driver.state.floatingEffects.single {

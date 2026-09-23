@@ -15,6 +15,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for DividedDamageEffect.
@@ -78,7 +79,7 @@ class DividedDamageExecutor(
             for ((targetId, amount) in distribution) {
                 if (amount <= 0 || targetId !in stillLegal) continue
                 val result = dealDamageToTarget(currentState, targetId, amount, context.sourceId)
-                if (!result.isSuccess) {
+                if (result.outcome !is Outcome.Done) {
                     return result
                 }
                 currentState = result.newState

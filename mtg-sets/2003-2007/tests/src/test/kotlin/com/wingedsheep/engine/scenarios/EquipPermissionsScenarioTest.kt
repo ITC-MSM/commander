@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.FreeFirstEquipEachTurn
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Equip-timing/cost permissions added for Forge Anew (CR 702.6e equip timing is lifted, plus a
@@ -77,7 +78,7 @@ class EquipPermissionsScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(you, sword, equipId, targets = listOf(ChosenTarget.Permanent(courser)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(sword)?.get<AttachedToComponent>()?.targetId shouldBe courser
     }
@@ -93,7 +94,7 @@ class EquipPermissionsScenarioTest : FunSpec({
         // No mana available — the first equip this turn is still payable (it's free).
         driver.submit(
             ActivateAbility(you, sword, equipId, targets = listOf(ChosenTarget.Permanent(a)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(sword)?.get<AttachedToComponent>()?.targetId shouldBe a
 
@@ -107,7 +108,7 @@ class EquipPermissionsScenarioTest : FunSpec({
         driver.giveColorlessMana(you, 1)
         driver.submit(
             ActivateAbility(you, sword, equipId, targets = listOf(ChosenTarget.Permanent(b)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(sword)?.get<AttachedToComponent>()?.targetId shouldBe b
     }

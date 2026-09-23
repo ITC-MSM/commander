@@ -13,6 +13,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Wail of the Forgotten — {U}{B} Sorcery
@@ -73,7 +75,7 @@ class WailOfTheForgottenScenarioTest : FunSpec({
             )
         ))
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("not descended 8 — mode 0 returns target nonland permanent to its owner's hand") {
@@ -90,7 +92,7 @@ class WailOfTheForgottenScenarioTest : FunSpec({
             chosenModes = listOf(0),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(creature)))
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
 
         d.bothPass()
         d.findPermanent(p2, "Centaur Courser").shouldBeNull()
@@ -111,7 +113,7 @@ class WailOfTheForgottenScenarioTest : FunSpec({
             chosenModes = listOf(1),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Player(p2)))
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
 
         d.bothPass()
         // The opponent chooses which card to discard.
@@ -137,7 +139,7 @@ class WailOfTheForgottenScenarioTest : FunSpec({
             chosenModes = listOf(2),
             modeTargetsOrdered = listOf(emptyList())
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
 
         d.bothPass()
         // Keep Grizzly Bears; the other two go to the graveyard.
@@ -167,7 +169,7 @@ class WailOfTheForgottenScenarioTest : FunSpec({
                 listOf(ChosenTarget.Player(p2))
             )
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
 
         d.bothPass()
         d.submitCardSelection(p2, listOf(doomed))
@@ -193,7 +195,7 @@ class WailOfTheForgottenScenarioTest : FunSpec({
             chosenModes = listOf(0),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(creature)))
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
 
         d.bothPass()
         d.findPermanent(p2, "Centaur Courser").shouldBeNull()

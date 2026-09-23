@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Pillage the Bog (OTJ #224) — {B}{G} Sorcery.
@@ -54,7 +55,7 @@ class PillageTheBogScenarioTest : FunSpec({
 
         val handBefore = driver.getHandSize(player)
 
-        driver.castSpell(player, spell).isSuccess shouldBe true
+        driver.castSpell(player, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe true

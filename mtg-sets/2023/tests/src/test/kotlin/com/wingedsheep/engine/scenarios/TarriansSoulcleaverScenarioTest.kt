@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tarrian's Soulcleaver (LCI #264) — {1} Legendary Artifact — Equipment.
@@ -102,7 +103,7 @@ class TarriansSoulcleaverScenarioTest : FunSpec({
         // Destroy the victim for real so its dies (battlefield -> graveyard) trigger fires.
         val doomBlade = driver.putCardInHand(driver.player1, "Doom Blade")
         driver.giveMana(driver.player1, Color.BLACK, 2)
-        driver.castSpell(driver.player1, doomBlade, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, doomBlade, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Doom Blade -> victim dies, queuing the Soulcleaver trigger
         driver.state.getBattlefield().contains(victim) shouldBe false
         driver.bothPass() // resolve the Soulcleaver "another ... is put into a graveyard" trigger
@@ -123,7 +124,7 @@ class TarriansSoulcleaverScenarioTest : FunSpec({
 
         val doomBlade = driver.putCardInHand(driver.player1, "Doom Blade")
         driver.giveMana(driver.player1, Color.BLACK, 2)
-        driver.castSpell(driver.player1, doomBlade, targets = listOf(artifact)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, doomBlade, targets = listOf(artifact)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Doom Blade -> artifact dies
         driver.state.getBattlefield().contains(artifact) shouldBe false
         driver.bothPass() // resolve the Soulcleaver trigger
@@ -144,7 +145,7 @@ class TarriansSoulcleaverScenarioTest : FunSpec({
 
         val doomBlade = driver.putCardInHand(driver.player1, "Doom Blade")
         driver.giveMana(driver.player1, Color.BLACK, 2)
-        driver.castSpell(driver.player1, doomBlade, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, doomBlade, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Doom Blade
         driver.bothPass() // resolve (or fizzle) the Soulcleaver trigger with no equipped creature
 
@@ -166,7 +167,7 @@ class TarriansSoulcleaverScenarioTest : FunSpec({
 
         driver.giveMana(driver.player1, Color.RED, 1)
         val bolt1 = driver.putCardInHand(driver.player1, "Lightning Bolt")
-        driver.castSpell(driver.player1, bolt1, targets = listOf(necromage)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, bolt1, targets = listOf(necromage)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the bolt -> Necromage dies, queuing both players' triggers
         driver.bothPass() // resolve one trigger (APNAP)
         driver.bothPass() // resolve the other trigger
@@ -180,7 +181,7 @@ class TarriansSoulcleaverScenarioTest : FunSpec({
         // the Soulcleaver's `Artifact or Creature` union must match on last-known info.
         driver.giveMana(driver.player1, Color.RED, 1)
         val bolt2 = driver.putCardInHand(driver.player1, "Lightning Bolt")
-        driver.castSpell(driver.player1, bolt2, targets = listOf(fungusTokens.first())).isSuccess shouldBe true
+        driver.castSpell(driver.player1, bolt2, targets = listOf(fungusTokens.first())).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the bolt -> token dies and is swept
         driver.bothPass() // resolve the Soulcleaver trigger
 

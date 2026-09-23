@@ -19,6 +19,7 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Leave No Trace (RAV #23) — "Radiance — Destroy target enchantment and each other enchantment
@@ -44,7 +45,7 @@ class LeaveNoTraceScenarioTest : FunSpec({
     fun GameTestDriver.leaveNoTrace(caster: EntityId, target: EntityId) {
         giveMana(caster, Color.WHITE, 2)
         val spell = putCardInHand(caster, "Leave No Trace")
-        castSpellWithTargets(caster, spell, listOf(ChosenTarget.Permanent(target))).isSuccess shouldBe true
+        castSpellWithTargets(caster, spell, listOf(ChosenTarget.Permanent(target))).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && guard++ < 10) bothPass()
     }

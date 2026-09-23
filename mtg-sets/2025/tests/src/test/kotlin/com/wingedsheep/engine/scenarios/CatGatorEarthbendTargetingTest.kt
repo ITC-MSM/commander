@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.scripting.targets.AnyTarget
 import com.wingedsheep.sdk.scripting.targets.TargetCreatureOrPlaneswalker
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Regression: "any target" must read the PROJECTED type line, not the printed one.
@@ -53,7 +54,7 @@ class CatGatorEarthbendTargetingTest : FunSpec({
         // Earthbend the Forest into a creature-land.
         val lesson = driver.putCardInHand(you, "Earthbending Lesson")
         driver.giveMana(you, Color.GREEN, 4)
-        driver.castSpell(you, lesson, listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(you, lesson, listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // After animation: the Forest is a creature in projection, so both "any target"

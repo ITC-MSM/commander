@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bandit's Haul — {3} Artifact
@@ -86,7 +87,7 @@ class BanditsHaulScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = me, sourceId = haul, abilityId = abilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the draw
 
         driver.getHandSize(me) shouldBe handBefore + 1

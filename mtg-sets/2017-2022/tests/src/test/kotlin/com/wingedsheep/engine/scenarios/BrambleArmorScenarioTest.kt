@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bramble Armor (MID #171, reprinted VOW #188) — {1}{G} Artifact — Equipment.
@@ -109,7 +110,7 @@ class BrambleArmorScenarioTest : FunSpec({
                 abilityId = equipAbilityId,
                 targets = listOf(ChosenTarget.Permanent(secondBear))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Armor is now on the second bear, which becomes 4/3; the first bear reverts to 2/2.

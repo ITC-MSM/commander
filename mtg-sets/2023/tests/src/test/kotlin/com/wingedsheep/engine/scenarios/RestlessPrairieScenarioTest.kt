@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Restless Prairie (LCI #281).
@@ -55,7 +56,7 @@ class RestlessPrairieScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val prairie = driver.putCardInHand(player, "Restless Prairie")
-        driver.playLand(player, prairie).isSuccess shouldBe true
+        driver.playLand(player, prairie).outcome shouldBe Outcome.Done
 
         driver.isTapped(prairie) shouldBe true
     }
@@ -72,7 +73,7 @@ class RestlessPrairieScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = prairie, abilityId = animateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val projected = projector.project(driver.state)
@@ -121,7 +122,7 @@ class RestlessPrairieScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 2)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = prairie, abilityId = animateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)

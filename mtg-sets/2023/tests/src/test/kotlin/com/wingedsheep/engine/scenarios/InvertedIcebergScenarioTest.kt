@@ -25,6 +25,8 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Inverted Iceberg // Iceberg Titan (LCI #60).
@@ -83,7 +85,7 @@ class InvertedIcebergScenarioTest : FunSpec({
         val graveyardBefore = driver.getGraveyard(p1).size
 
         driver.giveMana(p1, Color.BLUE, 2)
-        driver.castSpell(p1, iceberg).isSuccess shouldBe true
+        driver.castSpell(p1, iceberg).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the artifact spell; ETB trigger goes on the stack
         driver.bothPass() // resolve the ETB trigger: mill a card, then draw a card
 
@@ -221,7 +223,7 @@ class InvertedIcebergScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(bears))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("rejects two materials — 'Craft with artifact' takes exactly one") {
@@ -242,6 +244,6 @@ class InvertedIcebergScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(trinketA, trinketB))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

@@ -18,6 +18,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Mechanic-level tests for Fabricate N (CR 702.123).
@@ -97,7 +98,7 @@ class FabricateScenarioTest : FunSpec({
         driver.giveMana(player, Color.GREEN, 3)
         val cardId = driver.putCardInHand(player, cardName)
         val result = driver.submit(CastSpell(player, cardId))
-        if (!result.isSuccess) throw AssertionError("cast of $cardName failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast of $cardName failed: ${result.error}")
         driver.bothPass()
     }
 

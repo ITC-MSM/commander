@@ -1333,7 +1333,12 @@ object ZoneTransitionService {
 
             // Tapped and attacking
             if (options.tappedAndAttacking) {
-                val defenderId = state.turnOrder.firstOrNull { it != controllerId }
+                // CR 508.4: it attacks a defending player. Prefer one already defending in this
+                // combat, else the first opponent still in the game — never a teammate (Two-Headed
+                // Giant) or a player who has left.
+                val opponents = state.getOpponents(controllerId)
+                val defenders = com.wingedsheep.engine.mechanics.combat.CombatDefenders.defendingPlayers(state)
+                val defenderId = opponents.firstOrNull { it in defenders } ?: opponents.firstOrNull()
                 if (defenderId != null) {
                     updated = updated.with(AttackingComponent(defenderId))
                 }

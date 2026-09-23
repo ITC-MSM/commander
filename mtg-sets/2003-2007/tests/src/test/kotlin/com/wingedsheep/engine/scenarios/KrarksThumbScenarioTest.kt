@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.GameRng
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Krark's Thumb (MRD #190) — "If you would flip a coin, instead flip two coins and ignore one."
@@ -55,6 +56,9 @@ class KrarksThumbScenarioTest : FunSpec({
 
         repeat(3) { d.putLandOnBattlefield(d.player1, "Mountain") }
         d.getLands(d.player1).forEach { d.tapPermanent(it) }
+        // Krark's Thumb is legendary: a second copy needs a waiver, or the legend rule (CR 704.5j)
+        // removes one before the Gambit's caster gets priority back.
+        if (thumbs > 1) d.putPermanentOnBattlefield(d.player1, "Legend Rule Waiver")
         repeat(thumbs) { d.putPermanentOnBattlefield(d.player1, "Krark's Thumb") }
 
         val gambit = d.putCardInHand(d.player1, "Fiery Gambit")
@@ -67,7 +71,7 @@ class KrarksThumbScenarioTest : FunSpec({
 
     fun Board.cast(): ExecutionResult {
         val cast = d.castSpell(me, gambit, targets = listOf(bears))
-        withClue("cast failed: ${cast.error}") { cast.isSuccess shouldBe true }
+        withClue("cast failed: ${cast.error}") { cast.outcome shouldBe Outcome.Done }
         // Read the hand *after* the Gambit has left it, so the draw-nine tier is measured against
         // the board the spell actually resolves on.
         handAtResolution = handSize()

@@ -20,6 +20,7 @@ import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Corpseberry Cultivator (BLB).
@@ -137,7 +138,7 @@ class CorpseberryCultivatorScenarioTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(sacrificedPermanents = listOf(food))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // The Food went away as the cost was paid, and the Cultivator's forage trigger is now on the
         // stack above Feed the Cycle.

@@ -755,7 +755,9 @@ data class SpellCastEvent(
  * mana abilities (CR 605.1). These let triggers distinguish the two "activates an ability" wordings:
  * "isn't a mana ability" (Flamescroll Celebrant — fired only for non-mana abilities, which use the
  * stack) versus "without {T} in its activation cost" (Antiquities Haunting Wind / Powerleech /
- * Artifact Possession — fired for any ability, mana or not, whose cost lacks {T}).
+ * Artifact Possession — fired for any ability, mana or not, whose cost lacks {T}). [isLoyalty] marks
+ * a planeswalker's loyalty ability (CR 606) for "whenever an opponent activates a loyalty ability"
+ * (Gideon the Oathless).
  */
 @Serializable
 @SerialName("AbilityActivatedEvent")
@@ -767,6 +769,8 @@ data class AbilityActivatedEvent(
     val costsTap: Boolean = false,
     val isManaAbility: Boolean = false,
     val isExhaust: Boolean = false,
+    /** True for a loyalty ability (CR 606) — "whenever you activate a loyalty ability". */
+    val isLoyalty: Boolean = false,
 ) : GameEvent
 
 /**
@@ -1119,6 +1123,18 @@ data class PhaseChangedEvent(
 @SerialName("StepChangedEvent")
 data class StepChangedEvent(
     val newStep: Step
+) : GameEvent
+
+/**
+ * An effect ended the turn (CR 724.1 — Ultima, Time Stop). Emitted once the expedited process has
+ * reached the cleanup step, just before the next turn begins. Triggered abilities that triggered
+ * before this point never go on the stack (CR 724.1a), so [com.wingedsheep.engine.core.Settler]
+ * detects triggers only from the events after the last one of these.
+ */
+@Serializable
+@SerialName("TurnEndedByEffectEvent")
+data class TurnEndedByEffectEvent(
+    val activePlayerId: EntityId
 ) : GameEvent
 
 /**

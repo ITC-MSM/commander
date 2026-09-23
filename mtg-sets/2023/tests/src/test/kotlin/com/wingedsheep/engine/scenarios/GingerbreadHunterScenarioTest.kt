@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /** Scenario tests for Gingerbread Hunter // Puny Snack. */
 class GingerbreadHunterScenarioTest : ScenarioTestBase() {
@@ -51,7 +52,7 @@ class GingerbreadHunterScenarioTest : ScenarioTestBase() {
                 val cardId = game.findCardsInHand(1, "Gingerbread Hunter").first()
                 game.execute(
                     CastSpell(game.player1Id, cardId, listOf(ChosenTarget.Permanent(bears)), faceIndex = 0)
-                ).isSuccess shouldBe true
+                ).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 withClue("a 2/2 hit by -2/-2 dies to state-based actions") {

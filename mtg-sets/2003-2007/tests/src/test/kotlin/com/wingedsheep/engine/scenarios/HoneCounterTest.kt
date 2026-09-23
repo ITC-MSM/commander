@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Hone counters — CR 122.1j: "A hone counter on an Equipment gives +1/+0 to any creature that
@@ -57,7 +58,7 @@ class HoneCounterTest : FunSpec({
                 Bonesplitter.activatedAbilities.first().id,
                 targets = listOf(ChosenTarget.Permanent(creature))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(equipment)?.get<AttachedToComponent>()?.targetId shouldBe creature
     }

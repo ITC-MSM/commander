@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Territory Forge — {4}{R} Artifact (BIG #15).
@@ -53,7 +55,7 @@ class TerritoryForgeScenarioTest : FunSpec({
         val forge = driver.putCardInHand(me, "Territory Forge")
         driver.giveColorlessMana(me, 4)
         driver.giveMana(me, com.wingedsheep.sdk.core.Color.RED, 1)
-        driver.castSpell(me, forge).isSuccess shouldBe true
+        driver.castSpell(me, forge).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Territory Forge → it enters, ETB trigger goes on the stack and prompts a target
 
         // The ETB asks for "target artifact or land" — choose the lamp.
@@ -68,7 +70,7 @@ class TerritoryForgeScenarioTest : FunSpec({
         // Activate the inherited "{T}: You gain 2 life" ability ON Territory Forge.
         val lifeBefore = driver.getLifeTotal(me)
         driver.submit(ActivateAbility(playerId = me, sourceId = forge, abilityId = gainLifeAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the gain-life
 
         driver.getLifeTotal(me) shouldBe lifeBefore + 2
@@ -93,6 +95,6 @@ class TerritoryForgeScenarioTest : FunSpec({
 
         // With nothing exiled, the inherited ability isn't available — activating it fails.
         driver.submit(ActivateAbility(playerId = me, sourceId = forge, abilityId = gainLifeAbilityId))
-            .isSuccess shouldBe false
+            .outcome shouldNotBe Outcome.Done
     }
 })

@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Donatello's Technique (TMT #39) — {2}{U} Sorcery, Sneak {U}. "Draw two cards."
@@ -23,7 +24,7 @@ class DonatellosTechniqueTest : FunSpec({
         // mana added here — unspent mana empties as each step/phase ends (CR 500.5)
         driver.giveMana(player, Color.BLUE, 3)
         val before = driver.getHandSize(player)
-        driver.castSpell(player, spell).isSuccess shouldBe true
+        driver.castSpell(player, spell).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
         // -1 for the spell leaving hand, +2 drawn.
         driver.getHandSize(player) shouldBe before - 1 + 2

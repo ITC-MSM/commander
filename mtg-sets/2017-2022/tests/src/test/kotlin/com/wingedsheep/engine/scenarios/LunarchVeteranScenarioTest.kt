@@ -19,6 +19,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Lunarch Veteran // Luminous Phantom (MID).
@@ -56,7 +57,7 @@ class LunarchVeteranScenarioTest : FunSpec({
         driver.giveMana(player, Color.WHITE, 1)
 
         val lifeBefore = driver.getLifeTotal(player)
-        driver.submit(CastSpell(player, veteran, paymentStrategy = PaymentStrategy.FromPool)).isSuccess shouldBe true
+        driver.submit(CastSpell(player, veteran, paymentStrategy = PaymentStrategy.FromPool)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // Its own entry is not "another creature" — no life gained yet.
@@ -65,7 +66,7 @@ class LunarchVeteranScenarioTest : FunSpec({
         // A second creature entering through the real cast pipeline does trigger it.
         val lions = driver.putCardInHand(player, "Savannah Lions")
         driver.giveMana(player, Color.WHITE, 1)
-        driver.submit(CastSpell(player, lions, paymentStrategy = PaymentStrategy.FromPool)).isSuccess shouldBe true
+        driver.submit(CastSpell(player, lions, paymentStrategy = PaymentStrategy.FromPool)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.getLifeTotal(player) shouldBe lifeBefore + 1
@@ -81,7 +82,7 @@ class LunarchVeteranScenarioTest : FunSpec({
         driver.giveMana(player, Color.WHITE, 2)
 
         val result = disturbCast(driver, player, veteran)
-        io.kotest.assertions.withClue("error=${result.error}") { result.isSuccess shouldBe true }
+        io.kotest.assertions.withClue("error=${result.error}") { result.outcome shouldBe Outcome.Done }
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val phantom = driver.findPermanent(player, "Luminous Phantom")
@@ -103,7 +104,7 @@ class LunarchVeteranScenarioTest : FunSpec({
         driver.giveMana(player, Color.WHITE, 2)
         driver.giveMana(player, Color.RED, 1)
 
-        disturbCast(driver, player, veteran).isSuccess shouldBe true
+        disturbCast(driver, player, veteran).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
         val lifeBefore = driver.getLifeTotal(player)
 
@@ -113,7 +114,7 @@ class LunarchVeteranScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(victim)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty() || driver.pendingDecision != null) driver.bothPass()
 
         driver.getLifeTotal(player) shouldBe lifeBefore + 1
@@ -130,7 +131,7 @@ class LunarchVeteranScenarioTest : FunSpec({
         driver.giveMana(player, Color.WHITE, 2)
         driver.giveMana(player, Color.RED, 1)
 
-        disturbCast(driver, player, veteran).isSuccess shouldBe true
+        disturbCast(driver, player, veteran).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.submit(
@@ -139,7 +140,7 @@ class LunarchVeteranScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(veteran)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty() || driver.pendingDecision != null) driver.bothPass()
 
         driver.state.getExile(player).shouldContain(veteran)

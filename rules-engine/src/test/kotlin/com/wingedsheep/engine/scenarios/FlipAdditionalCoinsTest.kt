@@ -28,6 +28,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * [FlipAdditionalCoins] — "If you would flip a coin, instead flip two coins and ignore one"
@@ -125,11 +126,11 @@ class FlipAdditionalCoinsTest : FunSpec({
 
     /** The first seed in [range] whose flip of [effect] paused (i.e. produced a mixed batch). */
     fun seedThatPauses(driver: GameTestDriver, player: EntityId, effect: Effect, range: LongRange) =
-        range.firstOrNull { flipWithSeed(driver, player, effect, it).isPaused }
+        range.firstOrNull { flipWithSeed(driver, player, effect, it).outcome is Outcome.Paused }
 
     /** The first seed in [range] whose flip of [effect] did not pause (a unanimous batch). */
     fun seedThatSettles(driver: GameTestDriver, player: EntityId, effect: Effect, range: LongRange) =
-        range.firstOrNull { !flipWithSeed(driver, player, effect, it).isPaused }
+        range.firstOrNull { flipWithSeed(driver, player, effect, it).outcome !is Outcome.Paused }
 
     // ── How many coins are flipped ───────────────────────────────────────
 
@@ -140,7 +141,7 @@ class FlipAdditionalCoinsTest : FunSpec({
 
         (1L..40L).forEach { seed ->
             val result = flipWithSeed(driver, player, FlipCoinEffect(), seed)
-            result.isPaused shouldBe false
+            (result.outcome is Outcome.Paused) shouldBe false
             val flips = result.events.filterIsInstance<CoinFlipEvent>()
             flips.size shouldBe 1
             flips.single().ignored shouldBe false
@@ -233,7 +234,7 @@ class FlipAdditionalCoinsTest : FunSpec({
 
         (1L..40L).forEach { seed ->
             val result = flipWithSeed(driver, player, FlipCoinEffect(), seed)
-            result.isPaused shouldBe false
+            (result.outcome is Outcome.Paused) shouldBe false
             val flips = result.events.filterIsInstance<CoinFlipEvent>()
             flips.size shouldBe 2
             flips.all { it.won }.shouldBeTrue()

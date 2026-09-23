@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Undying Malice (VOW).
@@ -46,13 +47,13 @@ class UndyingMaliceScenarioTest : FunSpec({
 
         val malice = driver.putCardInHand(you, "Undying Malice")
         driver.giveMana(you, Color.BLACK, 1)
-        driver.castSpell(you, malice, listOf(goblin)).isSuccess shouldBe true
+        driver.castSpell(you, malice, listOf(goblin)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Undying Malice — grant applied for the turn
 
         // Kill the granted creature.
         val doomBlade = driver.putCardInHand(you, "Doom Blade")
         driver.giveMana(you, Color.BLACK, 2)
-        driver.castSpell(you, doomBlade, listOf(goblin)).isSuccess shouldBe true
+        driver.castSpell(you, doomBlade, listOf(goblin)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Doom Blade — Goblin dies, granted "when this dies" trigger goes on stack
         driver.bothPass()  // resolve the granted return trigger
 
@@ -75,7 +76,7 @@ class UndyingMaliceScenarioTest : FunSpec({
 
         val malice = driver.putCardInHand(you, "Undying Malice")
         driver.giveMana(you, Color.BLACK, 1)
-        driver.castSpell(you, malice, listOf(goblin)).isSuccess shouldBe true
+        driver.castSpell(you, malice, listOf(goblin)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // While the grant is live it rides the creature.
@@ -83,7 +84,7 @@ class UndyingMaliceScenarioTest : FunSpec({
 
         val doomBlade = driver.putCardInHand(you, "Doom Blade")
         driver.giveMana(you, Color.BLACK, 2)
-        driver.castSpell(you, doomBlade, listOf(goblin)).isSuccess shouldBe true
+        driver.castSpell(you, doomBlade, listOf(goblin)).outcome shouldBe Outcome.Done
         driver.bothPass()  // Doom Blade resolves — Goblin dies
         driver.bothPass()  // return trigger resolves — Goblin comes back
 

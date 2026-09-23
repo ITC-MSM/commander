@@ -84,7 +84,7 @@ class WardCounterEffectExecutor(
         effect: WardCounterEffect,
         context: EffectContext
     ): EffectResult {
-        val spellEntityId = context.targetingSourceEntityId
+        val spellEntityId = context.triggerContext?.targetingSourceEntityId
             ?: return EffectResult.success(state)
 
         if (!state.stack.contains(spellEntityId)) {

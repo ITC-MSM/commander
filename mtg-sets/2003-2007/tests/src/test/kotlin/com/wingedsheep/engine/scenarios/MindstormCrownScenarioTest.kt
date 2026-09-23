@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Mindstorm Crown (MRD #207) — "At the beginning of your upkeep, draw a card if you had no cards
@@ -97,7 +98,7 @@ class MindstormCrownScenarioTest : FunSpec({
         // holding priority first.
         if (d.priorityPlayer != d.player1) d.passPriority(d.priorityPlayer!!)
         d.giveMana(d.player1, Color.BLACK, 1)
-        d.castSpell(d.player1, ritual).isSuccess shouldBe true
+        d.castSpell(d.player1, ritual).outcome shouldBe Outcome.Done
         withClue("the hand is empty before the trigger resolves") {
             d.getHandSize(d.player1) shouldBe 0
         }

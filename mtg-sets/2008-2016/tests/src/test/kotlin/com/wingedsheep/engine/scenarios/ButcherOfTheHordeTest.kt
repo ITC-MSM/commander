@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Butcher of the Horde:
@@ -73,7 +75,7 @@ class ButcherOfTheHordeTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(soldier))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve ability → modal choice
         driver.bothPass()
@@ -106,7 +108,7 @@ class ButcherOfTheHordeTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(soldier))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve ability → modal choice
         driver.bothPass()
@@ -139,7 +141,7 @@ class ButcherOfTheHordeTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(soldier))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve ability → modal choice
         driver.bothPass()
@@ -172,7 +174,7 @@ class ButcherOfTheHordeTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(butcher))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("can sacrifice multiple creatures for different keywords") {

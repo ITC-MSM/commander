@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Regression test: Gossip's Talent (level 2) grants "target attacking creature
@@ -81,7 +82,7 @@ class GossipsTalentLongstalkBrawlTest : FunSpec({
                 ChosenTarget.Permanent(theirs)
             ))
         ))
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         // Resolve the fight.
         driver.bothPass()

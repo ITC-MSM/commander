@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Thorin Oakenshield — "As long as you have an enduring story, artifacts and creatures you control
@@ -59,7 +60,7 @@ class ThorinOakenshieldScenarioTest : FunSpec({
         repeat(3) { d.putLandOnBattlefield(active, "Mountain") }
         d.giveMana(active, Color.RED, 1)
         val bolt = d.putCardInHand(active, "Lightning Bolt")
-        d.castSpellWithTargets(active, bolt, listOf(ChosenTarget.Permanent(thorin))).isSuccess shouldBe true
+        d.castSpellWithTargets(active, bolt, listOf(ChosenTarget.Permanent(thorin))).outcome shouldBe Outcome.Done
 
         // No ward trigger to resolve first — the Bolt itself is the only thing on the stack.
         d.bothPass()

@@ -22,6 +22,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Silvos, Rogue Elemental.
@@ -109,7 +110,7 @@ class SilvosRogueElementalTest : FunSpec({
                 targets = emptyList()
             )
         )
-        regenResult.isSuccess shouldBe true
+        regenResult.outcome shouldBe Outcome.Done
 
         // Resolve the regeneration ability
         driver.bothPass()
@@ -117,7 +118,7 @@ class SilvosRogueElementalTest : FunSpec({
         // Cast Test Blast dealing 5 damage to Silvos
         val blast = driver.putCardInHand(player, "Test Blast")
         val castResult = driver.castSpell(player, blast, listOf(silvos))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.bothPass()
@@ -149,7 +150,7 @@ class SilvosRogueElementalTest : FunSpec({
         val blast = driver.putCardInHand(player, "Test Blast")
         driver.giveMana(player, Color.RED, 1)
         val castResult = driver.castSpell(player, blast, listOf(silvos))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.bothPass()
@@ -182,6 +183,6 @@ class SilvosRogueElementalTest : FunSpec({
                 targets = emptyList()
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

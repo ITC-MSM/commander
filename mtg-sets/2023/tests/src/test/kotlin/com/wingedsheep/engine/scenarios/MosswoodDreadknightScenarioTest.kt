@@ -11,6 +11,8 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Mosswood Dreadknight (WOE #231) — {1}{G} 3/2 Creature — Human Knight with trample and
@@ -41,7 +43,7 @@ class MosswoodDreadknightScenarioTest : FunSpec({
     fun GameTestDriver.killWithBolt(player: EntityId, creature: EntityId) {
         val bolt = putCardInHand(player, "Lightning Bolt")
         giveMana(player, Color.RED, 1)
-        castSpell(player, bolt, listOf(creature)).isSuccess shouldBe true
+        castSpell(player, bolt, listOf(creature)).outcome shouldBe Outcome.Done
         bothPass() // resolve the bolt; SBA kills the creature and queues the dies trigger
         bothPass() // resolve the dies trigger
         findPermanent(player, "Mosswood Dreadknight") shouldBe null
@@ -90,7 +92,7 @@ class MosswoodDreadknightScenarioTest : FunSpec({
 
         val result = driver.submit(CastSpell(playerId = you, cardId = knight, faceIndex = null))
         withClue("permission covers face 0 only — the creature half must be refused") {
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
         }
         driver.findPermanent(you, "Mosswood Dreadknight") shouldBe null
     }
@@ -106,7 +108,7 @@ class MosswoodDreadknightScenarioTest : FunSpec({
         driver.giveMana(you, Color.BLACK, 1)
         driver.giveColorlessMana(you, 1)
 
-        driver.submit(CastSpell(playerId = you, cardId = knight, faceIndex = 0)).isSuccess shouldBe true
+        driver.submit(CastSpell(playerId = you, cardId = knight, faceIndex = 0)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getHandSize(you) shouldBe handBefore + 1
@@ -122,7 +124,7 @@ class MosswoodDreadknightScenarioTest : FunSpec({
 
         driver.giveMana(you, Color.GREEN, 1)
         driver.giveColorlessMana(you, 1)
-        driver.submit(CastSpell(playerId = you, cardId = knight)).isSuccess shouldBe true
+        driver.submit(CastSpell(playerId = you, cardId = knight)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.assertPermanentExists(you, "Mosswood Dreadknight")
     }

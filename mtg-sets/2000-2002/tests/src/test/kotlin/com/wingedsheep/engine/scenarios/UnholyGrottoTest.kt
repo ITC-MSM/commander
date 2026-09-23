@@ -17,6 +17,8 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Unholy Grotto.
@@ -74,7 +76,7 @@ class UnholyGrottoTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(zombie, activePlayer, Zone.GRAVEYARD))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -109,7 +111,7 @@ class UnholyGrottoTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(bears, activePlayer, Zone.GRAVEYARD))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("cannot target Zombie in opponent's graveyard") {
@@ -135,7 +137,7 @@ class UnholyGrottoTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(opponentZombie, opponent, Zone.GRAVEYARD))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("cannot activate without paying black mana") {
@@ -160,7 +162,7 @@ class UnholyGrottoTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(zombie, activePlayer, Zone.GRAVEYARD))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("can target different Zombies in graveyard") {
@@ -186,7 +188,7 @@ class UnholyGrottoTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(zombie2, activePlayer, Zone.GRAVEYARD))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

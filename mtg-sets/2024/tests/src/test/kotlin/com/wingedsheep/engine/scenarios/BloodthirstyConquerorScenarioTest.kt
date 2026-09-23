@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bloodthirsty Conqueror {3}{B}{B} — Creature — Vampire Knight 5/5
@@ -78,7 +79,7 @@ class BloodthirstyConquerorScenarioTest : FunSpec({
 
         val spell = driver.putCardInHand(you, "Drain Two")
         driver.giveMana(you, Color.BLACK, 1)
-        driver.castSpell(you, spell).isSuccess shouldBe true
+        driver.castSpell(you, spell).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Drain Two: opponent 20 -> 18
         driver.bothPass() // resolve the life-gain trigger
 

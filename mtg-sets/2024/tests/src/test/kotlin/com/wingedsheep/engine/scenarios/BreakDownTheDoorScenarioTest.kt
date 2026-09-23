@@ -18,6 +18,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Break Down the Door (DSK #170) — {2}{G} Instant.
@@ -58,7 +59,7 @@ class BreakDownTheDoorScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(artifact))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(driver.player2, "Artifact Creature") shouldBe null
@@ -83,7 +84,7 @@ class BreakDownTheDoorScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(enchantment))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(driver.player2, "Growing Dread") shouldBe null
@@ -108,7 +109,7 @@ class BreakDownTheDoorScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(emptyList()),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (!driver.isPaused && driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val pick = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()

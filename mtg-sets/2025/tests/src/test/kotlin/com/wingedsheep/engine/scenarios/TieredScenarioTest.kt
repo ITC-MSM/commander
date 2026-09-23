@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tiered (CR 702.183) — "Choose one. As an additional cost to cast this spell, pay the cost
@@ -79,7 +80,7 @@ class TieredScenarioTest : FunSpec({
         val spell = d.putCardInHand(p1, "Fire Magic")
         d.submit(
             CastSpell(p1, spell, chosenModes = listOf(0), paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // 1 damage to each: both survive.
@@ -101,7 +102,7 @@ class TieredScenarioTest : FunSpec({
         val spell = d.putCardInHand(p1, "Fire Magic")
         d.submit(
             CastSpell(p1, spell, chosenModes = listOf(2), paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // 3 damage to each: both die.
@@ -119,9 +120,9 @@ class TieredScenarioTest : FunSpec({
         d.giveMana(p1, Color.RED, 1) // base only; {5} unpaid
 
         val spell = d.putCardInHand(p1, "Fire Magic")
-        d.submit(
+        (d.submit(
             CastSpell(p1, spell, chosenModes = listOf(2), paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess.shouldBeFalse()
+        ).outcome is Outcome.Done).shouldBeFalse()
     }
 
     test("Tiered is choose-one — submitting two tiers is rejected") {
@@ -133,9 +134,9 @@ class TieredScenarioTest : FunSpec({
         d.giveColorlessMana(p1, 7)
 
         val spell = d.putCardInHand(p1, "Fire Magic")
-        d.submit(
+        (d.submit(
             CastSpell(p1, spell, chosenModes = listOf(0, 2), paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess.shouldBeFalse()
+        ).outcome is Outcome.Done).shouldBeFalse()
     }
 
     // -------------------------------------------------------------------------
@@ -163,7 +164,7 @@ class TieredScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(tgt)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.state.getBattlefield().contains(victim) shouldBe false
@@ -189,7 +190,7 @@ class TieredScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(tgt)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.state.getBattlefield().contains(victim) shouldBe true
@@ -220,7 +221,7 @@ class TieredScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(tgt)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.state.getBattlefield().contains(victim) shouldBe false
@@ -245,7 +246,7 @@ class TieredScenarioTest : FunSpec({
             val spell = d.putCardInHand(p1, "Restoration Magic")
             d.submit(
                 CastSpell(p1, spell, chosenModes = listOf(2), paymentStrategy = PaymentStrategy.FromPool)
-            ).isSuccess shouldBe true
+            ).outcome shouldBe Outcome.Done
             d.bothPass()
             life(d, p1) shouldBe (before + 6)
         }
@@ -269,7 +270,7 @@ class TieredScenarioTest : FunSpec({
                     modeTargetsOrdered = listOf(listOf(tgt)),
                     paymentStrategy = PaymentStrategy.FromPool
                 )
-            ).isSuccess shouldBe true
+            ).outcome shouldBe Outcome.Done
             d.bothPass()
             life(d, p1) shouldBe (before + 3)
         }
@@ -298,7 +299,7 @@ class TieredScenarioTest : FunSpec({
                     modeTargetsOrdered = listOf(listOf(tgt)),
                     paymentStrategy = PaymentStrategy.FromPool
                 )
-            ).isSuccess shouldBe true
+            ).outcome shouldBe Outcome.Done
             d.bothPass()
             val proj = d.state.projectedState
             return proj.getPower(creature) to proj.getToughness(creature)
@@ -332,7 +333,7 @@ class TieredScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(tgt)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         val proj = d.state.projectedState
@@ -359,7 +360,7 @@ class TieredScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(vTgt)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // Kill it: Thunder (tier 0) deals 2 — lethal to the now-3/2 creature.
@@ -374,7 +375,7 @@ class TieredScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(tTgt)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass() // resolve Thunder → creature dies
         d.bothPass() // resolve the granted dies trigger → return it tapped
 

@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /** Scenario tests for Popular Egotist. */
 class PopularEgotistScenarioTest : FunSpec({
@@ -59,7 +60,7 @@ class PopularEgotistScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = emptyList()
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve until the drain trigger needs a target, then point it at the opponent.
         var guard = 0

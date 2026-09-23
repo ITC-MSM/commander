@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for effects that grant additional land plays per turn.
@@ -47,7 +48,7 @@ class AdditionalLandPlaysTest : FunSpec({
 
         // Cast Summer Bloom
         val castResult = driver.castSpell(player, summerBloom)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Pass priority to resolve
         driver.bothPass()
@@ -59,28 +60,28 @@ class AdditionalLandPlaysTest : FunSpec({
 
         // Play first land (normal)
         val forest1 = driver.putCardInHand(player, "Forest")
-        driver.playLand(player, forest1).isSuccess shouldBe true
+        driver.playLand(player, forest1).outcome shouldBe Outcome.Done
 
         // Should have 3 remaining
         driver.state.getEntity(player)?.get<LandDropsComponent>()?.remaining shouldBe 3
 
         // Play second land (first additional)
         val forest2 = driver.putCardInHand(player, "Forest")
-        driver.playLand(player, forest2).isSuccess shouldBe true
+        driver.playLand(player, forest2).outcome shouldBe Outcome.Done
 
         // Should have 2 remaining
         driver.state.getEntity(player)?.get<LandDropsComponent>()?.remaining shouldBe 2
 
         // Play third land (second additional)
         val forest3 = driver.putCardInHand(player, "Forest")
-        driver.playLand(player, forest3).isSuccess shouldBe true
+        driver.playLand(player, forest3).outcome shouldBe Outcome.Done
 
         // Should have 1 remaining
         driver.state.getEntity(player)?.get<LandDropsComponent>()?.remaining shouldBe 1
 
         // Play fourth land (third additional)
         val forest4 = driver.putCardInHand(player, "Forest")
-        driver.playLand(player, forest4).isSuccess shouldBe true
+        driver.playLand(player, forest4).outcome shouldBe Outcome.Done
 
         // Should have 0 remaining
         driver.state.getEntity(player)?.get<LandDropsComponent>()?.remaining shouldBe 0
@@ -88,7 +89,7 @@ class AdditionalLandPlaysTest : FunSpec({
         // Verify we can't play a fifth land
         val forest5 = driver.putCardInHand(player, "Forest")
         val fifthResult = driver.submitExpectFailure(PlayLand(player, forest5))
-        fifthResult.isSuccess shouldBe false
+        fifthResult.outcome shouldNotBe Outcome.Done
 
         // Verify 4 lands on battlefield
         driver.getLands(player).size shouldBe 4
@@ -159,7 +160,7 @@ class AdditionalLandPlaysTest : FunSpec({
 
         // Play the normal land drop
         val forest1 = driver.findCardInHand(player, "Forest")!!
-        driver.playLand(player, forest1).isSuccess shouldBe true
+        driver.playLand(player, forest1).outcome shouldBe Outcome.Done
 
         // Verify can't play another land
         driver.state.getEntity(player)?.get<LandDropsComponent>()?.remaining shouldBe 0
@@ -167,7 +168,7 @@ class AdditionalLandPlaysTest : FunSpec({
         val forest2 = driver.findCardInHand(player, "Forest")
         if (forest2 != null) {
             val result = driver.submitExpectFailure(PlayLand(player, forest2))
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
         }
     }
 })

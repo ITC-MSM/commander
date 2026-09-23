@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tel-Jilad Chosen — {1}{G} Creature — Elf Warrior 2/1 (Mirrodin #132)
@@ -58,11 +59,11 @@ class TelJiladChosenScenarioTest : FunSpec({
         val turn = driver.state.turnNumber
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
         driver.state.turnNumber shouldBe turn // didn't sail past this turn's combat
-        driver.declareAttackers(attacker, listOf(chosen), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(chosen), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         // The artifact Golem is not a legal blocker for a creature with protection from artifacts.
-        driver.declareBlockers(defender, mapOf(golem to listOf(chosen))).isSuccess shouldBe false
+        driver.declareBlockers(defender, mapOf(golem to listOf(chosen))).outcome shouldNotBe Outcome.Done
     }
 
     test("a nonartifact creature can still block it") {
@@ -79,10 +80,10 @@ class TelJiladChosenScenarioTest : FunSpec({
         val turn = driver.state.turnNumber
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
         driver.state.turnNumber shouldBe turn
-        driver.declareAttackers(attacker, listOf(chosen), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(chosen), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
-        driver.declareBlockers(defender, mapOf(courser to listOf(chosen))).isSuccess shouldBe true
+        driver.declareBlockers(defender, mapOf(courser to listOf(chosen))).outcome shouldBe Outcome.Done
     }
 
     test("combat damage from an artifact creature is prevented") {
@@ -101,9 +102,9 @@ class TelJiladChosenScenarioTest : FunSpec({
         val turn = driver.state.turnNumber
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
         driver.state.turnNumber shouldBe turn
-        driver.declareAttackers(attacker, listOf(golem), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(golem), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(defender, mapOf(chosen to listOf(golem))).isSuccess shouldBe true
+        driver.declareBlockers(defender, mapOf(chosen to listOf(golem))).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.END_COMBAT)
 
         // The Golem's 2 damage would be lethal to a 2/1, but protection prevents all of it.

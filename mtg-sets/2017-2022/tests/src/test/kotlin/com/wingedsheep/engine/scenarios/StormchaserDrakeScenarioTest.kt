@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Stormchaser Drake — "Whenever this creature becomes the target of a spell you control, draw a card."
@@ -92,7 +93,7 @@ class StormchaserDrakeScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(drake))
             )
         )
-        ping.isSuccess shouldBe true
+        ping.outcome shouldBe Outcome.Done
 
         driver.bothPass()
         (notDrawn in driver.getHand(player)) shouldBe false

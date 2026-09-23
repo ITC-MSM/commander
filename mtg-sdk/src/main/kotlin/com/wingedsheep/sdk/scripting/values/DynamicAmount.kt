@@ -66,6 +66,18 @@ enum class TurnTracker {
      * "if an opponent was dealt combat damage by a legendary creature this turn" (Blitzball).
      */
     DEALT_COMBAT_DAMAGE_BY_LEGENDARY_CREATURE,
+    /**
+     * Indicator (0 or 1) that the player was dealt noncombat damage this turn — any source, any
+     * amount above zero after prevention. Powers "as long as an opponent was dealt noncombat damage
+     * this turn" (Whiplash Wordsmith, Grim Repriser).
+     */
+    DEALT_NONCOMBAT_DAMAGE,
+    /**
+     * [DEALT_NONCOMBAT_DAMAGE] one turn back: whether the player was dealt noncombat damage during
+     * the previous turn, whoever's turn that was. Rolled over at the turn boundary. Powers "if an
+     * opponent was dealt noncombat damage last turn" (Command the Stage).
+     */
+    DEALT_NONCOMBAT_DAMAGE_LAST_TURN,
     /** Indicator (0 or 1) that the player put one or more counters on a creature this turn. */
     COUNTERS_PUT_ON_CREATURE,
     /** Number of land cards the player played this turn (derived from `LandDropsComponent`). */
@@ -104,6 +116,14 @@ enum class TurnTracker {
     CREATURES_ENTERED_UNDER_CONTROL,
     /** Indicator (0 or 1) that the player sacrificed at least one Food this turn. */
     FOOD_SACRIFICED,
+    /**
+     * Indicator (0 or 1) that the player scried or surveilled this turn — "if you've scried or
+     * surveilled this turn" (Surveillance Phantasm, Desperate Futurescribe, Proctor of Potential).
+     * Recorded by the same executors that emit the scry / surveil events, so it is set exactly when
+     * a "whenever you scry or surveil" trigger would fire: a scry 0 or surveil 0 is no event at all
+     * (CR 701.22b / 701.25c) and never marks it, while a scry into an empty library still does.
+     */
+    SCRIED_OR_SURVEILED,
     /**
      * Indicator (0 or 1) that the player sacrificed at least one artifact this turn — the
      * card-type sibling of [FOOD_SACRIFICED], recorded by the same central sacrifice hook and
@@ -241,12 +261,15 @@ enum class TurnTracker {
         DEALT_COMBAT_DAMAGE -> "whether ${player.description} were dealt combat damage this turn"
         DEALT_COMBAT_DAMAGE_BY_LEGENDARY_CREATURE ->
             "whether ${player.description} were dealt combat damage by a legendary creature this turn"
+        DEALT_NONCOMBAT_DAMAGE -> "whether ${player.description} were dealt noncombat damage this turn"
+        DEALT_NONCOMBAT_DAMAGE_LAST_TURN -> "whether ${player.description} were dealt noncombat damage last turn"
         COUNTERS_PUT_ON_CREATURE -> "whether ${player.description} put a counter on a creature this turn"
         LANDS_PLAYED -> "the number of lands ${player.description} played this turn"
         LANDS_ENTERED_UNDER_CONTROL -> "the number of lands that entered the battlefield under ${player.possessive} control this turn"
         NONLAND_PERMANENTS_ENTERED -> "the number of nonland permanents that entered the battlefield under ${player.possessive} control this turn"
         CREATURES_ENTERED_UNDER_CONTROL -> "the number of creatures that entered the battlefield under ${player.possessive} control this turn"
         FOOD_SACRIFICED -> "whether ${player.description} sacrificed a Food this turn"
+        SCRIED_OR_SURVEILED -> "whether ${player.description} scried or surveilled this turn"
         ARTIFACT_SACRIFICED -> "whether ${player.description} sacrificed an artifact this turn"
         CARDS_LEFT_GRAVEYARD -> "the number of cards that left ${player.possessive} graveyard this turn"
         DESCENDED -> "the number of times ${player.description} descended this turn"

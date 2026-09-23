@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Regression test for Splinter, Radical Rat (TMT #169).
@@ -55,7 +57,7 @@ class SplinterRadicalRatTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(splinter))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the GrantKeyword effect
 
         // Splinter is now unblockable, not unable to block.
@@ -64,6 +66,6 @@ class SplinterRadicalRatTest : FunSpec({
         // Attempting to block Splinter must fail.
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         val blockResult = driver.declareBlockers(opponent, mapOf(blocker to listOf(splinter)))
-        blockResult.isSuccess shouldBe false
+        blockResult.outcome shouldNotBe Outcome.Done
     }
 })

@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Devout Decree (M20) — {1}{W} Sorcery
@@ -41,7 +42,7 @@ class DevoutDecreeScenarioTest : FunSpec({
         val decree = driver.putCardInHand(you, "Devout Decree")
         driver.giveMana(you, Color.WHITE, 2)
         val cast = driver.castSpell(you, decree, targets = listOf(victim))
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         driver.bothPass() // resolve Devout Decree: exile the target, then pause for Scry 1
         // Resolve the Scry decision (SelectCardsDecision, min 0 → keep on top).
@@ -72,7 +73,7 @@ class DevoutDecreeScenarioTest : FunSpec({
         val cast = driver.castSpell(you, decree, targets = listOf(whiteCreature))
 
         // Casting with an illegal target must fail; the white creature stays on the battlefield.
-        cast.isSuccess shouldBe false
+        cast.outcome shouldNotBe Outcome.Done
         driver.findPermanent(opponent, "Savannah Lions") shouldNotBe null
     }
 })

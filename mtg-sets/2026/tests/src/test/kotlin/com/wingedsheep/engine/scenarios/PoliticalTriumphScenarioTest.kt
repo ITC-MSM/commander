@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Political Triumph (MSH) — "Whenever a creature you control enters, scry 1 and put a plan counter
@@ -56,7 +57,7 @@ class PoliticalTriumphScenarioTest : FunSpec({
 
         val creature = d.putCardInHand(d.player1, "Centaur Courser")
         d.giveMana(d.player1, Color.GREEN, 3)
-        d.castSpell(d.player1, creature).isSuccess shouldBe true
+        d.castSpell(d.player1, creature).outcome shouldBe Outcome.Done
         d.settle()
 
         d.planCounters(triumph) shouldBe 1
@@ -68,12 +69,12 @@ class PoliticalTriumphScenarioTest : FunSpec({
         val d = driver()
         val triumphCard = d.putCardInHand(d.player1, "Political Triumph")
         d.giveMana(d.player1, Color.WHITE, 1)
-        d.castSpell(d.player1, triumphCard).isSuccess shouldBe true
+        d.castSpell(d.player1, triumphCard).outcome shouldBe Outcome.Done
         d.settle()
 
         val creature = d.putCardInHand(d.player1, "Centaur Courser")
         d.giveMana(d.player1, Color.GREEN, 3)
-        d.castSpell(d.player1, creature).isSuccess shouldBe true
+        d.castSpell(d.player1, creature).outcome shouldBe Outcome.Done
         d.settle()
 
         d.planCounters(triumphCard) shouldBe 1
@@ -89,7 +90,7 @@ class PoliticalTriumphScenarioTest : FunSpec({
 
         val creature = d.putCardInHand(d.player1, "Centaur Courser")
         d.giveMana(d.player1, Color.GREEN, 3)
-        d.castSpell(d.player1, creature).isSuccess shouldBe true
+        d.castSpell(d.player1, creature).outcome shouldBe Outcome.Done
         d.settle()
         d.planCounters(triumph) shouldBe 1
 
@@ -106,7 +107,7 @@ class PoliticalTriumphScenarioTest : FunSpec({
         repeat(2) {
             val creature = d.putCardInHand(d.player1, "Centaur Courser")
             d.giveMana(d.player1, Color.GREEN, 3)
-            d.castSpell(d.player1, creature).isSuccess shouldBe true
+            d.castSpell(d.player1, creature).outcome shouldBe Outcome.Done
             d.settle()
         }
 

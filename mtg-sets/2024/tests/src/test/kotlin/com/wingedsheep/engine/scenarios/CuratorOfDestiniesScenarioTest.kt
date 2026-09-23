@@ -21,6 +21,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Curator of Destinies: on ETB you look at your top five and split them into a face-down and a
@@ -62,7 +63,7 @@ class CuratorOfDestiniesScenarioTest : FunSpec({
         val spell = putCardInHand(active, "Curator of Destinies")
         giveMana(active, Color.BLUE, 2)
         giveColorlessMana(active, 4)
-        castSpell(active, spell).isSuccess shouldBe true
+        castSpell(active, spell).outcome shouldBe Outcome.Done
         bothPass() // Curator resolves; its ETB trigger goes on the stack
         bothPass() // the ETB trigger resolves
     }
@@ -199,7 +200,7 @@ class CuratorOfDestiniesScenarioTest : FunSpec({
         driver.giveColorlessMana(active, 4)
         driver.giveMana(opponent, Color.BLUE, 2)
 
-        driver.castSpell(active, curator).isSuccess shouldBe true
+        driver.castSpell(active, curator).outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 1
         driver.passPriority(active)
 
@@ -212,7 +213,7 @@ class CuratorOfDestiniesScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(curatorOnStack)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 2
 
         // … but Counterspell resolves without countering it.

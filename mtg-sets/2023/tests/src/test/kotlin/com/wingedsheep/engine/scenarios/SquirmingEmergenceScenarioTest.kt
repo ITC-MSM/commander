@@ -6,6 +6,8 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Squirming Emergence (LCI #241, {1}{B}{G} Sorcery).
@@ -80,7 +82,7 @@ class SquirmingEmergenceScenarioTest : ScenarioTestBase() {
                 val result = game.castSpellTargetingGraveyardCard(1, "Squirming Emergence", 1, "Centaur Courser")
 
                 withClue("Targeting a MV-3 card with a cap of 2 should be rejected") {
-                    result.isSuccess shouldBe false
+                    result.outcome shouldNotBe Outcome.Done
                 }
                 withClue("Centaur Courser should remain in the graveyard") {
                     game.isInGraveyard(1, "Centaur Courser") shouldBe true
@@ -106,7 +108,7 @@ class SquirmingEmergenceScenarioTest : ScenarioTestBase() {
                 val result = game.castSpellTargetingGraveyardCard(1, "Squirming Emergence", 1, "Lightning Bolt")
 
                 withClue("Targeting a nonpermanent card should be rejected") {
-                    result.isSuccess shouldBe false
+                    result.outcome shouldNotBe Outcome.Done
                 }
                 withClue("Lightning Bolt should remain in the graveyard") {
                     game.isInGraveyard(1, "Lightning Bolt") shouldBe true

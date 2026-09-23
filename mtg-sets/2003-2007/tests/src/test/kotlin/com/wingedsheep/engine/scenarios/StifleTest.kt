@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Stifle.
@@ -79,7 +80,7 @@ class StifleTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val abilityOnStack = driver.getTopOfStack()!!
 
@@ -129,7 +130,7 @@ class StifleTest : FunSpec({
 
         // Player 1 casts Stifle targeting the triggered ability
         val castResult = driver.castSpellWithTargets(player1, stifle, listOf(ChosenTarget.Spell(triggeredAbilityOnStack)))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve Stifle (both pass)
         driver.bothPass()

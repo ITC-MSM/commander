@@ -12,6 +12,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Get Out — {U}{U} Instant
@@ -59,7 +60,7 @@ class GetOutScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Spell(bearsSpell)))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass() // resolve Get Out (counters Grizzly Bears)
         driver.bothPass() // Grizzly Bears is countered, no permanent enters
@@ -96,7 +97,7 @@ class GetOutScenarioTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(me, "Grizzly Bears") shouldBe null

@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Flash Conscription (RAV #124) — "Untap target creature and gain control of it until end of turn.
@@ -41,7 +42,7 @@ class FlashConscriptionScenarioTest : FunSpec({
         if (white > 0) giveMana(player1, Color.WHITE, white)
         giveMana(player1, Color.RED, 6 - white)
         val card = putCardInHand(player1, "Flash Conscription")
-        castSpellWithTargets(player1, card, listOf(ChosenTarget.Permanent(victim))).isSuccess shouldBe true
+        castSpellWithTargets(player1, card, listOf(ChosenTarget.Permanent(victim))).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && guard++ < 10) bothPass()
     }

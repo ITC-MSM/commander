@@ -23,6 +23,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the one-shot "next spell can't be countered" rider
@@ -81,7 +82,7 @@ class MakeNextSpellUncounterableTest : FunSpec({
     /** Activate a village's "{U}, {T}" ability and resolve it, leaving a pending rider. */
     fun activateVillage(driver: GameTestDriver, player: EntityId, village: EntityId, abilityId: AbilityId) {
         driver.giveMana(player, Color.BLUE, 1)
-        driver.submit(ActivateAbility(playerId = player, sourceId = village, abilityId = abilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(playerId = player, sourceId = village, abilityId = abilityId)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the ability → adds the pending rider
     }
 

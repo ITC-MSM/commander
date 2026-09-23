@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Peter Parker's Camera (SPM #171) — {1} Artifact.
@@ -132,7 +133,7 @@ class PeterParkersCameraScenarioTest : FunSpec({
             driver.bothPass(); guard++
         }
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
-        driver.submitTargetSelection(me, listOf(creatureB)).isSuccess shouldBe true
+        driver.submitTargetSelection(me, listOf(creatureB)).outcome shouldBe Outcome.Done
 
         // Resolve the copy (creatureB) then the original (creatureA): both get +1/+0.
         guard = 0

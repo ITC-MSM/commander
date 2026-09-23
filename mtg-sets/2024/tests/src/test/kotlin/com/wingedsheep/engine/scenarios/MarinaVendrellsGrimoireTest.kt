@@ -17,6 +17,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Marina Vendrell's Grimoire (DSK 64).
@@ -78,7 +79,7 @@ class MarinaVendrellsGrimoireTest : FunSpec({
         d.giveMana(p1, Color.BLUE, 1)
         d.giveColorlessMana(p1, 5)
         val before = d.getHandSize(p1)
-        d.castSpell(p1, grimoire).isSuccess shouldBe true
+        d.castSpell(p1, grimoire).outcome shouldBe Outcome.Done
         var guard = 0
         while (d.state.stack.isNotEmpty() && guard++ < 20) d.bothPass()
 
@@ -110,7 +111,7 @@ class MarinaVendrellsGrimoireTest : FunSpec({
         val spell = d.putCardInHand(p1, "Test Lifegain")
         d.giveColorlessMana(p1, 1)
         val before = d.getHandSize(p1)
-        d.castSpell(p1, spell).isSuccess shouldBe true
+        d.castSpell(p1, spell).outcome shouldBe Outcome.Done
         d.settle(p1)
 
         // -1 (cast) + 3 (gained 3 life → draw 3) = +2, and life went up by 3.
@@ -127,7 +128,7 @@ class MarinaVendrellsGrimoireTest : FunSpec({
         val spell = d.putCardInHand(p1, "Test Lifeloss")
         d.giveColorlessMana(p1, 1)
         val before = d.getHandSize(p1)
-        d.castSpell(p1, spell).isSuccess shouldBe true
+        d.castSpell(p1, spell).outcome shouldBe Outcome.Done
         d.settle(p1)
 
         // -1 (cast) - 3 (discard 3 for losing 3 life) = -4; hand still non-empty so no loss.
@@ -145,7 +146,7 @@ class MarinaVendrellsGrimoireTest : FunSpec({
         // enough that it isn't emptied, so the only thing that could kill p1 is the 0-life SBA.
         val spell = d.putCardInHand(p1, "Test Lifeloss")
         d.giveColorlessMana(p1, 1)
-        d.castSpell(p1, spell).isSuccess shouldBe true
+        d.castSpell(p1, spell).outcome shouldBe Outcome.Done
         d.settle(p1)
 
         d.getLifeTotal(p1) shouldBe 0
@@ -173,7 +174,7 @@ class MarinaVendrellsGrimoireTest : FunSpec({
         stateField.set(d, st)
 
         d.giveColorlessMana(p1, 1)
-        d.castSpell(p1, spell).isSuccess shouldBe true
+        d.castSpell(p1, spell).outcome shouldBe Outcome.Done
         d.settle(p1)
 
         d.state.gameOver.shouldBeTrue()

@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Elusive Otter // Grove's Bounty (WOE #225) — {U} 1/1 Creature — Otter.
@@ -147,6 +148,6 @@ class ElusiveOtterScenarioTest : FunSpec({
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         // Equal power is not *less* power, so the block is legal.
-        driver.declareBlockers(opponent, mapOf(lions to listOf(otter))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(lions to listOf(otter))).outcome shouldBe Outcome.Done
     }
 })

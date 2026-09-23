@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Burning Curiosity.
@@ -50,7 +51,7 @@ class BurningCuriosityTest : FunSpec({
     fun castAndResolve(driver: GameTestDriver, caster: com.wingedsheep.sdk.model.EntityId): List<com.wingedsheep.sdk.model.EntityId> {
         driver.giveMana(caster, Color.RED, 3) // {2}{R}, paid from pool
         val spell = driver.putCardInHand(caster, "Burning Curiosity")
-        driver.castSpell(caster, spell).isSuccess shouldBe true
+        driver.castSpell(caster, spell).outcome shouldBe Outcome.Done
         // Resolve the spell (exile top two + grant may-play) without leaving the caster's turn.
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN, maxPasses = 200)
         return driver.getExile(caster)
@@ -95,7 +96,7 @@ class BurningCuriosityTest : FunSpec({
 
         // The "until end of your next turn" window must still be open here.
         driver.state.mayPlayPermissions.any { land in it.cardIds } shouldBe true
-        driver.playLand(p2, land).isSuccess shouldBe true
+        driver.playLand(p2, land).outcome shouldBe Outcome.Done
         driver.getExile(p2).contains(land) shouldBe false
     }
 
@@ -143,7 +144,7 @@ class BurningCuriosityTest : FunSpec({
         driver.state.activePlayerId shouldBe p1
 
         driver.state.mayPlayPermissions.any { land in it.cardIds } shouldBe true
-        driver.playLand(p1, land).isSuccess shouldBe true
+        driver.playLand(p1, land).outcome shouldBe Outcome.Done
         driver.getExile(p1).contains(land) shouldBe false
     }
 })

@@ -25,6 +25,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Resumer module for the two-step legal-actions submission flow on activated abilities whose cost
@@ -355,6 +356,6 @@ class ActivateAbilityXCostContinuationResumer(
      * or failed re-entry is passed through untouched; its own frame is still in flight.
      */
     private fun reenter(result: ExecutionResult, checkForMore: CheckForMore): ExecutionResult =
-        if (result.isPaused || result.error != null) result
+        if (result.outcome is Outcome.Paused || result.error != null) result
         else checkForMore(result.newState, result.events)
 }

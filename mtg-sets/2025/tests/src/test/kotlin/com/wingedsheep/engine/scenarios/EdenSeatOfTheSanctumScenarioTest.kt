@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Eden, Seat of the Sanctum (FIN #277) — Land — Town.
@@ -43,7 +44,7 @@ class EdenSeatOfTheSanctumScenarioTest : FunSpec({
         val manaAbility = EdenSeatOfTheSanctum.activatedAbilities[0].id
         driver.submit(
             ActivateAbility(playerId = me, sourceId = eden, abilityId = manaAbility)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(me)?.get<ManaPoolComponent>()!!
         pool.colorless shouldBe 1
@@ -66,7 +67,7 @@ class EdenSeatOfTheSanctumScenarioTest : FunSpec({
         val ability = EdenSeatOfTheSanctum.activatedAbilities[1].id
         driver.submit(
             ActivateAbility(playerId = me, sourceId = eden, abilityId = ability)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         // Resolve the activated ability (mill two), pausing on the optional-sacrifice decision.
         while (!driver.isPaused && driver.stackSize > 0) driver.bothPass()
 
@@ -103,7 +104,7 @@ class EdenSeatOfTheSanctumScenarioTest : FunSpec({
         val ability = EdenSeatOfTheSanctum.activatedAbilities[1].id
         driver.submit(
             ActivateAbility(playerId = me, sourceId = eden, abilityId = ability)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         // Resolve the activated ability (mill two), pausing on the optional-sacrifice decision.
         while (!driver.isPaused && driver.stackSize > 0) driver.bothPass()
 

@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Splitskin Doll (DSK #33) — {1}{W} Artifact Creature — Toy 2/1.
@@ -43,7 +44,7 @@ class SplitskinDollScenarioTest : FunSpec({
         driver.giveMana(player, Color.WHITE, 2)
         val handBefore = driver.getHandSize(player) - 1 // the doll itself leaves hand on cast
 
-        driver.castSpell(player, doll).isSuccess shouldBe true
+        driver.castSpell(player, doll).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature spell -> enters trigger goes on the stack
         driver.bothPass() // resolve the enters trigger: draw, then conditional discard
 
@@ -68,7 +69,7 @@ class SplitskinDollScenarioTest : FunSpec({
         driver.giveMana(player, Color.WHITE, 2)
         val handBefore = driver.getHandSize(player) - 1
 
-        driver.castSpell(player, doll).isSuccess shouldBe true
+        driver.castSpell(player, doll).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature spell
         driver.bothPass() // resolve the enters trigger: draw only, no discard
 

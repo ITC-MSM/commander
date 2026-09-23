@@ -12,9 +12,9 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
  * Destroy all artifacts and creatures. End the turn.
  *
  * The board wipe resolves first — regeneration still saves creatures (there is no "can't be
- * regenerated" clause). Then "end the turn" (CR 720): all spells and abilities on the stack are
+ * regenerated" clause). Then "end the turn" (CR 724.1): all spells and abilities on the stack are
  * exiled, including Ultima itself and the dies triggers from the wipe (even those that can't be
- * countered — they never reach the stack, CR 720.1c); creatures are removed from combat; and the
+ * countered — they never reach the stack, CR 724.1a); creatures are removed from combat; and the
  * game skips straight to the cleanup step — the active player discards down to their maximum hand
  * size, marked damage wears off, and "this turn" / "until end of turn" effects end — before the
  * next turn begins.

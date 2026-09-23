@@ -49,7 +49,7 @@ class SneakCastEnumerator : ActionEnumerator {
             val sneakKeywordName = sneakAbility.keyword?.displayName ?: "Sneak"
 
             // Honor cast restrictions exactly like the normal cast path (CR 601.3).
-            if (!context.castPermissionUtils.checkCastRestrictions(
+            if (!context.legality.castRestrictionsMet(
                     state, playerId, cardDef.script.castRestrictions
                 )
             ) continue
@@ -127,7 +127,7 @@ class SneakCastEnumerator : ActionEnumerator {
                 if (context.cantCastSpell(cardId)) continue
 
                 val cardDef = context.cardRegistry.getCard(cardComponent.name) ?: continue
-                if (!context.castPermissionUtils.checkCastRestrictions(
+                if (!context.legality.castRestrictionsMet(
                         state, playerId, cardDef.script.castRestrictions
                     )
                 ) continue

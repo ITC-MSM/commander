@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 class HuntDownScenarioTest : FunSpec({
     fun driver() = GameTestDriver().apply {
@@ -40,7 +42,7 @@ class HuntDownScenarioTest : FunSpec({
         val blocker = d.putCreatureOnBattlefield(d.player2, "Grizzly Bears")
         d.hunt(blocker, attacker)
         d.attack(attacker)
-        d.declareBlockers(d.player2, emptyMap()).isSuccess shouldBe false
+        d.declareBlockers(d.player2, emptyMap()).outcome shouldNotBe Outcome.Done
         d.declareBlockers(d.player2, mapOf(blocker to listOf(attacker))).error shouldBe null
     }
 
@@ -52,7 +54,7 @@ class HuntDownScenarioTest : FunSpec({
         d.state.projectedState.isCreature(blocker) shouldBe true
         d.hunt(blocker, attacker)
         d.attack(attacker)
-        d.declareBlockers(d.player2, emptyMap()).isSuccess shouldBe false
+        d.declareBlockers(d.player2, emptyMap()).outcome shouldNotBe Outcome.Done
         d.declareBlockers(d.player2, mapOf(blocker to listOf(attacker))).error shouldBe null
     }
 

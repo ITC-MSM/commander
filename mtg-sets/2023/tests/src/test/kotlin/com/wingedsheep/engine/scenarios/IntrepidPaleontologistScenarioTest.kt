@@ -19,6 +19,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Intrepid Paleontologist (LCI #193):
@@ -94,7 +95,7 @@ class IntrepidPaleontologistScenarioTest : FunSpec({
 
         // Cast Colossadactyl ({2}{G}{G}) from exile via the granted permission.
         driver.giveMana(you, Color.GREEN, 4)
-        driver.castSpell(you, dino).isSuccess shouldBe true
+        driver.castSpell(you, dino).outcome shouldBe Outcome.Done
 
         // Resolve it onto the battlefield.
         var guard = 0
@@ -133,6 +134,6 @@ class IntrepidPaleontologistScenarioTest : FunSpec({
 
         // No permission to cast a non-Dinosaur from the linked exile.
         driver.giveMana(you, Color.GREEN, 2)
-        driver.castSpell(you, bears).isSuccess shouldBe false
+        driver.castSpell(you, bears).outcome shouldNotBe Outcome.Done
     }
 })

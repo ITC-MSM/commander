@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.effects.StormCopyEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * What counts toward Storm's copy count. Per CR 702.40a Storm copies the spell
@@ -34,7 +35,7 @@ class StormCountedSpellsInclusionTest : FunSpec({
 
         driver.putLandOnBattlefield(caster, "Mountain")
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
-        driver.castSpell(caster, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
 
         // Lightning Bolt is on the stack, not yet resolved — spellsCastThisTurn already reflects it.
         driver.state.spellsCastThisTurn shouldBe 1
@@ -51,14 +52,14 @@ class StormCountedSpellsInclusionTest : FunSpec({
 
         // Play a land (not a cast).
         val landInHand = driver.putCardInHand(caster, "Swamp")
-        driver.submit(PlayLand(caster, landInHand)).isSuccess shouldBe true
+        driver.submit(PlayLand(caster, landInHand)).outcome shouldBe Outcome.Done
         driver.state.spellsCastThisTurn shouldBe 0
 
         // Ensure we have enough mana for Tendrils (2BB).
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
 
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val stormTriggers = driver.state.stack.mapNotNull {
             driver.state.getEntity(it)?.get<TriggeredAbilityOnStackComponent>()

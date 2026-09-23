@@ -14,6 +14,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Cid, Timeless Artificer (FIN) — {2}{W}{U} Legendary Creature — Human Artificer 4/4.
@@ -103,7 +104,7 @@ class CidTimelessArtificerScenarioTest : FunSpec({
         driver.giveMana(me, Color.BLUE, 1)
 
         val handBefore = driver.getHandSize(me)
-        driver.submit(CycleCard(playerId = me, cardId = cid)).isSuccess shouldBe true
+        driver.submit(CycleCard(playerId = me, cardId = cid)).outcome shouldBe Outcome.Done
         driver.bothPass() // cycling ability resolves: draw a card
 
         withClue("Cid is discarded to the graveyard and a replacement card is drawn (net hand unchanged)") {

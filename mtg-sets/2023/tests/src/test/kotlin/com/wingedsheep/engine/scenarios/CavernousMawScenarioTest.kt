@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Cavernous Maw (LCI #270).
@@ -45,7 +46,7 @@ class CavernousMawScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 2)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = maw, abilityId = animateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 

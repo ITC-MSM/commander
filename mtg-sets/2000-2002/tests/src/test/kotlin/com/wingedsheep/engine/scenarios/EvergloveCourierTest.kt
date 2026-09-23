@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the Everglove Courier card and the MAY_NOT_UNTAP / WhileSourceTapped mechanics.
@@ -78,7 +79,7 @@ class EvergloveCourierTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(elf))
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         // Let the ability resolve
         driver.bothPass()

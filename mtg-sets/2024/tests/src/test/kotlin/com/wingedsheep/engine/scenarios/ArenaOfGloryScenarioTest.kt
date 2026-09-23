@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Arena of Glory (MH3) — proves the two genuinely new pieces this land needed: the Exert cost
@@ -63,7 +64,7 @@ class ArenaOfGloryScenarioTest : FunSpec({
         // Enters-tapped replacement effects only apply through the real PlayLand pipeline —
         // putLandOnBattlefield bypasses it entirely (mirrors TdmCheckLandsScenarioTest).
         val noMountain = d.putCardInHand(active, "Arena of Glory")
-        d.playLand(active, noMountain).isSuccess shouldBe true
+        d.playLand(active, noMountain).outcome shouldBe Outcome.Done
         d.state.getEntity(noMountain)?.has<TappedComponent>() shouldBe true
     }
 
@@ -75,7 +76,7 @@ class ArenaOfGloryScenarioTest : FunSpec({
 
         d.putLandOnBattlefield(active, "Mountain")
         val withMountain = d.putCardInHand(active, "Arena of Glory")
-        d.playLand(active, withMountain).isSuccess shouldBe true
+        d.playLand(active, withMountain).outcome shouldBe Outcome.Done
         d.state.getEntity(withMountain)?.has<TappedComponent>() shouldBe false
     }
 

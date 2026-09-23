@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Mechanical Mobster (SPM #168) — {3} Artifact Creature — Human Robot Villain 2/1.
@@ -69,7 +70,7 @@ class MechanicalMobsterScenarioTest : FunSpec({
                 cardId = mobster,
                 paymentStrategy = PaymentStrategy.AutoPay,
             ),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass() // resolve the creature; the ETB trigger goes on the stack and wants targets
 
         // One decision covers both requirements: index 0 = graveyard exile, index 1 = connive target.

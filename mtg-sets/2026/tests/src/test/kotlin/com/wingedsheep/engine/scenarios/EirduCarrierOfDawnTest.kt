@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * End-to-end scenario tests for Eirdu, Carrier of Dawn // Isilu, Carrier of Twilight.
@@ -113,7 +114,7 @@ class EirduCarrierOfDawnTest : FunSpec({
 
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
         driver.giveMana(caster, Color.RED, 1)
-        driver.castSpell(caster, bolt, listOf(bears)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(bears)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lightning Bolt; persist trigger goes on the stack
         driver.bothPass() // resolve persist
 

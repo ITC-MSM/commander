@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Irascible Wolverine (OTJ #130) — {2}{R} Wolverine, 3/2, Plot {2}{R}.
@@ -36,7 +37,7 @@ class IrascibleWolverineScenarioTest : FunSpec({
         val wolverine = driver.putCardInHand(p1, "Irascible Wolverine")
         driver.giveMana(p1, Color.RED, 3) // {2}{R}
 
-        driver.castSpell(p1, wolverine).isSuccess shouldBe true
+        driver.castSpell(p1, wolverine).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the spell (Wolverine enters)
         if (driver.stackSize > 0) driver.bothPass() // resolve the ETB trigger
 
@@ -46,7 +47,7 @@ class IrascibleWolverineScenarioTest : FunSpec({
         driver.state.mayPlayPermissions.any { exiled in it.cardIds } shouldBe true
 
         // And it can actually be played from exile this turn.
-        driver.playLand(p1, exiled).isSuccess shouldBe true
+        driver.playLand(p1, exiled).outcome shouldBe Outcome.Done
         driver.getExile(p1).contains(exiled) shouldBe false
     }
 
@@ -60,7 +61,7 @@ class IrascibleWolverineScenarioTest : FunSpec({
         val wolverine = driver.putCardInHand(p1, "Irascible Wolverine")
         driver.giveMana(p1, Color.RED, 3)
 
-        driver.castSpell(p1, wolverine).isSuccess shouldBe true
+        driver.castSpell(p1, wolverine).outcome shouldBe Outcome.Done
         driver.bothPass()
         if (driver.stackSize > 0) driver.bothPass()
 

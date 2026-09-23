@@ -145,7 +145,7 @@ class SourceZoneIdentityTest : FunSpec({
         val source = d.putCreatureOnBattlefield(d.player1, "Grizzly Bears")
         val ref = d.state.objectRef(source)!!
         val context = EffectContext(sourceId = null, controllerId = d.player2,
-            triggeringEntityId = source, triggeringPlayerId = d.player1, triggerLastKnownPower = 7,
+            triggeringEntityId = source, triggeringPlayerId = d.player1, triggerContext = com.wingedsheep.engine.event.TriggerContext(lastKnownPower = 7),
             objectReferences = ObjectReferenceEnvironment(captured = true, triggering = ref))
         move(d, source, Zone.BATTLEFIELD, Zone.EXILE)
         val current = context.withCurrentObjectReferences(d.state)
@@ -430,7 +430,7 @@ class SourceZoneIdentityTest : FunSpec({
         val trigger = d.state.getEntity(d.state.stack.last())!!
             .get<com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent>()!!
         trigger.objectReferences.triggering shouldBe stackSpell
-        trigger.triggeringPlayerId shouldBe d.player1
+        trigger.triggerContext?.triggeringPlayerId shouldBe d.player1
         EffectContext(sourceId = trigger.sourceId, controllerId = d.player2, triggeringEntityId = bolt,
             objectReferences = trigger.objectReferences).resolveTarget(EffectTarget.TriggeringEntity, d.state) shouldBe null
         (bolt in d.state.getZone(ZoneKey(d.player2, Zone.GRAVEYARD))) shouldBe true

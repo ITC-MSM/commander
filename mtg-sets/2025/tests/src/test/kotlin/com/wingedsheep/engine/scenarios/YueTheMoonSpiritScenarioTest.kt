@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Yue, the Moon Spirit.
@@ -56,7 +57,7 @@ class YueTheMoonSpiritScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = yue, abilityId = abilityId),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // The ability is on the stack — both players pass so it resolves, then it pauses to
         // choose the noncreature spell to free-cast.
@@ -83,7 +84,7 @@ class YueTheMoonSpiritScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = yue, abilityId = abilityId),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve the ability off the stack, then decline the optional cast (choose nothing).
         driver.passPriority(player)

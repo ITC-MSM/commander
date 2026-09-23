@@ -23,6 +23,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.util.UUID
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Mistform Mutant.
@@ -88,7 +89,7 @@ class MistformMutantTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(bear))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Both pass to resolve the ability
         driver.bothPass()
@@ -166,7 +167,7 @@ class MistformMutantTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(opponentBear))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the ability
         driver.bothPass()

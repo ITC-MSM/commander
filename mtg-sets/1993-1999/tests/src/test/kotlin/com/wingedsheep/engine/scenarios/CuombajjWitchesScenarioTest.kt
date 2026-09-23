@@ -17,6 +17,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Cuombajj Witches (ARN):
@@ -229,7 +230,7 @@ class CuombajjWitchesScenarioTest : ScenarioTestBase() {
                     )
                 )
 
-                activation.isPaused shouldBe true
+                (activation.outcome is Outcome.Paused) shouldBe true
                 val opponentChoice = driver.pendingDecision.shouldBeInstanceOf<ChooseOptionDecision>()
                 opponentChoice.playerId shouldBe controller
                 opponentChoice.options shouldBe listOf("Player 2", "Player 3")

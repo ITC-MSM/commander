@@ -14,6 +14,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Deconstruction Hammer (LCI #9) — {W} Artifact — Equipment.
@@ -60,7 +61,7 @@ class DeconstructionHammerScenarioTest : FunSpec({
                 abilityId = equipAbilityId,
                 targets = listOf(ChosenTarget.Permanent(bear))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         d.state.getEntity(attachedHammer)?.get<AttachedToComponent>()?.targetId shouldBe bear
 
@@ -75,7 +76,7 @@ class DeconstructionHammerScenarioTest : FunSpec({
                 abilityId = grantedAbilityId,
                 targets = listOf(ChosenTarget.Permanent(victim))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         var guard = 0
         while (d.state.stack.isNotEmpty() && d.pendingDecision == null && guard++ < 20) d.bothPass()
 

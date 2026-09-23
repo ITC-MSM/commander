@@ -126,7 +126,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             if (context.cantCastSpell(cardId)) continue
 
             val castRestrictions = cardDef.script.castRestrictions
-            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+            if (!context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
             val effectiveCost = context.costCalculator.calculateEffectiveCost(
                 state, cardDef, playerId, fromZone = Zone.COMMAND,
@@ -262,7 +262,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             if (isInstant || context.canPlaySorcerySpeed) {
                 // Check cast restrictions
                 val castRestrictions = topCardDef?.script?.castRestrictions ?: emptyList()
-                if (context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) {
+                if (context.legality.castRestrictionsMet(state, playerId, castRestrictions)) {
                     // Gwenom: a spell cast from the top under a PlayFromTopWithAlternativeCost
                     // permission pays no mana and instead pays life equal to its mana value.
                     val topAltCost = context.castPermissionUtils.playFromTopAlternativeCost(state, playerId)
@@ -489,7 +489,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     val grantsFlashTiming = permissions.any { it.asThoughFlash }
                     val hasCorrectTiming = isInstant || grantsFlashTiming || context.canPlaySorcerySpeed
                     val castRestrictions = effectiveScript?.castRestrictions ?: emptyList()
-                    val meetsRestrictions = context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)
+                    val meetsRestrictions = context.legality.castRestrictionsMet(state, playerId, castRestrictions)
                     val baseEffectiveCost = if (cardDef != null && prepareFace != null) {
                         context.costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, prepareFace.manaCost, playerId)
                     } else if (cardDef != null) {
@@ -780,35 +780,11 @@ class CastFromZoneEnumerator : ActionEnumerator {
         val state = context.state
         val playerId = context.playerId
 
-        for (entityId in state.getBattlefield()) {
-            val container = state.getEntity(entityId) ?: continue
-            val controller = container.get<ControllerComponent>()?.playerId ?: continue
-            if (controller != playerId) continue
-            val linked = container.get<LinkedExileComponent>() ?: continue
-            val entityCard = container.get<CardComponent>() ?: continue
-            val cardDef = context.cardRegistry.getCard(entityCard.cardDefinitionId) ?: continue
-            val grantAbility = cardDef.script.staticAbilities
-                .filterIsInstance<GrantMayCastFromLinkedExile>()
-                .firstOrNull() ?: continue
-
-            // Timing restriction — e.g. Dawnhand Dissident's "during your turn"
-            if (grantAbility.duringYourTurnOnly && !state.isActiveTurnFor(playerId)) continue
-
-            // Once-per-turn restriction (Maralen, Fae Ascendant) — skip the granter entirely
-            // once it's already been used this turn.
-            if (grantAbility.oncePerTurn &&
-                container.get<com.wingedsheep.engine.state.components.battlefield.MayCastFromLinkedExileUsedThisTurnComponent>() != null
-            ) continue
-
-            // Resolve dynamic mana-value cap (e.g. "spell with mana value ≤ number of Elves
-            // and Faeries you control"). Computed once per granter.
-            val maxManaValueCap: Int? = grantAbility.maxManaValue?.let { amount ->
-                val effectContext = com.wingedsheep.engine.handlers.EffectContext(
-                    sourceId = entityId,
-                    controllerId = playerId,
-                )
-                com.wingedsheep.engine.handlers.DynamicAmountEvaluator().evaluate(state, amount, effectContext)
-            }
+        // Which permanents grant, and which of their exiled cards they admit, is the legality
+        // kernel's answer — the same one CastSpellHandler and the client view read.
+        for (granter in context.legality.linkedExileGranters(state, playerId)) {
+            val entityId = granter.granterId
+            val grantAbility = granter.ability
 
             // Pre-compute additional-cost affordability for the granter's optional
             // additional cost (e.g. "remove three counters from your creatures").
@@ -816,7 +792,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 state, playerId, grantAbility.additionalCost, context.costUtils
             )
 
-            for (exiledId in linked.exiledIds) {
+            for (exiledId in granter.exiledIds) {
                 // Skip if already handled by a direct MayPlayPermission — but only when its
                 // gate is open. A closed conditional gate must fall through so the linked-exile
                 // path remains a viable independent permission source.
@@ -824,25 +800,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 if (state.hasMayPlayFor(exiledId, playerId, context.conditionEvaluator, context.cardRegistry)) continue
                 val exiledCard = exiledContainer.get<CardComponent>() ?: continue
 
-                // Ownership restriction — "cards you own exiled with this creature"
-                if (grantAbility.ownedByYou && exiledCard.ownerId != playerId) continue
-
-                // "exiled with this permanent this turn" gating (Maralen, Fae Ascendant)
-                if (grantAbility.exiledThisTurnOnly) {
-                    val turn = exiledContainer.get<com.wingedsheep.engine.state.components.battlefield.ExileEntryTurnComponent>()?.turnNumber
-                    if (turn == null || turn != state.turnNumber) continue
-                }
-
-                // Mana-value cap (Maralen)
-                if (maxManaValueCap != null && exiledCard.manaCost.cmc > maxManaValueCap) continue
-
-                // Check filter (e.g., nonland, or "Dinosaur creature" for Intrepid
-                // Paleontologist). Delegate to the shared matcher so legal-action
-                // enumeration and cast-time validation (CastZoneResolver.matchesCardFilter)
-                // agree on subtype/type gating.
-                val passesFilter = com.wingedsheep.engine.handlers.actions.spell.CastZoneResolver
-                    .matchesCardFilter(exiledCard, grantAbility.filter)
-                if (!passesFilter) continue
+                // Ownership, "exiled this turn", mana-value cap and card filter.
+                if (!context.legality.linkedExileAdmits(state, playerId, granter, exiledId)) continue
 
                 // Verify card is actually in exile
                 val inExile = state.turnOrder.any { pid -> exiledId in state.getZone(ZoneKey(pid, Zone.EXILE)) }
@@ -869,7 +828,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     val isInstant = exiledCard.typeLine.isInstant
                     val hasCorrectTiming = isInstant || context.canPlaySorcerySpeed
                     val castRestrictions = exiledCardDef?.script?.castRestrictions ?: emptyList()
-                    val meetsRestrictions = context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)
+                    val meetsRestrictions = context.legality.castRestrictionsMet(state, playerId, castRestrictions)
                     val freeCastFromGranter = grantAbility.withoutPayingManaCost
                     val costString = if (freeCastFromGranter) "0" else run {
                         val effectiveCost = if (exiledCardDef != null) {
@@ -1082,7 +1041,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     val isInstant = cardComponent.typeLine.isInstant
                     val hasCorrectTiming = isInstant || context.canPlaySorcerySpeed
                     val castRestrictions = cardDef.script.castRestrictions
-                    val meetsRestrictions = context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)
+                    val meetsRestrictions = context.legality.castRestrictionsMet(state, playerId, castRestrictions)
                     val effectiveCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId, fromZone = zone)
                     val costString = effectiveCost.toString()
                     val canAfford = context.manaSolver.canPay(state, playerId, effectiveCost, precomputedSources = context.availableManaSources)
@@ -1197,7 +1156,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 val isInstant = cardComponent.typeLine.isInstant
                 val hasCorrectTiming = isInstant || context.canPlaySorcerySpeed
                 val castRestrictions = cardDef.script.castRestrictions
-                val meetsRestrictions = context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)
+                val meetsRestrictions = context.legality.castRestrictionsMet(state, playerId, castRestrictions)
                 val effectiveCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId, fromZone = Zone.GRAVEYARD)
                 val costString = effectiveCost.toString()
                 val canAfford = context.manaSolver.canPay(state, playerId, effectiveCost, precomputedSources = context.availableManaSources)
@@ -1304,7 +1263,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
 
             // Check cast restrictions
             val castRestrictions = cardDef.script.castRestrictions
-            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+            if (!context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
             // Calculate effective flashback cost (applying cost reductions/increases)
             val effectiveCost = context.costCalculator.calculateEffectiveCostWithAlternativeBase(
@@ -1459,7 +1418,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             }
 
             val castRestrictions = cardDef.script.castRestrictions
-            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+            if (!context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
             val effectiveCost = context.costCalculator.calculateEffectiveCostWithAlternativeBase(
                 state, cardDef, mayhem.cost, playerId
@@ -1593,7 +1552,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
 
             // Cast restrictions are a property of the whole card, so they are read from the front
             // face's script exactly as a normal cast of this card would.
-            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, cardDef.script.castRestrictions)) continue
+            if (!context.legality.castRestrictionsMet(state, playerId, cardDef.script.castRestrictions)) continue
 
             val effectiveCost = context.costCalculator.calculateEffectiveCostWithAlternativeBase(
                 state, cardDef, disturb.cost, playerId
@@ -1710,7 +1669,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             }
 
             val castRestrictions = cardDef.script.castRestrictions
-            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+            if (!context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
             val effectiveCost = context.costCalculator.calculateEffectiveCostWithAlternativeBase(
                 state, cardDef, harmonize.cost, playerId
@@ -1866,7 +1825,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
 
             // Check cast restrictions
             val castRestrictions = cardDef.script.castRestrictions
-            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+            if (!context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
             // A warp card can always be cast two ways — its normal cost or its warp cost — and
             // which to use is the caster's choice (CR 118.9a). Surface both in the action window
@@ -2031,7 +1990,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             }
 
             val castRestrictions = cardDef.script.castRestrictions
-            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+            if (!context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
             // A dash card can always be cast two ways — its normal cost or its dash cost — and
             // which to use is the caster's choice (CR 118.9a / 601.2b). Surface both in the
@@ -2194,7 +2153,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             if (!context.canPlaySorcerySpeed) continue
 
             val castRestrictions = cardDef.script.castRestrictions
-            val meetsRestrictions = context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)
+            val meetsRestrictions = context.legality.castRestrictionsMet(state, playerId, castRestrictions)
             if (!meetsRestrictions) continue
 
             val effectiveCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
@@ -2391,7 +2350,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
 
                 // Check cast restrictions
                 val castRestrictions = cardDef.script.castRestrictions
-                if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+                if (!context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
                 // Check life affordability (only when there is a life cost)
                 if (lifeCost > 0) {

@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ascendant Packleader (VOW #186) — {G} Creature — Wolf, 2/1.
@@ -47,7 +48,7 @@ class AscendantPackleaderScenarioTest : FunSpec({
 
         val packleader = driver.putCardInHand(player, "Ascendant Packleader")
         driver.giveMana(player, Color.GREEN, 1)
-        driver.castSpell(player, packleader).isSuccess shouldBe true
+        driver.castSpell(player, packleader).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve → enters the battlefield
 
         // 2/1 base + a +1/+1 counter = 3/2.
@@ -64,7 +65,7 @@ class AscendantPackleaderScenarioTest : FunSpec({
 
         val packleader = driver.putCardInHand(player, "Ascendant Packleader")
         driver.giveMana(player, Color.GREEN, 1)
-        driver.castSpell(player, packleader).isSuccess shouldBe true
+        driver.castSpell(player, packleader).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.power(packleader) shouldBe 2
@@ -82,7 +83,7 @@ class AscendantPackleaderScenarioTest : FunSpec({
         // Cast Force of Nature (mana value 5) — the cast trigger fires.
         val force = driver.putCardInHand(player, "Force of Nature")
         driver.giveMana(player, Color.GREEN, 5)
-        driver.castSpell(player, force).isSuccess shouldBe true
+        driver.castSpell(player, force).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the trigger (and the spell)
 
         driver.power(packleader) shouldBe 3
@@ -98,7 +99,7 @@ class AscendantPackleaderScenarioTest : FunSpec({
         // Grizzly Bears is mana value 2 — below the threshold, so no trigger.
         val bears = driver.putCardInHand(player, "Grizzly Bears")
         driver.giveMana(player, Color.GREEN, 2)
-        driver.castSpell(player, bears).isSuccess shouldBe true
+        driver.castSpell(player, bears).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.power(packleader) shouldBe 2

@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Leyline of the Void (Guildpact #52):
@@ -48,7 +49,7 @@ class LeylineOfTheVoidScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // Bolt resolves, deals 3 to the 1/1 — it would die into the opp's graveyard
 
         driver.getGraveyard(opp) shouldNotContain victim
@@ -63,7 +64,7 @@ class LeylineOfTheVoidScenarioTest : FunSpec({
         driver.putPermanentOnBattlefield(you, "Leyline of the Void")
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, targets = listOf(you)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, targets = listOf(you)).outcome shouldBe Outcome.Done
         driver.bothPass() // Bolt resolves and heads to its owner's (your) graveyard
 
         // Your own card lands in your graveyard normally — Leyline only hits opponents.

@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Wave of Indifference.
@@ -74,7 +76,7 @@ class WaveOfIndifferenceTest : FunSpec({
         val waveCard = driver.findCardInHand(driver.player1, "Wave of Indifference")
             ?: driver.putCardInHand(driver.player1, "Wave of Indifference")
         val castResult = driver.castXSpell(driver.player1, waveCard, xValue = 1, targets = listOf(blocker))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Advance to combat
         driver.advanceToPlayer1DeclareAttackers()
@@ -82,7 +84,7 @@ class WaveOfIndifferenceTest : FunSpec({
 
         // Declare attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(attacker), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
@@ -91,7 +93,7 @@ class WaveOfIndifferenceTest : FunSpec({
         val blockResult = driver.submitExpectFailure(
             DeclareBlockers(driver.player2, mapOf(blocker to listOf(attacker)))
         )
-        blockResult.isSuccess shouldBe false
+        blockResult.outcome shouldNotBe Outcome.Done
         blockResult.error shouldContainIgnoringCase "can't block"
     }
 
@@ -116,19 +118,19 @@ class WaveOfIndifferenceTest : FunSpec({
         val waveCard = driver.findCardInHand(driver.player1, "Wave of Indifference")
             ?: driver.putCardInHand(driver.player1, "Wave of Indifference")
         val castResult = driver.castXSpell(driver.player1, waveCard, xValue = 1, targets = listOf(targetedBlocker))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Advance to combat
         driver.advanceToPlayer1DeclareAttackers()
         val attackResult = driver.declareAttackers(driver.player1, listOf(attacker), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
         // Free blocker should be able to block
         val blockResult = driver.declareBlockers(driver.player2, mapOf(freeBlocker to listOf(attacker)))
-        blockResult.isSuccess shouldBe true
+        blockResult.outcome shouldBe Outcome.Done
     }
 
     test("Wave of Indifference with X=2 prevents two creatures from blocking") {
@@ -154,7 +156,7 @@ class WaveOfIndifferenceTest : FunSpec({
             driver.player1, waveCard, xValue = 2,
             targets = listOf(blocker1, blocker2)
         )
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.advanceToPlayer1DeclareAttackers()
         val attackResult = driver.declareAttackers(
@@ -162,7 +164,7 @@ class WaveOfIndifferenceTest : FunSpec({
             listOf(attacker1, attacker2),
             driver.player2
         )
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
@@ -171,7 +173,7 @@ class WaveOfIndifferenceTest : FunSpec({
         val blockResult1 = driver.submitExpectFailure(
             DeclareBlockers(driver.player2, mapOf(blocker1 to listOf(attacker1)))
         )
-        blockResult1.isSuccess shouldBe false
+        blockResult1.outcome shouldNotBe Outcome.Done
         blockResult1.error shouldContainIgnoringCase "can't block"
     }
 })

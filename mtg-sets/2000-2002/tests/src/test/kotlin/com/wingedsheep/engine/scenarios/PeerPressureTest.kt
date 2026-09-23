@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Peer Pressure.
@@ -61,7 +62,7 @@ class PeerPressureTest : FunSpec({
         driver.giveMana(caster, Color.BLUE, 1)
         driver.giveMana(caster, Color.BLUE, 3) // generic mana via blue
         val castResult = driver.castSpell(caster, cardId)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell (opponent passes priority)
         driver.bothPass()

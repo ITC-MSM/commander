@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Imprisoned in the Moon
@@ -95,7 +96,7 @@ class ImprisonedInTheMoonScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = player, sourceId = ragavan, abilityId = manaAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.isTapped(ragavan) shouldBe true
         val pool = driver.state.getEntity(player)?.get<ManaPoolComponent>()
@@ -133,7 +134,7 @@ class ImprisonedInTheMoonScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = forest, abilityId = manaAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(player)?.get<ManaPoolComponent>()
         pool?.colorless shouldBe 1

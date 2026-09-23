@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Biorhythm.
@@ -46,7 +47,7 @@ class BiorhythmTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 8)
 
         val castResult = driver.castSpell(activePlayer, biorhythm)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

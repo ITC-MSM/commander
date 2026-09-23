@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Reproduction for manually tapping Lilypad Village to cast Druid of the Spade.
@@ -54,7 +55,7 @@ class LilypadVillageManualTapTest : FunSpec({
                 paymentStrategy = PaymentStrategy.Explicit(listOf(forest1, forest2, lilypad))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("Manual FromPool: tap two Forests and Lilypad's creature-only {U}, then cast Druid of the Spade") {
@@ -74,9 +75,9 @@ class LilypadVillageManualTapTest : FunSpec({
         val forestAbility = driver.cardRegistry.requireCard("Forest").activatedAbilities[0].id
         val lilypadCreatureOnlyAbility = LilypadVillage.activatedAbilities[1].id
 
-        driver.submit(ActivateAbility(activePlayer, forest1, forestAbility)).isSuccess shouldBe true
-        driver.submit(ActivateAbility(activePlayer, forest2, forestAbility)).isSuccess shouldBe true
-        driver.submit(ActivateAbility(activePlayer, lilypad, lilypadCreatureOnlyAbility)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(activePlayer, forest1, forestAbility)).outcome shouldBe Outcome.Done
+        driver.submit(ActivateAbility(activePlayer, forest2, forestAbility)).outcome shouldBe Outcome.Done
+        driver.submit(ActivateAbility(activePlayer, lilypad, lilypadCreatureOnlyAbility)).outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
         pool!!.green shouldBe 2
@@ -91,6 +92,6 @@ class LilypadVillageManualTapTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

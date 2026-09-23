@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.core.Step
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Clockwork Avian's refill ability (ATQ #45).
@@ -48,7 +49,7 @@ class ClockworkAvianActivatedAbilityScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 2)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = avian, abilityId = refillAbilityId, xValue = 2)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         plusOneZero(driver, avian) shouldBe 3 // 1 + min(2, 4-1) = 1 + 2
@@ -66,7 +67,7 @@ class ClockworkAvianActivatedAbilityScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 5)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = avian, abilityId = refillAbilityId, xValue = 5)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         plusOneZero(driver, avian) shouldBe 4 // capped at four total, NOT 2 + 5 = 7

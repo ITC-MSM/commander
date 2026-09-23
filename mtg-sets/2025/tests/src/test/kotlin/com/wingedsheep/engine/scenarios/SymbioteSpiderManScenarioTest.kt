@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Symbiote Spider-Man — {2}{U/B} Legendary Creature — Symbiote Spider Hero (2/4).
@@ -100,7 +101,7 @@ class SymbioteSpiderManScenarioTest : FunSpec({
                 abilityId = findNewHost,
                 targets = listOf(ChosenTarget.Permanent(host))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Symbiote exiled from the graveyard; host got a +1/+1 counter (now 4/4).

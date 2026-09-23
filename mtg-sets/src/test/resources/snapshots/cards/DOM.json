@@ -816,7 +816,8 @@
                 "amountPerAttacker": {
                     "type": "Fixed",
                     "amount": 1
-                }
+                },
+                "coversPlaneswalkers": true
             }
         ]
     },

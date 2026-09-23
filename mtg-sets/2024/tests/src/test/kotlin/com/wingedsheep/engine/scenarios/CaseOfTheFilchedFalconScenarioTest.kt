@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Case of the Filched Falcon — {U} Enchantment — Case.
@@ -50,7 +51,7 @@ class CaseOfTheFilchedFalconScenarioTest : FunSpec({
         val driver = newDriver()
         val card = driver.putCardInHand(driver.player1, "Case of the Filched Falcon")
         driver.giveMana(driver.player1, Color.BLUE, 1)
-        driver.castSpell(driver.player1, card).isSuccess shouldBe true
+        driver.castSpell(driver.player1, card).outcome shouldBe Outcome.Done
         driver.bothPass() // Case resolves, enters trigger on the stack
         driver.bothPass() // trigger resolves
 

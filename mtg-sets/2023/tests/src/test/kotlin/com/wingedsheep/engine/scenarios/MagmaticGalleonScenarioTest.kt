@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Magmatic Galleon (LCI #157) — {3}{R}{R} Artifact — Vehicle, 5/5, Crew 2.
@@ -117,7 +118,7 @@ class MagmaticGalleonScenarioTest : FunSpec({
         // Resolve the Galleon; its ETB trigger goes on the stack and asks for a target.
         var guard = 0
         while (driver.pendingDecision == null && guard++ < 20) driver.bothPass()
-        driver.submitTargetSelection(active, listOf(bear)).isSuccess shouldBe true
+        driver.submitTargetSelection(active, listOf(bear)).outcome shouldBe Outcome.Done
 
         // Resolve the ETB damage (kills the bear with 3 excess) and the resulting Treasure trigger.
         driver.drainStack()
@@ -140,7 +141,7 @@ class MagmaticGalleonScenarioTest : FunSpec({
 
         var guard = 0
         while (driver.pendingDecision == null && guard++ < 20) driver.bothPass()
-        driver.submitTargetSelection(active, listOf(wall)).isSuccess shouldBe true
+        driver.submitTargetSelection(active, listOf(wall)).outcome shouldBe Outcome.Done
         driver.drainStack()
 
         // 5 damage to a 5-toughness creature = exactly lethal, 0 excess → requireExcess gate blocks.

@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 class WarpMechanicTest : FunSpec({
 
@@ -89,7 +90,7 @@ class WarpMechanicTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 1
     }
 
@@ -186,7 +187,7 @@ class WarpMechanicTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(warped)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val returned = driver.findPermanent(player, "Warp Test Creature")
@@ -246,7 +247,7 @@ class WarpMechanicTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.findPermanent(player, "Warp Test Creature") shouldNotBe null
@@ -509,7 +510,7 @@ class WarpMechanicTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        recastResult.isSuccess shouldBe true
+        recastResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val permanent = driver.findPermanent(player, "Warp Test Creature")
@@ -578,7 +579,7 @@ class WarpMechanicTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val permanent = driver.findPermanent(player, "Warp X Creature")

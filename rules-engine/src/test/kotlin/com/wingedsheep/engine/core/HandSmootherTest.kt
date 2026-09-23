@@ -419,7 +419,7 @@ class HandSmootherTest : FunSpec({
 
             // Take a mulligan
             val mulliganResult = processor.process(result.state, TakeMulligan(player1)).result
-            mulliganResult.isSuccess shouldBe true
+            mulliganResult.outcome shouldBe Outcome.Done
 
             // New hand should have 7 cards (will need to bottom 1 after keeping)
             val newHand = mulliganResult.state.getHand(player1)

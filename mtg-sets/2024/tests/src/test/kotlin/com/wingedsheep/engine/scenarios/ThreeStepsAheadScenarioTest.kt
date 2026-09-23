@@ -13,6 +13,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Three Steps Ahead — {U} Instant, Spree
@@ -56,7 +58,7 @@ class ThreeStepsAheadScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Spell(boltOnStack))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.isPaused shouldBe false
@@ -83,7 +85,7 @@ class ThreeStepsAheadScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(bear))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.isPaused shouldBe false
@@ -113,7 +115,7 @@ class ThreeStepsAheadScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(emptyList()),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.bothPass()
         // The discard may pause for a selection if hand has >1 card.
@@ -143,6 +145,6 @@ class ThreeStepsAheadScenarioTest : FunSpec({
                 chosenModes = emptyList(),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Thrill of Possibility {1}{R} Instant (ELD canonical; reprinted in FDN).
@@ -47,7 +49,7 @@ class ThrillOfPossibilityScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // The discarded card is in the graveyard immediately (paid as a cost).
         driver.getGraveyardCardNames(me) shouldContain "Mountain"
@@ -74,6 +76,6 @@ class ThrillOfPossibilityScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

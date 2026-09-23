@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Svogthos, the Restless Tomb (RAV #283) — "{3}{B}{G}: Until end of turn, this land becomes a black
@@ -42,7 +43,7 @@ class SvogthosTheRestlessTombScenarioTest : FunSpec({
         giveMana(player, Color.BLACK, 1)
         giveMana(player, Color.GREEN, 1)
         submit(ActivateAbility(playerId = player, sourceId = land, abilityId = animateAbility))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && guard++ < 20) bothPass()
     }

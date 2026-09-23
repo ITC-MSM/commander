@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dryad Arbor (FUT #174) — Land Creature — Forest Dryad, 1/1.
@@ -82,7 +83,7 @@ class DryadArborScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = me, sourceId = arbor, abilityId = manaAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.isTapped(arbor) shouldBe true
         driver.state.getEntity(me)?.get<ManaPoolComponent>()?.green shouldBe 1
     }

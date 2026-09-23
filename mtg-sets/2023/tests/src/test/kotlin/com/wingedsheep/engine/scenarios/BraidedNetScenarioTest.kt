@@ -30,6 +30,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Braided Net // Braided Quipu (LCI #47).
@@ -250,7 +252,7 @@ class BraidedNetScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(creature))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     // NOTE: over-count material rejection ("exactly one" craft supplied two artifacts) is

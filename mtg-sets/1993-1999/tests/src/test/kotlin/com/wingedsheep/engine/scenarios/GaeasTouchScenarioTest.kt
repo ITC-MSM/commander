@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Gaea's Touch — "{0}: You may put a basic Forest card from your hand onto the
@@ -45,17 +47,17 @@ class GaeasTouchScenarioTest : FunSpec({
         val landsBefore = driver.getLands(me).size
 
         driver.submit(ActivateAbility(playerId = me, sourceId = touch, abilityId = putAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         // The "you may" is a ChooseUpTo(1) selection — take the Forest.
         driver.submitCardSelection(me, listOf(driver.findCardInHand(me, "Forest")!!))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         withClue("the Forest arrived from hand") {
             driver.getLands(me).size shouldBe landsBefore + 1
         }
         withClue("and the land drop is still available — this is a put, not a play") {
-            driver.playLand(me, driver.findCardInHand(me, "Forest")!!).isSuccess shouldBe true
+            driver.playLand(me, driver.findCardInHand(me, "Forest")!!).outcome shouldBe Outcome.Done
             driver.getLands(me).size shouldBe landsBefore + 2
         }
     }
@@ -72,14 +74,14 @@ class GaeasTouchScenarioTest : FunSpec({
         driver.putCardInHand(me, "Forest")
 
         driver.submit(ActivateAbility(playerId = me, sourceId = touch, abilityId = putAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.submitCardSelection(me, listOf(driver.findCardInHand(me, "Forest")!!))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         withClue("the second activation this turn is illegal") {
             driver.submit(ActivateAbility(playerId = me, sourceId = touch, abilityId = putAbilityId))
-                .isSuccess shouldBe false
+                .outcome shouldNotBe Outcome.Done
         }
     }
 
@@ -93,7 +95,7 @@ class GaeasTouchScenarioTest : FunSpec({
         val touch = driver.putPermanentOnBattlefield(me, "Gaea's Touch")
 
         driver.submit(ActivateAbility(playerId = me, sourceId = touch, abilityId = manaAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         withClue("a mana ability resolves without the stack, and the cost ate the enchantment") {
             driver.findPermanent(me, "Gaea's Touch") shouldBe null

@@ -37,7 +37,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   - **Cave cards in your graveyard** — [DynamicAmount.Count] over [Zone.GRAVEYARD]
  *     ([GameObjectFilter.Any] with the Cave subtype, since graveyard cards aren't restricted to lands).
  * The activation-restriction check evaluates the condition with the Maw as the effect source
- * (`CastPermissionUtils.checkActivationRestriction`), so `excludeSelf` resolves against the Maw.
+ * (`LegalityKernel.activationRestrictionFailure`), so `excludeSelf` resolves against the Maw.
  */
 val CavernousMaw = card("Cavernous Maw") {
     manaCost = ""

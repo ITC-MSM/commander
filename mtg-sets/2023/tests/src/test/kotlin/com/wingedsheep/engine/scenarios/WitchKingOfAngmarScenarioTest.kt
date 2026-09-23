@@ -14,6 +14,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Witch-king of Angmar (LTR #114) — {3}{B}{B} Legendary Creature — Wraith Noble, 5/3.
@@ -53,10 +54,10 @@ class WitchKingOfAngmarScenarioTest : FunSpec({
         driver.removeSummoningSickness(giant)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(bears), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(bears), defender).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareNoBlockers(defender).isSuccess shouldBe true
+        driver.declareNoBlockers(defender).outcome shouldBe Outcome.Done
 
         // Advance through the combat-damage step: defender takes 2, the Witch-king trigger goes on
         // the stack and resolves. passPriorityUntil auto-resolves the combat-damage assignment, the
@@ -96,7 +97,7 @@ class WitchKingOfAngmarScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(discardedCards = listOf(toDiscard))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Card was discarded as the cost.

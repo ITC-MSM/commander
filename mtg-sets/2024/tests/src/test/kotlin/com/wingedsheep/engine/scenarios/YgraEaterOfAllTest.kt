@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 class YgraEaterOfAllTest : FunSpec({
 
@@ -69,7 +70,7 @@ class YgraEaterOfAllTest : FunSpec({
         val opponentBear = driver.state.getBattlefield()
             .first { it != ygra && driver.state.getEntity(it)?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.name == "Plain Bear" }
         val castResult = driver.castSpell(active, doomBlade, listOf(opponentBear))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve doom blade and the trigger
         driver.bothPass()

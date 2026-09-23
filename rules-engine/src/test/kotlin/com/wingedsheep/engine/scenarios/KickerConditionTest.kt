@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests that the WasKicked condition correctly checks a component on the permanent,
@@ -69,7 +70,7 @@ class KickerConditionTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.passPriority(p1)
@@ -116,7 +117,7 @@ class KickerConditionTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.passPriority(p1)

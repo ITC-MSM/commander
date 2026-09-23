@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Fool's Tome.
@@ -57,7 +59,7 @@ class FoolsTomeScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = tome, abilityId = abilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getHandSize(activePlayer) shouldBe 1
@@ -78,7 +80,7 @@ class FoolsTomeScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = tome, abilityId = abilityId)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("cannot activate without enough mana") {
@@ -96,6 +98,6 @@ class FoolsTomeScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = tome, abilityId = abilityId)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

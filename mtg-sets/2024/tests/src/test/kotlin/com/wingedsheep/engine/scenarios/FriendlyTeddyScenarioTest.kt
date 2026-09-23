@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Friendly Teddy (DSK #247) — {2} Artifact Creature — Bear Toy 2/2.
@@ -38,7 +39,7 @@ class FriendlyTeddyScenarioTest : FunSpec({
         // Destroy the Teddy via a Lightning Bolt to the face... actually bolt the 2/2 directly.
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpell(player, bolt, targets = listOf(teddy)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, targets = listOf(teddy)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the bolt — Teddy dies, queuing the dies trigger
         driver.bothPass() // resolve the dies trigger
 

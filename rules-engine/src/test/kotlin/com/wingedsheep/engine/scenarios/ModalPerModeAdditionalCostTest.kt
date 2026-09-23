@@ -26,6 +26,8 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests H1 / H2 / H3 from [`backlog/modal-cast-time-choices-plan.md`]:
@@ -152,7 +154,7 @@ class ModalPerModeAdditionalCostTest : FunSpec({
                 chosenModes = listOf(1),
                 paymentStrategy = com.wingedsheep.engine.core.PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         d.bothPass()
 
@@ -180,7 +182,7 @@ class ModalPerModeAdditionalCostTest : FunSpec({
         )
 
         // Cast must not succeed — insufficient mana after adding mode 1's {1}.
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("H2 — mode with SacrificePermanent additional cost forces the creature into the graveyard") {
@@ -206,7 +208,7 @@ class ModalPerModeAdditionalCostTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(sacrificedPermanents = listOf(sacrifice)),
                 paymentStrategy = com.wingedsheep.engine.core.PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // After validation but before resolution, the creature is sacrificed (701.16 —
         // additional costs are paid before the spell goes on the stack).
@@ -242,7 +244,7 @@ class ModalPerModeAdditionalCostTest : FunSpec({
                 chosenModes = listOf(1, 2),
                 paymentStrategy = com.wingedsheep.engine.core.PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         d.bothPass()
 
@@ -271,7 +273,7 @@ class ModalPerModeAdditionalCostTest : FunSpec({
                 paymentStrategy = com.wingedsheep.engine.core.PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("Escalate — the first chosen mode adds no mana cost") {
@@ -290,7 +292,7 @@ class ModalPerModeAdditionalCostTest : FunSpec({
                 chosenModes = listOf(0),
                 paymentStrategy = com.wingedsheep.engine.core.PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         d.state.getEntity(p1)!!.get<LifeTotalComponent>()!!.life shouldBe lifeBefore + 1
     }
@@ -312,7 +314,7 @@ class ModalPerModeAdditionalCostTest : FunSpec({
                 chosenModes = listOf(0, 1, 2),
                 paymentStrategy = com.wingedsheep.engine.core.PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         d.state.getEntity(p1)!!.get<LifeTotalComponent>()!!.life shouldBe lifeBefore
     }
@@ -333,6 +335,6 @@ class ModalPerModeAdditionalCostTest : FunSpec({
                 chosenModes = listOf(0, 1),
                 paymentStrategy = com.wingedsheep.engine.core.PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

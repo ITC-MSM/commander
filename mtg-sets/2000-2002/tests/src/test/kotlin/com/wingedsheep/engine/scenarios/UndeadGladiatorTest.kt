@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Undead Gladiator:
@@ -82,7 +84,7 @@ class UndeadGladiatorTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the ability
         driver.bothPass()
@@ -123,7 +125,7 @@ class UndeadGladiatorTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("cannot activate graveyard ability during opponent's upkeep") {
@@ -155,7 +157,7 @@ class UndeadGladiatorTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("cannot activate graveyard ability without specifying a card to discard") {
@@ -182,6 +184,6 @@ class UndeadGladiatorTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

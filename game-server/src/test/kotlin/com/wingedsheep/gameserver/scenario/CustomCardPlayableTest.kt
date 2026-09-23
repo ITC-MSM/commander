@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The claim the whole sandbox rests on: a card Argentum Assay compiled out of pasted Scryfall JSON
@@ -61,7 +62,7 @@ class CustomCardPlayableTest : FunSpec({
 
         driver.giveMana(player, Color.WHITE, 1)
         driver.giveColorlessMana(player, 2)
-        driver.castSpell(player, sentinel).isSuccess shouldBe true
+        driver.castSpell(player, sentinel).outcome shouldBe Outcome.Done
         driver.bothPass() // the creature spell resolves
 
         val permanent = driver.findPermanent(player, "Argentum Sentinel")!!

@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /** Scenario tests for Cargo Ship. */
 class CargoShipScenarioTest : FunSpec({
@@ -45,7 +46,7 @@ class CargoShipScenarioTest : FunSpec({
                 abilityId = manaAbility.id,
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.isTapped(ship) shouldBe true
     }
 })

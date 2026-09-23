@@ -13,6 +13,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dwarven Mauler (HOB #95) — "Equip abilities you activate that target this creature cost {2} less
@@ -61,7 +62,7 @@ class DwarvenMaulerScenarioTest : FunSpec({
         driver.giveColorlessMana(driver.player1, 1)
         driver.submit(
             ActivateAbility(driver.player1, blade, equipId, targets = listOf(ChosenTarget.Permanent(mauler)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("{3} reduced by the Mauler's {2} is payable with a single mana") {
@@ -92,7 +93,7 @@ class DwarvenMaulerScenarioTest : FunSpec({
         driver.giveColorlessMana(driver.player1, 2)
         driver.submit(
             ActivateAbility(driver.player1, blade, equipId, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(blade)?.get<AttachedToComponent>()?.targetId shouldBe bear
     }

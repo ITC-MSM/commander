@@ -82,11 +82,8 @@ internal object CombatDamageUtils {
 
         // CR 702.22j: the defending player divides this attacker's damage "as they choose".
         val defenderId = container.get<AttackingComponent>()?.defenderId
-        val chooser = when {
-            defenderId == null -> defaultChooser
-            state.turnOrder.contains(defenderId) -> defenderId
-            else -> projected.getController(defenderId) ?: defaultChooser
-        }
+        // A battle's defending player is its protector (CR 310.9d), not its controller.
+        val chooser = defenderId?.let { CombatDefenders.defendingPlayerOf(state, it) } ?: defaultChooser
         return DamageChooser(chooser, orderConstrained = false)
     }
 

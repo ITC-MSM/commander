@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Jennika's Technique (TMT #93) — Instant, Sneak {R}. "Deals 2 damage to each creature."
@@ -26,7 +27,7 @@ class JennikasTechniqueTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         // mana added here — unspent mana empties as each step/phase ends (CR 500.5)
         driver.giveMana(player, Color.RED, 3)
-        driver.castSpell(player, spell).isSuccess shouldBe true
+        driver.castSpell(player, spell).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // Both 2/2s take 2 damage and die.

@@ -118,7 +118,7 @@ class GoblinMachinistTest : FunSpec({
                 abilityId = machinistAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Only 1 card revealed (nonland was on top), so no reorder decision needed
@@ -166,7 +166,7 @@ class GoblinMachinistTest : FunSpec({
                 abilityId = machinistAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 3 cards revealed, so should be paused for reorder decision
@@ -223,7 +223,7 @@ class GoblinMachinistTest : FunSpec({
                 abilityId = machinistAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe false
@@ -264,7 +264,7 @@ class GoblinMachinistTest : FunSpec({
                 abilityId = machinistAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 3 cards revealed, need to reorder for bottom
@@ -315,7 +315,7 @@ class GoblinMachinistTest : FunSpec({
                 abilityId = machinistAbilityId
             )
         )
-        result1.isSuccess shouldBe true
+        result1.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Should have +3/+0 from Centaur Courser (CMC 3)
@@ -331,7 +331,7 @@ class GoblinMachinistTest : FunSpec({
                 abilityId = machinistAbilityId
             )
         )
-        result2.isSuccess shouldBe true
+        result2.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Should have +3/+0 + +2/+0 = +5/+0, so 5/5

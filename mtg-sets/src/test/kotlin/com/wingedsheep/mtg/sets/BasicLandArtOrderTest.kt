@@ -37,6 +37,26 @@ class BasicLandArtOrderTest : FunSpec({
         }
     }
 
+    test("every sealed-supported set that prints a basic offers an in-booster printing of it") {
+        // BoosterGenerator.getBasicLands keeps in-booster variants only. A set whose every printing
+        // of a basic is marked non-booster (Scryfall reports `booster: false` for all of a set's
+        // basics before release) hands limited deck building no lands of that type at all. Snow
+        // basics and Wastes are opened, not handed out, so only the five regular types are held
+        // to this.
+        val suppliedTypes = setOf("Plains", "Island", "Swamp", "Mountain", "Forest")
+        val setsWithBasics = MtgSetCatalog.all.filter { it.sealedSupported && it.basicLands.isNotEmpty() }
+
+        assertSoftly {
+            for (set in setsWithBasics) {
+                for ((landName, variants) in set.basicLands.filter { it.name in suppliedTypes }.groupBy { it.name }) {
+                    withClue("${set.code} $landName (collector numbers ${variants.map { it.metadata.collectorNumber }})") {
+                        variants.any { it.metadata.inBooster } shouldBe true
+                    }
+                }
+            }
+        }
+    }
+
     test("sets that print both regular and special art lead with the regular art") {
         // Each pair is (set code, land name) -> the collector number of the plain booster art, with
         // the treatment it must beat noted. Read off each set's basic-land file header.
@@ -51,6 +71,7 @@ class BasicLandArtOrderTest : FunSpec({
             ("FDN" to "Plains") to "272",
             ("SOS" to "Plains") to "267",
             ("POR" to "Plains") to "196",
+            ("FRA" to "Plains") to "281", // vs non-booster treatments 382-384
         )
 
         assertSoftly {

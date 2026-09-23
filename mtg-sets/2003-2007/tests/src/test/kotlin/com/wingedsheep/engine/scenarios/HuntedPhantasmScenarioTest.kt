@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Hunted Phantasm (RAV #55) — {1}{U}{U} Creature — Spirit 4/6.
@@ -32,7 +33,7 @@ class HuntedPhantasmScenarioTest : ScenarioTestBase() {
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                game.castSpell(1, "Hunted Phantasm").isSuccess shouldBe true
+                game.castSpell(1, "Hunted Phantasm").outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val phantasm = game.findPermanent("Hunted Phantasm")!!

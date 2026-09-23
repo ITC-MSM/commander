@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Regression: an "other target" slot (CR 601.2c) whose every legal target was already spent on an
@@ -76,7 +78,7 @@ class OtherTargetFillAiTest : FunSpec({
         // No legal target list exists, so the AI hands the action back untouched for its own
         // simulation — or the engine — to reject, rather than inventing an illegal one.
         (filled as CastSpell).targets shouldBe emptyList()
-        driver.submit(filled).isSuccess shouldBe false
+        driver.submit(filled).outcome shouldNotBe Outcome.Done
     }
 
     test("the AI survives a priority window holding such a spell") {

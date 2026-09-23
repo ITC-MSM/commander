@@ -19,6 +19,8 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 class VariableLoyaltyCostTest : FunSpec({
     val walker = card("Variable Loyalty Test") {
@@ -53,7 +55,7 @@ class VariableLoyaltyCostTest : FunSpec({
             action.maxAffordableX shouldBe 3
             action.minX shouldBe 0
             val hand = d.getHandSize(me)
-            d.submit(action.action).isPaused shouldBe true
+            (d.submit(action.action).outcome is Outcome.Paused) shouldBe true
             val question = d.pendingDecision as ChooseNumberDecision
             question.minValue shouldBe 0
             question.maxValue shouldBe 3
@@ -84,6 +86,6 @@ class VariableLoyaltyCostTest : FunSpec({
         val source = d.putPermanentOnBattlefield(opp, walker.name)
         d.passPriority(me)
         d.submit(ActivateAbility(opp, source, walker.script.activatedAbilities.single().id, xValue = 0))
-            .isSuccess shouldBe false
+            .outcome shouldNotBe Outcome.Done
     }
 })

@@ -7,8 +7,6 @@ import com.wingedsheep.engine.core.CrewOrSaddleKind
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.SaddleMount
 import com.wingedsheep.engine.core.tap
-import com.wingedsheep.engine.event.TriggerDetector
-import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.registry.CardRegistry
@@ -37,8 +35,6 @@ import kotlin.reflect.KClass
 class SaddleMountHandler(
     private val cardRegistry: CardRegistry,
     private val stackResolver: StackResolver,
-    private val triggerDetector: TriggerDetector,
-    private val triggerProcessor: TriggerProcessor
 ) : ActionHandler<SaddleMount> {
     override val actionType: KClass<SaddleMount> = SaddleMount::class
 
@@ -175,23 +171,6 @@ class SaddleMountHandler(
 
         // Detect and process triggers from tapping creatures.
         val allEvents = events.toList()
-        val triggers = triggerDetector.detectTriggers(currentState, allEvents)
-        if (triggers.isNotEmpty()) {
-            val triggerResult = triggerProcessor.processTriggers(currentState, triggers)
-
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state.withPriority(action.playerId),
-                    allEvents + triggerResult.events
-                )
-            }
-
-            return ExecutionResult.success(
-                triggerResult.newState.withPriority(action.playerId),
-                allEvents + triggerResult.events
-            )
-        }
-
         return ExecutionResult.success(
             currentState.withPriority(action.playerId),
             allEvents
@@ -203,8 +182,6 @@ class SaddleMountHandler(
             return SaddleMountHandler(
                 services.cardRegistry,
                 services.stackResolver,
-                services.triggerDetector,
-                services.triggerProcessor
             )
         }
     }

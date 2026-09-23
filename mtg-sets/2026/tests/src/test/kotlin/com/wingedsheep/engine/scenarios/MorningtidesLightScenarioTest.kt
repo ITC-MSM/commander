@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Morningtide's Light — {3}{W} Sorcery (ECL)
@@ -124,7 +125,7 @@ class MorningtidesLightScenarioTest : FunSpec({
         driver.giveMana(opponent, Color.RED, 1)
         driver.passPriority(me)
         driver.castSpellWithTargets(opponent, bolt, listOf(ChosenTarget.Player(me)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getLifeTotal(me) shouldBe 20

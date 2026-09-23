@@ -13,6 +13,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bloodbond March (RAV #192) — "Whenever a player casts a creature spell, each player returns all
@@ -48,7 +49,7 @@ class BloodbondMarchScenarioTest : FunSpec({
         val bears = d.putCardInHand(me, "Grizzly Bears")
         d.giveMana(me, Color.GREEN, 1)
         d.giveColorlessMana(me, 1)
-        d.castSpell(me, bears).isSuccess shouldBe true
+        d.castSpell(me, bears).outcome shouldBe Outcome.Done
 
         withClue("the trigger sits above the creature spell") { d.stackSize shouldBe 2 }
         d.bothPass()
@@ -80,7 +81,7 @@ class BloodbondMarchScenarioTest : FunSpec({
 
         val bolt = d.putCardInHand(me, "Lightning Bolt")
         d.giveMana(me, Color.RED, 1)
-        d.castSpellWithTargets(me, bolt, listOf(ChosenTarget.Player(opp))).isSuccess shouldBe true
+        d.castSpellWithTargets(me, bolt, listOf(ChosenTarget.Player(opp))).outcome shouldBe Outcome.Done
         withClue("no trigger on the stack") { d.stackSize shouldBe 1 }
         d.bothPass()
 

@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.scripting.effects.ForEachEffect
 import com.wingedsheep.sdk.scripting.effects.IterationSpace
 import com.wingedsheep.sdk.scripting.references.Player
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The single executor behind [ForEachEffect]: enumerate the iteration space once
@@ -117,7 +118,7 @@ class ForEachExecutor(
 
             val result = effectExecutor(stateForExecution, effect.body, iterationContext)
 
-            if (result.isPaused) {
+            if (result.outcome is Outcome.Paused) {
                 // The body needs a decision; our ForEachContinuation is beneath its
                 // frames and resumes the remaining items once the body completes.
                 return EffectResult.propagatePause(

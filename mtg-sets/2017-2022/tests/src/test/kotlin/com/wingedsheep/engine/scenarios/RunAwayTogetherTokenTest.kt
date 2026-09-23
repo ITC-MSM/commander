@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tokens that would be returned to hand cease to exist instead (MTG 704.5d).
@@ -76,7 +77,7 @@ class RunAwayTogetherTokenTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 2)
 
         val result = driver.castSpell(activePlayer, spell, listOf(ownCreature, opponentToken))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Non-token bounces normally: leaves battlefield, ends up in owner's hand.
@@ -105,7 +106,7 @@ class RunAwayTogetherTokenTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 2)
 
         val result = driver.castSpell(activePlayer, spell, listOf(ownToken, opponentCreature))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(activePlayer, "Mouse Token") shouldBe null

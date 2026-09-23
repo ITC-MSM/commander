@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Turncoat Kunoichi (TMT #26) — ETB exiles a target opponent creature until Turncoat
@@ -27,7 +28,7 @@ class TurncoatKunoichiTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         // mana added here — unspent mana empties as each step/phase ends (CR 500.5)
         driver.giveMana(player, Color.WHITE, 3)
-        driver.castSpell(player, turncoat).isSuccess shouldBe true
+        driver.castSpell(player, turncoat).outcome shouldBe Outcome.Done
         // Resolve Turncoat; its ETB trigger then asks for the target opponent creature.
         while (driver.pendingDecision == null && driver.state.stack.isNotEmpty()) driver.bothPass()
         driver.submitTargetSelection(player, listOf(victim))

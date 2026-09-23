@@ -18,6 +18,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Lantern Bearer // Lanterns' Lift (VOW) — a disturb card whose back face is an Aura.
@@ -43,7 +44,7 @@ class LanternBearerScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         driver.giveMana(player, Color.BLUE, 1)
 
-        driver.submit(CastSpell(player, bearer, paymentStrategy = PaymentStrategy.FromPool)).isSuccess shouldBe true
+        driver.submit(CastSpell(player, bearer, paymentStrategy = PaymentStrategy.FromPool)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val perm = driver.findPermanent(player, "Lantern Bearer")
@@ -70,7 +71,7 @@ class LanternBearerScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        io.kotest.assertions.withClue("error=${result.error}") { result.isSuccess shouldBe true }
+        io.kotest.assertions.withClue("error=${result.error}") { result.outcome shouldBe Outcome.Done }
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val aura = driver.findPermanent(player, "Lanterns' Lift")
@@ -101,7 +102,7 @@ class LanternBearerScenarioTest : FunSpec({
                 alternativeCostType = AlternativeCostType.DISTURB,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // Kill the enchanted creature (3/3 with the Aura, so Bolt is exactly lethal); the Aura is
@@ -112,7 +113,7 @@ class LanternBearerScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(bears)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty() || driver.pendingDecision != null) driver.bothPass()
 
         driver.findPermanent(player, "Lanterns' Lift") shouldBe null

@@ -625,6 +625,49 @@ sealed interface SpellCastPredicate {
     data object CastAsAdventure : SpellCastPredicate {
         override val description = "as an Adventure"
     }
+
+    /**
+     * The spell was cast with at least one chosen target that is an **opponent** of the trigger's
+     * controller — "a spell that targets an opponent" (Danitha, Spear of Agony). The player half of
+     * [TargetsMatching], which only sees objects.
+     */
+    @SerialName("SpellTargetsOpponent")
+    @Serializable
+    data object TargetsOpponent : SpellCastPredicate {
+        override val description = "that targets an opponent"
+    }
+
+    /**
+     * The spell itself matches [filter] — the same test as
+     * [com.wingedsheep.sdk.scripting.EventPattern.SpellCastEvent.spellFilter], as a predicate so it
+     * can sit inside [AnyOf]: "an Equipment spell **or** a spell that targets a creature you
+     * control" (Danitha, Sword of Hope). Standing alone, prefer `spellFilter`.
+     */
+    @SerialName("SpellMatches")
+    @Serializable
+    data class SpellMatches(val filter: GameObjectFilter) : SpellCastPredicate {
+        override val description = "that is ${filter.description}"
+    }
+
+    /**
+     * At least one of [options] holds — the disjunction `requires` (a conjunctive set) can't say on
+     * its own. "A spell that targets an opponent or a creature an opponent controls" (Danitha,
+     * Spear of Agony) and "an Equipment spell or a spell that targets a creature you control"
+     * (Danitha, Sword of Hope).
+     *
+     * Only the gate is disjunctive: the "those creatures" capture behind [TargetsMatching] reads
+     * top-level predicates alone, so a payoff that acts on the matched targets must not hide its
+     * [TargetsMatching] inside an [AnyOf].
+     */
+    @SerialName("SpellAnyOf")
+    @Serializable
+    data class AnyOf(val options: List<SpellCastPredicate>) : SpellCastPredicate {
+        init {
+            require(options.size >= 2) { "SpellCastPredicate.AnyOf needs at least two options, got ${options.size}" }
+        }
+
+        override val description = options.joinToString(" or ") { it.description }
+    }
 }
 
 // =============================================================================

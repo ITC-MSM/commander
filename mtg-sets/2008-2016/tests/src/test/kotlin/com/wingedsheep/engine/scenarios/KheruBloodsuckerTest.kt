@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Kheru Bloodsucker.
@@ -74,7 +75,7 @@ class KheruBloodsuckerTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 2)
         val doomBlade = driver.putCardInHand(activePlayer, "Doom Blade")
         val castResult = driver.castSpellWithTargets(activePlayer, doomBlade, listOf(ChosenTarget.Permanent(brute)))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve Doom Blade
         driver.bothPass()
@@ -113,7 +114,7 @@ class KheruBloodsuckerTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 2)
         val doomBlade = driver.putCardInHand(activePlayer, "Doom Blade")
         val castResult = driver.castSpellWithTargets(activePlayer, doomBlade, listOf(ChosenTarget.Permanent(small)))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve Doom Blade
         driver.bothPass()

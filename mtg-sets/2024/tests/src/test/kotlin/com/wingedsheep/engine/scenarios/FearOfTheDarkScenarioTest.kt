@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Fear of the Dark (DSK #98) — "Whenever this creature attacks, if defending player controls no
@@ -55,7 +56,7 @@ class FearOfTheDarkScenarioTest : FunSpec({
         driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(nightmare), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(nightmare), p2).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the attack trigger
 
         val projected = StateProjector().project(driver.state)
@@ -76,7 +77,7 @@ class FearOfTheDarkScenarioTest : FunSpec({
         driver.putCreatureOnBattlefield(p2, "Test Glimmer")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(nightmare), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(nightmare), p2).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val projected = StateProjector().project(driver.state)

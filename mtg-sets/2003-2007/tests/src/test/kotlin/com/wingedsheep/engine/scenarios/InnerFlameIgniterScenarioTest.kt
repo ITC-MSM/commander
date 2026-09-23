@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Inner-Flame Igniter (LRW #182) — "{2}{R}: Creatures you control get +1/+0 until end of turn. If
@@ -46,7 +47,7 @@ class InnerFlameIgniterScenarioTest : FunSpec({
 
     fun ignite(d: GameTestDriver, me: EntityId, igniter: EntityId) {
         handPriorityTo(d, me)
-        d.submit(ActivateAbility(me, igniter, igniteAbility)).isSuccess shouldBe true
+        d.submit(ActivateAbility(me, igniter, igniteAbility)).outcome shouldBe Outcome.Done
         d.bothPass()
         handPriorityTo(d, me)
     }

@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Bilbo, Luckwearer // Burglar's Plot (HOB #32) — Adventure (CR 715).
@@ -71,7 +73,7 @@ class BilboLuckwearerScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(mine), ChosenTarget.Permanent(theirs)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // ExchangeControlEffect installs a continuous control-change effect, so the swap shows up
@@ -100,7 +102,7 @@ class BilboLuckwearerScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         // Rejected specifically by the cross-target constraint, not by some unrelated legality check.
         result.error?.contains("share a card type") shouldBe true
 

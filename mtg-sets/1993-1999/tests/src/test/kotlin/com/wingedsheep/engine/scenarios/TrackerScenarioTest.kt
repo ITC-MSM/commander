@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Tracker — "deals damage equal to its power to target creature. That creature
@@ -51,7 +52,7 @@ class TrackerScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, prey)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("the Tracker's 2 killed the Bears") {
@@ -83,7 +84,7 @@ class TrackerScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, prey)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(opponent, "Goblin Balloon Brigade") shouldBe null

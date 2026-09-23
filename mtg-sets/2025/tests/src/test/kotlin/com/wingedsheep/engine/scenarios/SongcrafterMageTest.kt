@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.AlternativePaymentChoice
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Songcrafter Mage (Tarkir: Dragonstorm): "When this creature enters, target instant or sorcery
@@ -68,7 +69,7 @@ class SongcrafterMageTest : FunSpec({
                 useAlternativeCost = true,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getLifeTotal(opponent) shouldBe 17
@@ -97,7 +98,7 @@ class SongcrafterMageTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool,
                 alternativePayment = AlternativePaymentChoice(harmonizeCreature = bears)
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isTapped(bears) shouldBe true

@@ -21,6 +21,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Covetous Castaway // Ghostly Castigator (MID).
@@ -81,7 +82,7 @@ class CovetousCastawayScenarioTest : FunSpec({
         driver.giveMana(player, Color.BLUE, 2)
         driver.giveMana(player, Color.RED, 1)
 
-        driver.submit(CastSpell(player, castaway, paymentStrategy = PaymentStrategy.FromPool)).isSuccess shouldBe true
+        driver.submit(CastSpell(player, castaway, paymentStrategy = PaymentStrategy.FromPool)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val libraryBefore = driver.state.getLibrary(player).size
@@ -94,7 +95,7 @@ class CovetousCastawayScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(castaway)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty() || driver.pendingDecision != null) driver.bothPass()
 
         driver.state.getLibrary(player).size shouldBe libraryBefore - 3
@@ -118,7 +119,7 @@ class CovetousCastawayScenarioTest : FunSpec({
 
         val libraryBefore = driver.state.getLibrary(player).size
         val result = disturbCast(driver, player, castaway)
-        io.kotest.assertions.withClue("error=${result.error}") { result.isSuccess shouldBe true }
+        io.kotest.assertions.withClue("error=${result.error}") { result.outcome shouldBe Outcome.Done }
 
         resolveEntryTrigger(driver, player, shuffle = true, targets = fodder)
 
@@ -143,7 +144,7 @@ class CovetousCastawayScenarioTest : FunSpec({
         driver.giveMana(player, Color.BLUE, 5)
         val libraryBefore = driver.state.getLibrary(player).size
 
-        disturbCast(driver, player, castaway).isSuccess shouldBe true
+        disturbCast(driver, player, castaway).outcome shouldBe Outcome.Done
         resolveEntryTrigger(driver, player, shuffle = false, targets = listOf(fodder))
 
         driver.findPermanent(player, "Ghostly Castigator").shouldNotBeNull()
@@ -162,7 +163,7 @@ class CovetousCastawayScenarioTest : FunSpec({
         driver.giveMana(player, Color.BLUE, 5)
         driver.giveMana(player, Color.BLACK, 2)
 
-        disturbCast(driver, player, castaway).isSuccess shouldBe true
+        disturbCast(driver, player, castaway).outcome shouldBe Outcome.Done
         resolveEntryTrigger(driver, player, shuffle = false, targets = emptyList())
 
         driver.submit(
@@ -171,7 +172,7 @@ class CovetousCastawayScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(castaway)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty() || driver.pendingDecision != null) driver.bothPass()
 
         // The back face's own replacement sends it to exile instead of the graveyard, and with the

@@ -45,6 +45,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 1.2 of `backlog/multiplayer.md` — "leaving the game" (CR 800.4a–c). When a player
@@ -117,7 +118,7 @@ class LeaveTheGameTest : FunSpec({
         val processor = ActionProcessor(registry())
 
         val result = processor.process(initial, Concede(players[1])).result
-        result.isSuccess.shouldBeTrue()
+        (result.outcome is Outcome.Done).shouldBeTrue()
         val state = result.newState
 
         state.gameOver shouldBe false
@@ -274,7 +275,7 @@ class LeaveTheGameTest : FunSpec({
         // The enumerator never offers the departed seat; the handler must refuse it too.
         processor.process(
             declaring, com.wingedsheep.engine.core.DeclareAttackers(players[0], mapOf(bear to players[2]))
-        ).result.isSuccess shouldBe false
+        ).result.outcome shouldNotBe Outcome.Done
         processor.process(
             declaring, com.wingedsheep.engine.core.DeclareAttackers(players[0], mapOf(bear to players[1]))
         ).result.error.shouldBeNull()
@@ -385,7 +386,7 @@ class LeaveTheGameTest : FunSpec({
             val result = processor.process(
                 state, com.wingedsheep.engine.core.PassPriority(prio)
             ).result
-            check(result.isSuccess || result.isPaused) { "action failed: ${result.error}" }
+            check(result.outcome is Outcome.Done || result.outcome is Outcome.Paused) { "action failed: ${result.error}" }
             state = result.newState
         }
         state.activePlayerId shouldBe players[1]
@@ -419,17 +420,17 @@ class LeaveTheGameTest : FunSpec({
         val paused = base.pausedOn(players[1])
 
         // Sanity: while the decision is pending nobody else may pass.
-        processor.process(paused, PassPriority(players[0])).result.isSuccess shouldBe false
+        processor.process(paused, PassPriority(players[0])).result.outcome shouldNotBe Outcome.Done
 
         val result = processor.process(paused, Concede(players[1])).result
-        result.isSuccess.shouldBeTrue()
+        (result.outcome is Outcome.Done).shouldBeTrue()
         val state = result.newState
         state.gameOver shouldBe false
         state.pendingDecision.shouldBeNull()
         state.continuationStack shouldContainExactly emptyList()
         // Priority is back with the active player, who can carry the game forward.
         state.priorityPlayerId shouldBe players[0]
-        processor.process(state, PassPriority(players[0])).result.isSuccess.shouldBeTrue()
+        (processor.process(state, PassPriority(players[0])).result.outcome is Outcome.Done).shouldBeTrue()
     }
 
     test("a pending decision addressed to another player survives the leaver's departure") {

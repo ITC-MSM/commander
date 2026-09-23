@@ -10,6 +10,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dáin, Lord of the Iron Hills — "As long as you have an enduring story, creatures can't attack you
@@ -48,7 +49,7 @@ class DainLordOfTheIronHillsScenarioTest : FunSpec({
         val result = d.declareAttackers(attacker, listOf(bear), defender)
 
         withClue("no enduring story → no tax, so the attack goes through unpaused") {
-            result.isSuccess shouldBe true
+            result.outcome shouldBe Outcome.Done
             (result.newState.pendingDecision is SelectManaSourcesDecision) shouldBe false
         }
     }

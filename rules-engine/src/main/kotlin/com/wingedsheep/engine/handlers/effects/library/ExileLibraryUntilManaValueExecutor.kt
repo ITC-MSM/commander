@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.ExileLibraryUntilManaValueEffect
 import com.wingedsheep.sdk.scripting.references.Player
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for [ExileLibraryUntilManaValueEffect].
@@ -84,7 +85,7 @@ class ExileLibraryUntilManaValueExecutor : EffectExecutor<ExileLibraryUntilManaV
 
             for (cardId in exiledForPlayer) {
                 val result = ZoneMovementUtils.moveCardToZone(currentState, cardId, Zone.EXILE)
-                if (result.isSuccess) {
+                if (result.outcome is Outcome.Done) {
                     currentState = result.state
                     allEvents.addAll(result.events)
                     allExiled.add(cardId)

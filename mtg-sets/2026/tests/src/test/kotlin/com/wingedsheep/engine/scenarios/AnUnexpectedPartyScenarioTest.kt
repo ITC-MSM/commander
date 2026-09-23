@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.ChoiceSlot
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * An Unexpected Party // At the Door (HOB #29) — {2}{W}{W} Enchantment with an
@@ -87,7 +88,7 @@ class AnUnexpectedPartyScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(playerId = player, cardId = party, faceIndex = 0, xValue = 3)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.isPaused shouldBe false
 
@@ -113,7 +114,7 @@ class AnUnexpectedPartyScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(playerId = player, cardId = party, faceIndex = 0, xValue = 1)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         dwarfTokens(driver, player).size shouldBe 1
@@ -127,7 +128,7 @@ class AnUnexpectedPartyScenarioTest : FunSpec({
         driver.giveMana(player, Color.WHITE, 5) // {X=2}{2}{W}
         driver.submit(
             CastSpell(playerId = player, cardId = party, faceIndex = 0, xValue = 2)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         val dwarves = dwarfTokens(driver, player)
         dwarves.size shouldBe 2

@@ -17,6 +17,8 @@ import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Printed Suspend (CR 702.62a / 116.2f) as a special action is legal "any time you could begin to
@@ -102,11 +104,11 @@ class PrintedSuspendTimingTest : FunSpec({
         // under, per AncestralVisionScenarioTest's "can only be taken at sorcery speed" test.
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
         driver.state.stack.isEmpty() shouldBe false
         driver.state.priorityPlayerId shouldBe me
 
-        driver.submit(SuspendCardFromHand(me, card)).isSuccess shouldBe true
+        driver.submit(SuspendCardFromHand(me, card)).outcome shouldBe Outcome.Done
         driver.getExile(me).contains(card) shouldBe true
     }
 
@@ -121,11 +123,11 @@ class PrintedSuspendTimingTest : FunSpec({
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
         driver.state.stack.isEmpty() shouldBe false
         driver.state.priorityPlayerId shouldBe me
 
-        driver.submit(SuspendCardFromHand(me, card)).isSuccess shouldBe true
+        driver.submit(SuspendCardFromHand(me, card)).outcome shouldBe Outcome.Done
         driver.getExile(me).contains(card) shouldBe true
     }
 
@@ -141,11 +143,11 @@ class PrintedSuspendTimingTest : FunSpec({
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
         driver.state.stack.isEmpty() shouldBe false
         driver.state.priorityPlayerId shouldBe me
 
-        driver.submit(SuspendCardFromHand(me, card)).isSuccess shouldBe true
+        driver.submit(SuspendCardFromHand(me, card)).outcome shouldBe Outcome.Done
         driver.getExile(me).contains(card) shouldBe true
     }
 
@@ -161,7 +163,7 @@ class PrintedSuspendTimingTest : FunSpec({
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
         driver.state.stack.isEmpty() shouldBe false
 
         driver.legalActions(me).any {
@@ -183,7 +185,7 @@ class PrintedSuspendTimingTest : FunSpec({
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
         driver.state.stack.isEmpty() shouldBe false
 
         driver.legalActions(me).any {
@@ -191,7 +193,7 @@ class PrintedSuspendTimingTest : FunSpec({
             action is SuspendCardFromHand && action.cardId == card
         } shouldBe false
 
-        driver.submit(SuspendCardFromHand(me, card)).isSuccess shouldBe false
+        driver.submit(SuspendCardFromHand(me, card)).outcome shouldNotBe Outcome.Done
         driver.getHand(me).contains(card) shouldBe true
     }
 
@@ -235,7 +237,7 @@ class PrintedSuspendTimingTest : FunSpec({
         val player = driver.state.getEntity(me)!!.with(CantCastSpellsComponent())
         driver.replaceState(driver.state.withEntity(me, player))
 
-        driver.submit(SuspendCardFromHand(me, card)).isSuccess shouldBe false
+        driver.submit(SuspendCardFromHand(me, card)).outcome shouldNotBe Outcome.Done
         driver.getHand(me).contains(card) shouldBe true
     }
 
@@ -253,7 +255,7 @@ class PrintedSuspendTimingTest : FunSpec({
                 cardId = card,
                 paymentStrategy = PaymentStrategy.Explicit(listOf(forest)),
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
         driver.getHand(me).contains(card) shouldBe true
     }
 
@@ -273,7 +275,7 @@ class PrintedSuspendTimingTest : FunSpec({
                 cardId = card,
                 paymentStrategy = PaymentStrategy.Explicit(listOf(opponentsMountain)),
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
         driver.getHand(me).contains(card) shouldBe true
         driver.state.getEntity(opponentsMountain)?.has<TappedComponent>() shouldBe false
     }
@@ -293,7 +295,7 @@ class PrintedSuspendTimingTest : FunSpec({
                 cardId = card,
                 paymentStrategy = PaymentStrategy.Explicit(listOf(creature, mountain)),
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
         driver.getHand(me).contains(card) shouldBe true
         driver.state.getEntity(creature)?.has<TappedComponent>() shouldBe false
         driver.state.getEntity(mountain)?.has<TappedComponent>() shouldBe false
@@ -313,7 +315,7 @@ class PrintedSuspendTimingTest : FunSpec({
                 cardId = card,
                 paymentStrategy = PaymentStrategy.Explicit(listOf(mountain)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.getExile(me).contains(card) shouldBe true
         driver.state.getEntity(mountain)?.has<TappedComponent>() shouldBe true
     }

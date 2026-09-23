@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sleep Magic (FIN #74) — {U} Enchantment — Aura.
@@ -44,7 +45,7 @@ class SleepMagicScenarioTest : FunSpec({
 
         val aura = driver.putCardInHand(driver.player1, "Sleep Magic")
         driver.giveMana(driver.player1, Color.BLUE, 1)
-        driver.castSpell(driver.player1, aura, listOf(creature)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, aura, listOf(creature)).outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         // ETB trigger taps the enchanted creature, and the Aura is attached.
@@ -54,7 +55,7 @@ class SleepMagicScenarioTest : FunSpec({
         // Deal damage to the enchanted creature: Shock it.
         val shock = driver.putCardInHand(driver.player1, "Shock")
         driver.giveMana(driver.player1, Color.RED, 1)
-        driver.castSpell(driver.player1, shock, listOf(creature)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, shock, listOf(creature)).outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         // The "when enchanted creature is dealt damage" trigger sacrifices the Aura.

@@ -25,6 +25,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain as stringShouldContain
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Oteclan Landmark // Oteclan Levitator (LCI #29).
@@ -100,7 +102,7 @@ class OteclanLandmarkScenarioTest : FunSpec({
 
         val landmark = driver.putCardInHand(p1, "Oteclan Landmark")
         driver.giveMana(p1, Color.WHITE, 1)
-        driver.castSpell(p1, landmark).isSuccess shouldBe true
+        driver.castSpell(p1, landmark).outcome shouldBe Outcome.Done
 
         driver.bothPass() // resolve the spell — the Landmark enters, ETB trigger queued
         driver.bothPass() // resolve the ETB trigger — pauses for the scry decision
@@ -205,7 +207,7 @@ class OteclanLandmarkScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(relic1, relic2))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error.shouldNotBeNull() stringShouldContain "at most"
 
         // Nothing was exiled; the Landmark is still its front face on the battlefield.
@@ -230,7 +232,7 @@ class OteclanLandmarkScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(trooper))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // The creature stays on the battlefield; nothing transformed.
         driver.findPermanent(p1, "Test Ground Trooper").shouldNotBeNull()

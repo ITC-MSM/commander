@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.ExileFromTopRepeatingEffect
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for [ExileFromTopRepeatingEffect].
@@ -104,7 +105,7 @@ class ExileFromTopRepeatingExecutor : EffectExecutor<ExileFromTopRepeatingEffect
 
             for (cardId in cardsToExile) {
                 val exileResult = ZoneMovementUtils.moveCardToZone(currentState, cardId, Zone.EXILE)
-                if (exileResult.isSuccess) {
+                if (exileResult.outcome is Outcome.Done) {
                     currentState = exileResult.state
                     allEvents.addAll(exileResult.events)
                 }
@@ -113,7 +114,7 @@ class ExileFromTopRepeatingExecutor : EffectExecutor<ExileFromTopRepeatingEffect
             // Put match card in hand
             if (matchCard != null) {
                 val handResult = ZoneMovementUtils.moveCardToZone(currentState, matchCard, Zone.HAND)
-                if (handResult.isSuccess) {
+                if (handResult.outcome is Outcome.Done) {
                     currentState = handResult.state
                     allEvents.addAll(handResult.events)
                     cardsToHand++

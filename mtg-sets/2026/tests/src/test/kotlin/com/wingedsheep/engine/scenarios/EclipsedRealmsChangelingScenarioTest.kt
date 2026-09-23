@@ -21,6 +21,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Eclipsed Realms (ECL #263) — Land
@@ -99,7 +101,7 @@ class EclipsedRealmsChangelingScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = core, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("chosen-type mana cannot cast a spell that is not of the chosen type") {
@@ -115,7 +117,7 @@ class EclipsedRealmsChangelingScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = bear, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("chosen-type mana can activate an ability of a changeling source") {
@@ -131,6 +133,6 @@ class EclipsedRealmsChangelingScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(p1, core, becomeCreatureAbilityId, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

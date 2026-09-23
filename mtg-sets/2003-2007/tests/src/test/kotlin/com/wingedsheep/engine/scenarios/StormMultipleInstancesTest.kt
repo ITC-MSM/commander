@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.StormCopyEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 6 of `backlog/storm-implementation-correctness.md`: per CR 702.40b,
@@ -52,7 +53,7 @@ class StormMultipleInstancesTest : FunSpec({
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
 
         val result = driver.castSpell(caster, tendrils, listOf(opponent))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Stack should contain: original Tendrils spell + 2 Storm trigger abilities.
         val stack = driver.state.stack
@@ -83,7 +84,7 @@ class StormMultipleInstancesTest : FunSpec({
 
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
         val result = driver.castSpell(caster, tendrils, listOf(opponent))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Per CR 702.40a the ability still triggers — with copyCount 0.
         val stormTriggers = driver.state.stack.mapNotNull { id ->
@@ -107,7 +108,7 @@ class StormMultipleInstancesTest : FunSpec({
 
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
         val result = driver.castSpell(caster, tendrils, listOf(opponent))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val stormTriggers = driver.state.stack.mapNotNull { id ->
             driver.state.getEntity(id)?.get<TriggeredAbilityOnStackComponent>()

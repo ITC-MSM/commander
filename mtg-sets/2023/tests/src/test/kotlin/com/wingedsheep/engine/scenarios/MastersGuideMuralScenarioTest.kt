@@ -25,6 +25,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Master's Guide-Mural // Master's Manufactory (LCI #233).
@@ -187,7 +189,7 @@ class MastersGuideMuralScenarioTest : FunSpec({
             ActivateAbility(playerId = p1, sourceId = mural, abilityId = manufactoryAbilityId())
         )
         withClue("No artifact entered this turn — activation must be rejected") {
-            rejected.isSuccess shouldBe false
+            rejected.outcome shouldNotBe Outcome.Done
         }
         driver.golemsOf(p1).size shouldBe 0
 
@@ -228,6 +230,6 @@ class MastersGuideMuralScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(bear))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

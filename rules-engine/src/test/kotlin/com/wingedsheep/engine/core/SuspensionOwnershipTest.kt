@@ -39,7 +39,7 @@ class SuspensionOwnershipTest : FunSpec({
         val paused = initial.suspendForDecision(::question, answer)
         val suspension = paused.state.continuationStack.single().shouldBeInstanceOf<Suspension>()
 
-        paused.isPaused shouldBe true
+        (paused.outcome is Outcome.Paused) shouldBe true
         paused.pendingDecision shouldBeSameInstanceAs suspension.question
         paused.state.pendingDecision shouldBeSameInstanceAs suspension.question
         suspension.question.id shouldBe "r11"

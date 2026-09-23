@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Thoughtbound Primoc's control-changing triggered ability.
@@ -141,7 +142,7 @@ class ThoughtboundPrimocTest : FunSpec({
             listOf(primoc),
             primocOwner
         )
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
     }
 
     test("new controller can block with stolen Thoughtbound Primoc") {
@@ -179,7 +180,7 @@ class ThoughtboundPrimocTest : FunSpec({
             opponent,
             mapOf(primoc to listOf(attacker))
         )
-        blockResult.isSuccess shouldBe true
+        blockResult.outcome shouldBe Outcome.Done
     }
 
     test("no control change when Wizard counts are tied") {

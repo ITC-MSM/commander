@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ankle Biter (OTJ #153) — {G} Snake, 1/1, Deathtouch.
@@ -50,10 +51,10 @@ class AnkleBiterScenarioTest : FunSpec({
         driver.removeSummoningSickness(bears)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(bears), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(bears), defender).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(defender, mapOf(biter to listOf(bears))).isSuccess shouldBe true
+        driver.declareBlockers(defender, mapOf(biter to listOf(bears))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 

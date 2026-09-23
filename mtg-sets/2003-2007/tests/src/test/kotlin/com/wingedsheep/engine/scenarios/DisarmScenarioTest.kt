@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Disarm — "Unattach all Equipment from target creature." ({U} instant, MRD #32)
@@ -46,7 +47,7 @@ class DisarmScenarioTest : FunSpec({
         giveColorlessMana(player, 1)
         submit(
             ActivateAbility(player, equipment, abilityId, targets = listOf(ChosenTarget.Permanent(creature)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         bothPass()
     }
 
@@ -70,7 +71,7 @@ class DisarmScenarioTest : FunSpec({
         val disarm = driver.putCardInHand(you, "Disarm")
         driver.giveMana(you, com.wingedsheep.sdk.core.Color.BLUE, 1)
         driver.castSpellWithTargets(you, disarm, listOf(ChosenTarget.Permanent(courser)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Every Equipment is unattached — the ForEach ran over the whole gathered collection,
@@ -94,7 +95,7 @@ class DisarmScenarioTest : FunSpec({
         val disarm = driver.putCardInHand(you, "Disarm")
         driver.giveMana(you, com.wingedsheep.sdk.core.Color.BLUE, 1)
         driver.castSpellWithTargets(you, disarm, listOf(ChosenTarget.Permanent(courser)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Unattached, but not destroyed, bounced, or exiled — still a permanent you control.
@@ -112,7 +113,7 @@ class DisarmScenarioTest : FunSpec({
         val disarm = driver.putCardInHand(you, "Disarm")
         driver.giveMana(you, com.wingedsheep.sdk.core.Color.BLUE, 1)
         driver.castSpellWithTargets(you, disarm, listOf(ChosenTarget.Permanent(courser)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Nothing to unattach: the creature survives untouched.

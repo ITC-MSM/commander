@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Rally the Monastery.
@@ -65,7 +66,7 @@ class RallyTheMonasteryTest : FunSpec({
 
         val before = driver.getCreatures(player1).size
         val result = driver.submit(CastSpell(player1, rally, chosenModes = listOf(0)))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val monks = driver.getCreatures(player1).filter { driver.getCardName(it) == "Monk Token" }
@@ -93,7 +94,7 @@ class RallyTheMonasteryTest : FunSpec({
             chosenModes = listOf(2),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(target)))
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(player2, "Big Creature") shouldBe null
@@ -117,6 +118,6 @@ class RallyTheMonasteryTest : FunSpec({
         driver.giveColorlessMana(player1, 1)
         val rally = driver.putCardInHand(player1, "Rally the Monastery")
         val result = driver.submit(CastSpell(player1, rally, chosenModes = listOf(0)))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

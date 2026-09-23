@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sandstorm Verge (OTJ #263) — Land — Desert.
@@ -51,7 +52,7 @@ class SandstormVergeScenarioTest : FunSpec({
                 abilityId = cantBlockAbilityId,
                 targets = listOf(ChosenTarget.Permanent(bears)),
             ),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the ability
 
         driver.state.projectedState.cantBlock(bears) shouldBe true

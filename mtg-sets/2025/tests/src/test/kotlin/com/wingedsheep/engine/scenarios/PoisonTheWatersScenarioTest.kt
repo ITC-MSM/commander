@@ -20,6 +20,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Poison the Waters — {1}{B} Sorcery, "Choose one —"
@@ -70,7 +71,7 @@ class PoisonTheWatersScenarioTest : FunSpec({
             chosenModes = listOf(0),
             modeTargetsOrdered = emptyList()
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
         d.bothPass()
 
         d.findPermanent(p2, "Test Squire").shouldBeNull()
@@ -97,7 +98,7 @@ class PoisonTheWatersScenarioTest : FunSpec({
             chosenModes = listOf(1),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Player(p2)))
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
         d.bothPass() // resolve → reveal + select decision
 
         val select = d.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()

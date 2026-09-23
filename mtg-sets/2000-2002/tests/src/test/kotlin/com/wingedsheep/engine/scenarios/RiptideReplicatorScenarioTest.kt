@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Riptide Replicator (ONS #309) — {X}{4} Artifact.
@@ -67,7 +68,7 @@ class RiptideReplicatorScenarioTest : FunSpec({
         val before = creatureTokens(driver.state, player).toSet()
         driver.submit(
             ActivateAbility(playerId = player, sourceId = replicator, abilityId = activateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         val newTokens = creatureTokens(driver.state, player) - before
         newTokens.size shouldBe 1

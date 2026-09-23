@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Resonating Lute (Secrets of Strixhaven #221).
@@ -95,7 +97,7 @@ class ResonatingLuteScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = p, sourceId = lute, abilityId = drawAbilityId),
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.isTapped(lute) shouldBe true
     }
 
@@ -116,7 +118,7 @@ class ResonatingLuteScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = p, sourceId = lute, abilityId = drawAbilityId),
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.isTapped(lute) shouldBe false
     }
 })

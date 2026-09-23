@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Gollum's Bite — "{B}: Target creature gets -2/-2 until end of turn." plus the graveyard ability
@@ -38,7 +40,7 @@ class GollumsBiteScenarioTest : FunSpec({
         val bite = d.putCardInHand(you, "Gollum's Bite")
         d.giveMana(you, Color.BLACK, 1)
 
-        d.castSpell(you, bite, listOf(courser)).isSuccess shouldBe true
+        d.castSpell(you, bite, listOf(courser)).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // 3/3 - 2/2 = 1/1: still alive, proving the -2/-2 applied.
@@ -60,7 +62,7 @@ class GollumsBiteScenarioTest : FunSpec({
         val result = d.submit(
             ActivateAbility(playerId = you, sourceId = bite, abilityId = graveyardAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         d.bothPass() // resolve → pause to choose a Ring-bearer
 
         val decision = d.pendingDecision as SelectCardsDecision
@@ -82,6 +84,6 @@ class GollumsBiteScenarioTest : FunSpec({
         val result = d.submit(
             ActivateAbility(playerId = you, sourceId = bite, abilityId = graveyardAbilityId)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

@@ -919,22 +919,31 @@ class GameSession(
 
         val (result, undoPolicy) = actionProcessor.process(state, action)
 
-        val error = result.error
-        if (error != null) {
-            return ActionResult.Failure(error)
+        fun accept() {
+            applyUndoPolicy(undoPolicy, action, state, playerId)
+            gameState = result.state
+            recordAction(action)
+            if (messageId != null) lastProcessedMessageId[playerId] = messageId
         }
 
-        // Apply the engine's undo policy
-        applyUndoPolicy(undoPolicy, action, state, playerId)
-
-        gameState = result.state
-        recordAction(action)
-        if (messageId != null) lastProcessedMessageId[playerId] = messageId
-        val pendingDecision = result.pendingDecision
-        return if (pendingDecision != null) {
-            ActionResult.PausedForDecision(result.state, pendingDecision, result.events)
-        } else {
-            ActionResult.Success(result.state, result.events)
+        return when (val outcome = result.outcome) {
+            is Outcome.Rejected -> {
+                // An illegal action is routine (a stale or wrong client request). A failure during
+                // execution means validation let through something the engine could not carry
+                // out, which is worth a look.
+                if (outcome.reason is Rejection.ExecutionFailed) {
+                    logger.warn("Action ${action::class.simpleName} by $playerId failed during execution: ${outcome.reason.message}")
+                }
+                ActionResult.Failure(outcome.reason.message)
+            }
+            is Outcome.Paused -> {
+                accept()
+                ActionResult.PausedForDecision(result.state, outcome.decision, result.events)
+            }
+            Outcome.Done -> {
+                accept()
+                ActionResult.Success(result.state, result.events)
+            }
         }
     }
 

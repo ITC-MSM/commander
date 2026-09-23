@@ -16,6 +16,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Hurl into History {3}{U}{U} — "Counter target artifact or creature spell. Discover X, where X is
@@ -73,7 +74,7 @@ class HurlIntoHistoryScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(ogreOnStack)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.bothPass() // Hurl resolves: counter the Ogre, then Discover 3.
 

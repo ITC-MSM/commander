@@ -28,6 +28,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 0 verification gate for `backlog/multiplayer.md`: the engine's core loop is
@@ -107,7 +108,7 @@ class MultiplayerSmokeTest : FunSpec({
                 val result = processor.process(
                     state, com.wingedsheep.engine.core.SubmitDecision(pending.playerId, response)
                 ).result
-                check(result.isSuccess || result.isPaused) { "discard failed: ${result.error}" }
+                check(result.outcome is Outcome.Done || result.outcome is Outcome.Paused) { "discard failed: ${result.error}" }
                 state = result.newState
                 continue
             }
@@ -124,7 +125,7 @@ class MultiplayerSmokeTest : FunSpec({
                 else -> PassPriority(prio)
             }
             val result = processor.process(state, action).result
-            check(result.isSuccess || result.isPaused) {
+            check(result.outcome is Outcome.Done || result.outcome is Outcome.Paused) {
                 "action $action failed: ${result.error}"
             }
             state = result.newState
@@ -157,7 +158,7 @@ class MultiplayerSmokeTest : FunSpec({
                     val result = processor.process(
                         state, com.wingedsheep.engine.core.SubmitDecision(pending.playerId, response)
                     ).result
-                    check(result.isSuccess || result.isPaused) { "discard failed: ${result.error}" }
+                    check(result.outcome is Outcome.Done || result.outcome is Outcome.Paused) { "discard failed: ${result.error}" }
                     state = result.newState
                     continue
                 }
@@ -173,7 +174,7 @@ class MultiplayerSmokeTest : FunSpec({
                     else -> PassPriority(prio)
                 }
                 val result = processor.process(state, action).result
-                check(result.isSuccess || result.isPaused) { "action $action failed: ${result.error}" }
+                check(result.outcome is Outcome.Done || result.outcome is Outcome.Paused) { "action $action failed: ${result.error}" }
                 state = result.newState
             }
             return state

@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Altar of Shadows (MRD #143) — "At the beginning of your first main phase, add {B} for each charge
@@ -56,7 +57,7 @@ class AltarOfShadowsScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, altar, destroyAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.state.getBattlefield().contains(bear) shouldBe false

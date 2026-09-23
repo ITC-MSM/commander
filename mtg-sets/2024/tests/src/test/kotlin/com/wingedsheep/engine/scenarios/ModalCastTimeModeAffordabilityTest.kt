@@ -33,6 +33,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Cast-time mode selection must respect stacked per-mode additional mana costs
@@ -139,9 +140,9 @@ class ModalCastTimeModeAffordabilityTest : FunSpec({
 
         val lifeBefore = d.state.getEntity(p1)!!.get<LifeTotalComponent>()!!.life
         val spell = d.putCardInHand(p1, "Test Stacking Costs Modal")
-        d.submit(
+        (d.submit(
             CastSpell(playerId = p1, cardId = spell, paymentStrategy = PaymentStrategy.FromPool)
-        ).isPaused shouldBe true
+        ).outcome is Outcome.Paused) shouldBe true
 
         // Pick 1: every mode is individually affordable, so all three are offered.
         val firstPick = d.pendingDecision.shouldBeInstanceOf<ChooseOptionDecision>()
@@ -172,9 +173,9 @@ class ModalCastTimeModeAffordabilityTest : FunSpec({
         d.giveColorlessMana(p1, 3)
 
         val spell = d.putCardInHand(p1, "Test Stacking Costs Modal")
-        d.submit(
+        (d.submit(
             CastSpell(playerId = p1, cardId = spell, paymentStrategy = PaymentStrategy.FromPool)
-        ).isPaused shouldBe true
+        ).outcome is Outcome.Paused) shouldBe true
 
         val firstPick = d.pendingDecision.shouldBeInstanceOf<ChooseOptionDecision>()
         d.submitDecision(p1, OptionChosenResponse(firstPick.id, 2)) // the {2} mode
@@ -198,9 +199,9 @@ class ModalCastTimeModeAffordabilityTest : FunSpec({
 
         val lifeBefore = d.state.getEntity(p1)!!.get<LifeTotalComponent>()!!.life
         val spell = d.putCardInHand(p1, "Test Reduced Cost Modal")
-        d.submit(
+        (d.submit(
             CastSpell(playerId = p1, cardId = spell, paymentStrategy = PaymentStrategy.FromPool)
-        ).isPaused shouldBe true
+        ).outcome is Outcome.Paused) shouldBe true
 
         val firstPick = d.pendingDecision.shouldBeInstanceOf<ChooseOptionDecision>()
         firstPick.options shouldBe listOf("Gain 1 life", "Pay {2}: You lose 1 life")
@@ -233,9 +234,9 @@ class ModalCastTimeModeAffordabilityTest : FunSpec({
         d.giveColorlessMana(p1, 2)
 
         val spell = d.putCardInHand(p1, "Unfortunate Accident")
-        d.submit(
+        (d.submit(
             CastSpell(playerId = p1, cardId = spell, paymentStrategy = PaymentStrategy.FromPool)
-        ).isPaused shouldBe true
+        ).outcome is Outcome.Paused) shouldBe true
 
         // Pick 1: both spree modes are individually affordable.
         val firstPick = d.pendingDecision.shouldBeInstanceOf<ChooseOptionDecision>()

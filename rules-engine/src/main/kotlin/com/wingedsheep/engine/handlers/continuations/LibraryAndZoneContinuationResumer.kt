@@ -629,7 +629,7 @@ class LibraryAndZoneContinuationResumer(
             objectReferences = continuation.objectReferences
         )
 
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             return ExecutionResult.propagatePause(result.state, result.events)
         }
 
@@ -935,8 +935,6 @@ class LibraryAndZoneContinuationResumer(
             return checkForMore(finalState, bottomEvents + tailEvents)
         }
 
-        // CastSpellHandler already detected + stacked this cast's triggers; propagate the flag
-        // so SubmitDecisionHandler doesn't re-scan the SpellCastEvent and double-fire them.
         if (castResult.pendingDecision != null) {
             // The cast paused (for target / X / mode selection). The leftover
             // bottoming is already done; let the cast's own continuations finish
@@ -944,11 +942,10 @@ class LibraryAndZoneContinuationResumer(
             return ExecutionResult.propagatePause(
                 castResult.state,
                 bottomEvents + castResult.events
-            ).copy(triggersAlreadyProcessed = castResult.triggersAlreadyProcessed)
+            )
         }
 
         return checkForMore(castResult.state, bottomEvents + castResult.events)
-            .copy(triggersAlreadyProcessed = castResult.triggersAlreadyProcessed)
     }
 
     /**
@@ -958,8 +955,8 @@ class LibraryAndZoneContinuationResumer(
      * In both branches the *other* exiled cards are bottom-randomized first. Then:
      *  - **Cast** (yes): the discovered card is granted a free cast (like [CascadeExecutor]) and
      *    synthesized through the normal cast machinery, so target / X / mode prompts surface and the
-     *    cast's "whenever you cast a spell (from exile)" triggers are stacked exactly once (the
-     *    `triggersAlreadyProcessed` flag is propagated so they aren't re-scanned). If the cast can't
+     *    cast's "whenever you cast a spell (from exile)" triggers are detected once, by the settle
+     *    boundary. If the cast can't
      *    initiate — no legal target, etc. — the card falls back to the controller's hand, per
      *    "If you don't cast it, put that card into your hand."
      *  - **Hand** (no): the discovered card is moved straight to the controller's hand.
@@ -999,7 +996,7 @@ class LibraryAndZoneContinuationResumer(
             val moveResult = ZoneMovementUtils.moveCardToZone(afterBottom, discovered, Zone.HAND)
             var afterHand = afterBottom
             val leadingEvents = bottomEvents.toMutableList()
-            if (moveResult.isSuccess) {
+            if (moveResult.outcome is Outcome.Done) {
                 afterHand = moveResult.state
                 leadingEvents.addAll(moveResult.events)
             }
@@ -1024,7 +1021,7 @@ class LibraryAndZoneContinuationResumer(
             val moveResult = ZoneMovementUtils.moveCardToZone(afterBottom, discovered, Zone.HAND)
             var afterHand = afterBottom
             val handEvents = bottomEvents.toMutableList()
-            if (moveResult.isSuccess) {
+            if (moveResult.outcome is Outcome.Done) {
                 afterHand = moveResult.state
                 handEvents.addAll(moveResult.events)
             }
@@ -1088,7 +1085,7 @@ class LibraryAndZoneContinuationResumer(
             val moveResult = ZoneMovementUtils.moveCardToZone(withoutThen, discovered, Zone.HAND)
             var afterHand = withoutThen
             val handEvents = bottomEvents.toMutableList()
-            if (moveResult.isSuccess) {
+            if (moveResult.outcome is Outcome.Done) {
                 afterHand = moveResult.state
                 handEvents.addAll(moveResult.events)
             }
@@ -1098,46 +1095,11 @@ class LibraryAndZoneContinuationResumer(
         if (castResult.pendingDecision != null) {
             // The cast paused (targets / X); the pre-pushed follow-up runs when it resumes.
             return ExecutionResult.propagatePause(castResult.state, bottomEvents + castResult.events)
-                .copy(triggersAlreadyProcessed = castResult.triggersAlreadyProcessed)
         }
 
         // Cast succeeded synchronously; checkForMore drains the pre-pushed follow-up continuation
-        // (the card's thenEffect plus the DiscoveredEvent emit tail). CastSpellHandler already
-        // stacked this cast's triggers (e.g. Quintorius Kand's "whenever you cast a spell from
-        // exile"); propagate the flag so SubmitDecisionHandler doesn't re-scan the SpellCastEvent and
-        // double-fire them. But that flag also suppresses scanning of the DiscoveredEvent the tail
-        // emits (CR 701.57b) — a genuinely new event CastSpellHandler never saw — so scan its
-        // "whenever you discover" triggers here.
-        return scanDiscoveredEventTriggers(
-            checkForMore(castResult.state, bottomEvents + castResult.events)
-                .copy(triggersAlreadyProcessed = castResult.triggersAlreadyProcessed)
-        )
-    }
-
-    /**
-     * Detect and process "whenever you discover" triggers (CR 701.57 — Curator of Sun's Creation)
-     * from any [DiscoveredEvent] in [result]'s events. Used only on the discover **cast-for-free**
-     * branch, which returns `triggersAlreadyProcessed = true` to protect the discovered card's own
-     * `SpellCastEvent` from a re-scan — a flag that would otherwise also suppress the DiscoveredEvent
-     * emitted by the discover tail. Detecting it here keeps the SpellCastEvent protected while still
-     * firing discover watchers. No-op when the result paused (the emit tail hasn't run yet) or has no
-     * DiscoveredEvent.
-     */
-    private fun scanDiscoveredEventTriggers(result: ExecutionResult): ExecutionResult {
-        if (!result.isSuccess || result.isPaused) return result
-        val discoveredEvents = result.events.filterIsInstance<com.wingedsheep.engine.core.DiscoveredEvent>()
-        if (discoveredEvents.isEmpty()) return result
-        val triggers = services.triggerDetector.detectTriggers(result.state, discoveredEvents)
-        if (triggers.isEmpty()) return result
-        val processed = services.triggerProcessor.processTriggers(result.state, triggers)
-        val events = result.events + processed.events
-        return if (processed.isPaused) {
-            ExecutionResult.propagatePause(processed.state, events)
-                .copy(triggersAlreadyProcessed = true)
-        } else {
-            ExecutionResult.success(processed.newState, events)
-                .copy(triggersAlreadyProcessed = true)
-        }
+        // (the card's thenEffect plus the DiscoveredEvent emit tail).
+        return checkForMore(castResult.state, bottomEvents + castResult.events)
     }
 
     /** Run a discover [DiscoverMayCastContinuation.thenEffect] (if any) with the discovered card published. */
@@ -1157,7 +1119,7 @@ class LibraryAndZoneContinuationResumer(
             pipeline = PipelineState.EMPTY.copy(storedCollections = discoveredCollections)
         )
         val result = effectRunner.executeRemainingEffects(state, listOf(thenEffect), ctx)
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             return ExecutionResult.propagatePause(result.state, leadingEvents + result.events)
         }
         return checkForMore(result.state, leadingEvents + result.events)
@@ -1210,7 +1172,7 @@ class LibraryAndZoneContinuationResumer(
                 FreeCastFallback.LEAVE -> {}
                 FreeCastFallback.HAND -> {
                     val moveResult = ZoneMovementUtils.moveCardToZone(cleaned, continuation.cardId, Zone.HAND)
-                    if (moveResult.isSuccess) {
+                    if (moveResult.outcome is Outcome.Done) {
                         cleaned = moveResult.state
                         fallbackEvents.addAll(moveResult.events)
                     }
@@ -1233,26 +1195,16 @@ class LibraryAndZoneContinuationResumer(
         val castCollections = continuation.storeCastTo?.let { mapOf(it to listOf(continuation.cardId)) }
             ?: emptyMap()
 
-        // CastSpellHandler already detected + stacked this cast's triggers (e.g. Quintorius Kand's
-        // "whenever you cast a spell from exile"); propagate the flag so SubmitDecisionHandler
-        // doesn't re-scan the SpellCastEvent and double-fire them.
         if (castResult.pendingDecision != null) {
             val exposed = exposeCollectionsToNextFrame(castResult.state, castCollections)
             return ExecutionResult.propagatePause(
                 exposed,
                 castResult.events,
-            ).copy(triggersAlreadyProcessed = castResult.triggersAlreadyProcessed)
+            )
         }
 
         val exposed = exposeCollectionsToNextFrame(castResult.state, castCollections)
-        // Shared by every free-cast-with-targets flow (cascade, discover, suspend, …). When a
-        // *discovered* targeted spell is cast for free, the discover tail's DiscoveredEvent rides
-        // this batch under triggersAlreadyProcessed = true and would be suppressed — scan it (no-op
-        // for the non-discover callers, which emit no DiscoveredEvent).
-        return scanDiscoveredEventTriggers(
-            checkForMore(exposed, castResult.events)
-                .copy(triggersAlreadyProcessed = castResult.triggersAlreadyProcessed)
-        )
+        return checkForMore(exposed, castResult.events)
     }
 
     /**
@@ -1338,7 +1290,7 @@ class LibraryAndZoneContinuationResumer(
             ),
         )
         val result = effectRunner.executeRemainingEffects(state, effects, loopContext)
-        if (result.isPaused) return result.toExecutionResult()
+        if (result.outcome is Outcome.Paused) return result.toExecutionResult()
         return checkForMore(result.state, result.events.toList())
     }
 }

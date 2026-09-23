@@ -14,6 +14,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Regression: an attacker with double strike + trample blocked by a creature
@@ -89,10 +90,10 @@ class TrampleAfterFirstStrikeKillTest : FunSpec({
         driver.removeSummoningSickness(attacker)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(attacker), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldBe Outcome.Done
 
         // Lets first-strike damage step run (auto-resolves AssignDamageDecision with
         // the default: 2 damage to the blocker, none to the player). Blocker dies as
@@ -131,7 +132,7 @@ class TrampleAfterFirstStrikeKillTest : FunSpec({
         driver.removeSummoningSickness(attacker)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(attacker), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         driver.declareBlockers(
@@ -143,7 +144,7 @@ class TrampleAfterFirstStrikeKillTest : FunSpec({
                 goblins[2] to listOf(attacker),
                 goblins[3] to listOf(attacker),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // First strike step: kill the 4/2 and one goblin.
         driver.passPriorityUntil(Step.FIRST_STRIKE_COMBAT_DAMAGE)
@@ -205,9 +206,9 @@ class TrampleAfterFirstStrikeKillTest : FunSpec({
         driver.removeSummoningSickness(attacker)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 
         driver.findPermanent(opponent, "Tough Blocker") shouldBe null

@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Thranduil's Company — {2}{G}{U} 3/4 Elf Soldier (HOB #168).
@@ -84,7 +86,7 @@ class ThranduilsCompanyScenarioTest : FunSpec({
 
         val forest2 = driver.putCardInHand(me, "Forest")
         withClue("only the base land drop — the Company is the only Elf") {
-            driver.submitExpectFailure(PlayLand(me, forest2)).isSuccess shouldBe false
+            driver.submitExpectFailure(PlayLand(me, forest2)).outcome shouldNotBe Outcome.Done
         }
     }
 
@@ -110,7 +112,7 @@ class ThranduilsCompanyScenarioTest : FunSpec({
 
         val forest3 = driver.putCardInHand(me, "Forest")
         withClue("but only one extra drop — a third land is still illegal") {
-            driver.submitExpectFailure(PlayLand(me, forest3)).isSuccess shouldBe false
+            driver.submitExpectFailure(PlayLand(me, forest3)).outcome shouldNotBe Outcome.Done
         }
     }
 })

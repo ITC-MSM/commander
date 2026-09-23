@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Pearl Shard (MRD #225) — "{3}, {T} or {W}, {T}: Prevent the next 2 damage that would be dealt to
@@ -42,7 +44,7 @@ class PearlShardScenarioTest : FunSpec({
         val bolt = putCardInHand(player2, "Lightning Bolt")
         giveMana(player2, Color.RED, 1)
         passPriority(player1)
-        castSpell(player2, bolt, targets = listOf(victim)).isSuccess shouldBe true
+        castSpell(player2, bolt, targets = listOf(victim)).outcome shouldBe Outcome.Done
         bothPass()
     }
 
@@ -53,7 +55,7 @@ class PearlShardScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, shard, genericAbility, targets = listOf(ChosenTarget.Player(d.player1)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.boltAt(d.player1)
@@ -71,7 +73,7 @@ class PearlShardScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, shard, whiteAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.boltAt(bear)
@@ -89,12 +91,12 @@ class PearlShardScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, shard, genericAbility, targets = listOf(ChosenTarget.Player(d.player1)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         withClue("the shard is now tapped, so the {W} half has no {T} left to pay") {
             d.submit(
                 ActivateAbility(d.player1, shard, whiteAbility, targets = listOf(ChosenTarget.Player(d.player1)))
-            ).isSuccess shouldBe false
+            ).outcome shouldNotBe Outcome.Done
         }
     }
 })

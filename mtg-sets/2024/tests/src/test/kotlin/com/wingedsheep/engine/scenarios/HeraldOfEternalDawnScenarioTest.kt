@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Herald of Eternal Dawn (FDN #17) — {4}{W}{W}{W} 6/6 Creature — Angel.
@@ -66,7 +67,7 @@ class HeraldOfEternalDawnScenarioTest : FunSpec({
 
         val spell = putCardInHand(player, cardName)
         giveColorlessMana(player, 1)
-        castSpell(player, spell).isSuccess shouldBe true
+        castSpell(player, spell).outcome shouldBe Outcome.Done
         settle()
     }
 

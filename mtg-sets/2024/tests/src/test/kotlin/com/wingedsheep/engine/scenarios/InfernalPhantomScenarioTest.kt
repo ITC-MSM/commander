@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Infernal Phantom (DSK #141) — {3}{R} Creature — Spirit 2/3.
@@ -39,7 +40,7 @@ class InfernalPhantomScenarioTest : FunSpec({
         // Bolt the 2/3 Phantom to its death (3 damage > 3 toughness).
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpell(player, bolt, targets = listOf(phantom)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, targets = listOf(phantom)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the bolt — Phantom dies, queuing the dies trigger
 
         // Dies trigger asks for "any target" — point it at the opponent.
@@ -64,14 +65,14 @@ class InfernalPhantomScenarioTest : FunSpec({
         val enchantment = driver.putCardInHand(player, "Test Enchantment")
         driver.giveMana(player, Color.WHITE, 1)
         driver.giveMana(player, Color.GREEN, 1)
-        driver.castSpell(player, enchantment).isSuccess shouldBe true
+        driver.castSpell(player, enchantment).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the enchantment — ETB queues the Eerie trigger
         driver.bothPass() // resolve the Eerie self-pump (now a 4/3)
 
         // Kill the (now 4/3) Phantom.
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpell(player, bolt, targets = listOf(phantom)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, targets = listOf(phantom)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the bolt — Phantom dies, queuing the dies trigger
 
         driver.submitTargetSelection(player, listOf(opponent))

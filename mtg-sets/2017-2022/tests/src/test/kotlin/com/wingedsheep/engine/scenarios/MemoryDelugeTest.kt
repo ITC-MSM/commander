@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Memory Deluge ({2}{U}{U}, instant, flashback {5}{U}{U}):
@@ -48,7 +49,7 @@ class MemoryDelugeTest : FunSpec({
         val spell = driver.putCardInHand(activePlayer, "Memory Deluge")
         driver.giveMana(activePlayer, Color.BLUE, 4)
 
-        driver.castSpell(activePlayer, spell).isSuccess shouldBe true
+        driver.castSpell(activePlayer, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe true
@@ -91,7 +92,7 @@ class MemoryDelugeTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe true

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /** Roads Go Ever, Ever On — linked-exile chapters and the targeted attack trigger from chapter IV. */
 class RoadsGoEverEverOnScenarioTest : FunSpec({
@@ -59,7 +60,7 @@ class RoadsGoEverEverOnScenarioTest : FunSpec({
         giveMana(controller, Color.WHITE)
         giveColorlessMana(controller, 1)
         val saga = putCardInHand(controller, "Roads Go Ever, Ever On")
-        castSpell(controller, saga).isSuccess shouldBe true
+        castSpell(controller, saga).outcome shouldBe Outcome.Done
         drain()
         return saga
     }

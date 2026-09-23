@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.targets.AnyTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Chain of Plasma.
@@ -54,7 +55,7 @@ class ChainOfPlasmaTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 2)
 
         val castResult = driver.castSpell(activePlayer, chain, listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -89,7 +90,7 @@ class ChainOfPlasmaTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 2)
 
         val castResult = driver.castSpell(activePlayer, chain, listOf(bear))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -123,7 +124,7 @@ class ChainOfPlasmaTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 2)
 
         val castResult = driver.castSpell(activePlayer, chain, listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -187,7 +188,7 @@ class ChainOfPlasmaTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 2)
 
         val castResult = driver.castSpell(activePlayer, chain, listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -211,7 +212,7 @@ class ChainOfPlasmaTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 2)
 
         val castResult = driver.castSpell(activePlayer, chain, listOf(activePlayer))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

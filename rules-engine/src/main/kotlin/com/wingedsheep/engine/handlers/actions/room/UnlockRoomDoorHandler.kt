@@ -9,8 +9,6 @@ import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.core.RoomFullyUnlockedEvent
 import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.core.UnlockRoomDoor
-import com.wingedsheep.engine.event.TriggerDetector
-import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.handlers.CostHandler
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor
@@ -42,8 +40,6 @@ import kotlin.reflect.KClass
 class UnlockRoomDoorHandler(
     private val manaSolver: ManaSolver,
     private val costHandler: CostHandler,
-    private val triggerDetector: TriggerDetector,
-    private val triggerProcessor: TriggerProcessor,
     private val manaAbilitySideEffectExecutor: ManaAbilitySideEffectExecutor,
     cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
 ) : ActionHandler<UnlockRoomDoor> {
@@ -285,22 +281,6 @@ class UnlockRoomDoorHandler(
         currentState = stateAfterUnlock
         events.addAll(unlockEvents)
 
-        // Detect and process triggers from the door-unlock events.
-        val triggers = triggerDetector.detectTriggers(currentState, events)
-        if (triggers.isNotEmpty()) {
-            val triggerResult = triggerProcessor.processTriggers(currentState, triggers)
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state.withPriority(action.playerId),
-                    events + triggerResult.events
-                )
-            }
-            return ExecutionResult.success(
-                triggerResult.newState.withPriority(action.playerId),
-                events + triggerResult.events
-            )
-        }
-
         // Player retains priority after the special action; clear priorityPassedBy so
         // the opponent's prior pass doesn't carry over.
         return ExecutionResult.success(currentState.withPriority(action.playerId), events)
@@ -311,8 +291,6 @@ class UnlockRoomDoorHandler(
             UnlockRoomDoorHandler(
                 manaSolver = services.manaSolver,
                 costHandler = services.costHandler,
-                triggerDetector = services.triggerDetector,
-                triggerProcessor = services.triggerProcessor,
                 manaAbilitySideEffectExecutor = services.manaAbilitySideEffectExecutor,
                 cardRegistry = services.cardRegistry,
             )

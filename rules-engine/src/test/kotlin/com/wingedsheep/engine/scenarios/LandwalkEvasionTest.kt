@@ -7,6 +7,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for landwalk evasion abilities.
@@ -70,7 +72,7 @@ class LandwalkEvasionTest : FunSpec({
 
         // Declare Forest Walker as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(forestWalker), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -84,7 +86,7 @@ class LandwalkEvasionTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "forestwalk"
         result.error shouldContainIgnoringCase "cannot be blocked"
     }
@@ -110,7 +112,7 @@ class LandwalkEvasionTest : FunSpec({
 
         // Declare Forest Walker as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(forestWalker), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -122,7 +124,7 @@ class LandwalkEvasionTest : FunSpec({
             mapOf(blocker to listOf(forestWalker))
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("creature with islandwalk cannot be blocked when defender controls an Island") {
@@ -146,7 +148,7 @@ class LandwalkEvasionTest : FunSpec({
 
         // Declare Island Walker as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(islandWalker), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -160,7 +162,7 @@ class LandwalkEvasionTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "islandwalk"
         result.error shouldContainIgnoringCase "cannot be blocked"
     }
@@ -186,7 +188,7 @@ class LandwalkEvasionTest : FunSpec({
 
         // Declare Island Walker as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(islandWalker), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -198,7 +200,7 @@ class LandwalkEvasionTest : FunSpec({
             mapOf(blocker to listOf(islandWalker))
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("landwalk only considers defending player's lands, not attacking player's") {
@@ -224,7 +226,7 @@ class LandwalkEvasionTest : FunSpec({
 
         // Declare Forest Walker as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(forestWalker), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -236,6 +238,6 @@ class LandwalkEvasionTest : FunSpec({
             mapOf(blocker to listOf(forestWalker))
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

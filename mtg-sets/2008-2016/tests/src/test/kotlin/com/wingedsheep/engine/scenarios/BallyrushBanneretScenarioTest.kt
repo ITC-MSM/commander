@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Ballyrush Banneret (MOR #1, reprinted in FDN #567) — {1}{W} Kithkin Soldier, 2/1.
@@ -61,7 +63,7 @@ class BallyrushBanneretScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = player, cardId = soldier, paymentStrategy = PaymentStrategy.AutoPay)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass() // resolve the creature spell
         driver.getCreatures(player).contains(soldier) shouldBe true
@@ -80,6 +82,6 @@ class BallyrushBanneretScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = player, cardId = bear, paymentStrategy = PaymentStrategy.AutoPay)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

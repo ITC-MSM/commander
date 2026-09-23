@@ -3,8 +3,7 @@
         "player-1": {
             "com.wingedsheep.engine.state.components.identity.PlayerComponent": {
                 "type": "com.wingedsheep.engine.state.components.identity.PlayerComponent",
-                "name": "Player1",
-                "startingLifeTotal": 20
+                "name": "Player1"
             },
             "com.wingedsheep.engine.state.components.identity.LifeTotalComponent": {
                 "type": "com.wingedsheep.engine.state.components.identity.LifeTotalComponent",
@@ -12,13 +11,7 @@
             },
             "com.wingedsheep.engine.state.components.player.ManaPoolComponent": {
                 "type": "com.wingedsheep.engine.state.components.player.ManaPoolComponent",
-                "white": 0,
                 "blue": 1,
-                "black": 0,
-                "red": 0,
-                "green": 0,
-                "colorless": 0,
-                "restrictedMana": [],
                 "manaBySubtype": {
                     "Bird": 1
                 },
@@ -27,37 +20,23 @@
                 }
             },
             "com.wingedsheep.engine.state.components.player.LandDropsComponent": {
-                "type": "com.wingedsheep.engine.state.components.player.LandDropsComponent",
-                "remaining": 1,
-                "maxPerTurn": 1
+                "type": "com.wingedsheep.engine.state.components.player.LandDropsComponent"
             }
         },
         "player-2": {
             "com.wingedsheep.engine.state.components.identity.PlayerComponent": {
                 "type": "com.wingedsheep.engine.state.components.identity.PlayerComponent",
-                "name": "Player2",
-                "startingLifeTotal": 20
+                "name": "Player2"
             },
             "com.wingedsheep.engine.state.components.identity.LifeTotalComponent": {
                 "type": "com.wingedsheep.engine.state.components.identity.LifeTotalComponent",
                 "life": 20
             },
             "com.wingedsheep.engine.state.components.player.ManaPoolComponent": {
-                "type": "com.wingedsheep.engine.state.components.player.ManaPoolComponent",
-                "white": 0,
-                "blue": 0,
-                "black": 0,
-                "red": 0,
-                "green": 0,
-                "colorless": 0,
-                "restrictedMana": [],
-                "manaBySubtype": {},
-                "manaBySource": {}
+                "type": "com.wingedsheep.engine.state.components.player.ManaPoolComponent"
             },
             "com.wingedsheep.engine.state.components.player.LandDropsComponent": {
-                "type": "com.wingedsheep.engine.state.components.player.LandDropsComponent",
-                "remaining": 1,
-                "maxPerTurn": 1
+                "type": "com.wingedsheep.engine.state.components.player.LandDropsComponent"
             }
         },
         "card-1001": {
@@ -75,21 +54,10 @@
                 "baseKeywords": [
                     "FLYING"
                 ],
-                "baseFlags": [],
                 "colors": [
                     "GREEN"
                 ],
-                "ownerId": "player-1",
-                "spellEffect": null,
-                "imageUri": null,
-                "backFaceImageUri": null,
-                "printingSetCode": null,
-                "hasNonManaActivatedAbility": false,
-                "hasActivatedAbility": false,
-                "originalSetCode": null,
-                "hasAdventure": false,
-                "isDoubleFaced": false,
-                "manaValueOverride": null
+                "ownerId": "player-1"
             },
             "com.wingedsheep.engine.state.components.identity.OwnerComponent": {
                 "type": "com.wingedsheep.engine.state.components.identity.OwnerComponent",
@@ -153,41 +121,15 @@
         },
         []
     ],
-    "departedLinkedExile": {},
-    "zoneReturns": [],
     "turnNumber": 1,
     "activePlayerId": "player-1",
     "phase": "PRECOMBAT_MAIN",
     "step": "PRECOMBAT_MAIN",
     "priorityPlayerId": "player-1",
-    "stack": [],
-    "objectIdentities": {
-        "card-1001": {
-            "generation": 1,
-            "logicalZone": {
-                "ownerId": "player-1",
-                "zoneType": "Battlefield"
-            }
-        }
-    },
-    "nextObjectGeneration": 2,
-    "priorityPassedBy": [],
-    "timestamp": 0,
     "turnOrder": [
         "player-1",
         "player-2"
     ],
-    "winnerId": null,
-    "gameOver": false,
-    "floatingEffects": [],
-    "delayedTriggers": [],
-    "grantedTriggeredAbilities": [],
-    "grantedStateTriggeredAbilities": [],
-    "grantedActivatedAbilities": [],
-    "grantedStaticAbilities": [],
-    "grantedReplacementEffects": [],
-    "grantedKeywordAbilities": [],
-    "globalGrantedTriggeredAbilities": [],
     "continuationStack": [
         {
             "type": "com.wingedsheep.engine.core.Suspension",
@@ -197,20 +139,12 @@
                 "playerId": "player-1",
                 "prompt": "Pay {1}",
                 "context": {
-                    "sourceId": null,
-                    "sourceName": "You may pay",
-                    "phase": "RESOLUTION",
-                    "triggeringEntityId": null,
-                    "inlineOnTrigger": false,
-                    "effectHint": null,
-                    "subjectEntityId": null,
-                    "abilityIdentity": null
+                    "sourceName": "You may pay"
                 },
                 "availableSources": [],
                 "requiredCost": "{1}",
                 "autoPaySuggestion": [],
-                "canDecline": true,
-                "waterbendPermanents": []
+                "canDecline": true
             },
             "answer": {
                 "type": "com.wingedsheep.engine.core.MayPayManaSelectionContinuation",
@@ -221,107 +155,12 @@
                     "type": "GainLife",
                     "amount": {
                         "type": "Fixed",
-                        "amount": 2,
-                        "description": "2"
-                    },
-                    "target": {
-                        "type": "Controller"
-                    },
-                    "description": "You gain 2 life"
+                        "amount": 2
+                    }
                 },
                 "effectContext": {
                     "sourceId": null,
-                    "controllerId": "player-1",
-                    "effectControllerId": null,
-                    "granterId": null,
-                    "abilityIdentity": null,
-                    "activatedAbility": null,
-                    "candidatePlayerId": null,
-                    "sourceFaceChanges": null,
-                    "sourceBattlefieldTimestamp": null,
-                    "sourceReferenceLost": false,
-                    "triggeringReferenceLost": false,
-                    "objectReferences": {
-                        "captured": false,
-                        "origin": null,
-                        "source": null,
-                        "triggering": null,
-                        "resolutionKey": null,
-                        "permittedMoves": [],
-                        "selfBinding": null
-                    },
-                    "targets": [],
-                    "alignedTargets": [],
-                    "xValue": null,
-                    "totalManaSpent": 0,
-                    "manaSpentOnXByColor": {},
-                    "declaredCostSlot": null,
-                    "wasBlightPaid": false,
-                    "wasWaterbendPaid": false,
-                    "wasSneaked": false,
-                    "wasWebSlung": false,
-                    "wasMayhem": false,
-                    "sacrificedPermanents": [],
-                    "discardedAsCostCards": [],
-                    "damageDistribution": null,
-                    "chosenModes": [],
-                    "modeTargetsOrdered": [],
-                    "modeTargetRequirements": {},
-                    "exiledCardCount": 0,
-                    "additionalCostBlightAmount": 0,
-                    "tappedPermanents": [],
-                    "exiledAsCostCards": [],
-                    "exiledAsCostSnapshots": [],
-                    "tappedEntitySnapshots": [],
-                    "lastKnownSourceCounters": {},
-                    "lastKnownSourceSnapshot": null,
-                    "lastKnownSourceAttachments": [],
-                    "chosenEntitySnapshots": [],
-                    "triggerDamageAmount": null,
-                    "triggerCounterCount": null,
-                    "triggerTotalCounterCount": null,
-                    "triggerMinusOneMinusOneCounterCount": null,
-                    "triggerLastKnownSubtypes": null,
-                    "triggerLastKnownCardTypes": null,
-                    "triggeringEntityId": null,
-                    "triggeringPlayerId": null,
-                    "targetingSourceEntityId": null,
-                    "triggerUnattachedFromEntityId": null,
-                    "defendingPlayerId": null,
-                    "triggerLastKnownPower": null,
-                    "triggerLastKnownToughness": null,
-                    "triggerDiedBatchTotalPower": null,
-                    "enchantedCreatureLastKnownPower": null,
-                    "triggerLastKnownCounters": null,
-                    "triggerLastKnownDamageDealtByPlayers": null,
-                    "triggerLastKnownBlockingOrBlockedByIds": null,
-                    "triggerModesChosenCount": null,
-                    "triggerManaSpentOnTriggeringSpell": null,
-                    "triggerColorsSpentOnTriggeringSpell": null,
-                    "triggerManaValueOfTriggeringSpell": null,
-                    "triggerXValueOfTriggeringSpell": null,
-                    "triggerScryCount": null,
-                    "triggerClashWon": null,
-                    "triggerDiscardCount": null,
-                    "triggerDiscoverValue": null,
-                    "triggerExcessDamageAmount": null,
-                    "triggerRecipientToughness": null,
-                    "manaColorChoice": null,
-                    "chosenColor": null,
-                    "chosenCreatureType": null,
-                    "opponentDeciderId": null,
-                    "castFromZone": null,
-                    "affectedEntityId": null,
-                    "pipeline": {
-                        "storedCollections": {},
-                        "namedTargets": {},
-                        "chosenValues": {},
-                        "storedNumbers": {},
-                        "storedStringLists": {},
-                        "storedSubtypeGroups": {},
-                        "iterationTarget": null
-                    },
-                    "resolutionDepth": 0
+                    "controllerId": "player-1"
                 },
                 "availableSources": [
                     {
@@ -334,55 +173,17 @@
                             "RED",
                             "GREEN"
                         ],
-                        "producesColorless": false,
-                        "requiresSacrifice": false,
-                        "requiresTappingAnotherPermanent": false,
-                        "manaAmount": 1
+                        "producesColorless": false
                     }
                 ],
                 "autoPaySuggestion": [
                     "card-1001"
-                ],
-                "waterbend": false,
-                "otherwise": null
+                ]
             }
         }
     ],
-    "spellsCastThisTurn": 0,
-    "playerSpellsCastThisTurn": {},
-    "spellsCastThisTurnByPlayer": {},
-    "dayNight": null,
-    "previousTurnActivePlayerId": null,
-    "previousTurnActiveTeamSpellCounts": {},
-    "pendingSpellCopies": [],
-    "pendingUncounterableSpells": [],
-    "pendingNextSpellAffinities": [],
-    "pendingFreeCastSpells": [],
-    "turnSpellCostReductions": [],
-    "spellWarpedThisTurn": false,
-    "damageCantBePreventedThisTurn": false,
-    "powerUpRestrictedTurns": [],
-    "nonlandPermanentLeftBattlefieldThisTurn": false,
-    "activeCounterPlacementModifiers": [],
-    "permanentsSacrificedThisTurn": 0,
-    "pendingSacrificeIds": [],
-    "pendingDiscardCauseControllers": {},
-    "playersWhoCommittedCrimeThisTurn": [],
-    "lastCastSpellColors": null,
-    "lastCardDrawnThisTurnByPlayer": {},
-    "drawStepStartDrawCountByPlayer": {},
-    "format": {
-        "type": "com.wingedsheep.sdk.core.Format.Standard"
-    },
-    "attackMode": "MULTIPLE",
-    "commanderDamage": [],
-    "mayPlayPermissions": [],
     "rng": {
         "state": 1703
     },
-    "nextEntityId": 0,
-    "nextRoutingId": 3,
-    "yieldsByPlayer": {},
-    "activeReplacementChain": null,
-    "optionalDamageRedirectChoices": {}
+    "nextRoutingId": 3
 }

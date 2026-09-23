@@ -88,7 +88,7 @@ class SurveilNTest : FunSpec({
                 abilityId = surveilAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Engine pauses: player chooses which of the top 2 cards go to the graveyard

@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Aerith Rescue Mission — {3}{W} Sorcery, modal "Choose one —".
@@ -70,7 +71,7 @@ class AerithRescueMissionScenarioTest : FunSpec({
                 chosenModes = listOf(0)
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -123,7 +124,7 @@ class AerithRescueMissionScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(chosenTargets)
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -172,7 +173,7 @@ class AerithRescueMissionScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(chosenTargets)
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

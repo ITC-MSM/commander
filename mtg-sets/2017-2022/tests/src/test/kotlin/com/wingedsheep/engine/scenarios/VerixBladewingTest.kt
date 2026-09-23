@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Verix Bladewing:
@@ -53,7 +54,7 @@ class VerixBladewingTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve spell
         driver.passPriority(p1)
@@ -89,7 +90,7 @@ class VerixBladewingTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve spell
         driver.passPriority(p1)

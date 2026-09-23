@@ -18,6 +18,8 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Smokebraider (LRW #189) — {1}{R} Creature — Elemental Shaman 1/1
@@ -97,7 +99,7 @@ class SmokebraiderScenarioTest : FunSpec({
         val elemental = driver.putCardInHand(p1, "Test Elemental")
         driver.submit(
             CastSpell(playerId = p1, cardId = elemental, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
     }
 
     test("the restricted mana cannot pay for a non-Elemental spell") {
@@ -111,6 +113,6 @@ class SmokebraiderScenarioTest : FunSpec({
         val goblin = driver.putCardInHand(p1, "Test Goblin")
         driver.submit(
             CastSpell(playerId = p1, cardId = goblin, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

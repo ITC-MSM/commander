@@ -13,6 +13,8 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for the BasicLandcycling keyword via Stratosoarer from Lorwyn Eclipsed.
@@ -46,7 +48,7 @@ class BasicLandcyclingTest : FunSpec({
         driver.giveColorlessMana(activePlayer, 1)
 
         val result = driver.submit(TypecycleCard(playerId = activePlayer, cardId = stratosoarer))
-        (result.isSuccess || result.isPaused).shouldBeTrue()
+        (result.outcome is Outcome.Done || result.outcome is Outcome.Paused).shouldBeTrue()
 
         // Stratosoarer was discarded into the graveyard.
         driver.getGraveyardCardNames(activePlayer) shouldContain "Stratosoarer"
@@ -78,7 +80,7 @@ class BasicLandcyclingTest : FunSpec({
         val stratosoarer = driver.putCardInHand(activePlayer, "Stratosoarer")
 
         val result = driver.submit(TypecycleCard(playerId = activePlayer, cardId = stratosoarer))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.findCardInHand(activePlayer, "Stratosoarer") shouldBe stratosoarer
     }
 })

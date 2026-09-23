@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Kilnmouth Dragon:
@@ -63,7 +64,7 @@ class KilnmouthDragonTest : FunSpec({
                 targets = listOf(ChosenTarget.Player(opponent))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve
         driver.bothPass()
@@ -96,7 +97,7 @@ class KilnmouthDragonTest : FunSpec({
                 targets = listOf(ChosenTarget.Player(opponent))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getLifeTotal(opponent) shouldBe lifeBefore
@@ -126,7 +127,7 @@ class KilnmouthDragonTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(bears))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 3 damage to a 2/2 should kill it

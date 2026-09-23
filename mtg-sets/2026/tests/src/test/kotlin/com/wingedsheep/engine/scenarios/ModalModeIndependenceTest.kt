@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests D3 from [`backlog/modal-cast-time-choices-plan.md`]: modes with different target
@@ -81,7 +82,7 @@ class ModalModeIndependenceTest : FunSpec({
                     listOf(ChosenTarget.Permanent(goblin))
                 )
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Simulate the Goblin leaving the battlefield (destroyed) before resolution. This
         // mirrors the pattern in ChooseNModalPreChosenTest D1 — move the entity to its
@@ -145,7 +146,7 @@ class ModalModeIndependenceTest : FunSpec({
                     listOf(ChosenTarget.Permanent(goblin))
                 )
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         d.bothPass()
 

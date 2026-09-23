@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Patient Naturalist (OTJ #174) — {2}{G} 2/3 Creature.
@@ -43,7 +44,7 @@ class PatientNaturalistScenarioTest : FunSpec({
 
         val naturalist = driver.putCardInHand(player, "Patient Naturalist")
         driver.giveMana(player, Color.GREEN, 3)
-        driver.castSpell(player, naturalist).isSuccess shouldBe true
+        driver.castSpell(player, naturalist).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.stackSize > 0 && !driver.isPaused && guard++ < 10) driver.bothPass()
 
@@ -74,7 +75,7 @@ class PatientNaturalistScenarioTest : FunSpec({
 
         val naturalist = driver.putCardInHand(player, "Patient Naturalist")
         driver.giveMana(player, Color.GREEN, 3)
-        driver.castSpell(player, naturalist).isSuccess shouldBe true
+        driver.castSpell(player, naturalist).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.stackSize > 0 && !driver.isPaused && guard++ < 10) driver.bothPass()
 

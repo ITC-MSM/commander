@@ -11,6 +11,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Goblin Spy.
@@ -99,6 +101,6 @@ class GoblinSpyTest : FunSpec({
 
         // Unlike Future Sight, the revealed top card cannot be cast from the library.
         val castResult = driver.castSpell(activePlayer, boltOnTop, listOf(creature))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
     }
 })

@@ -23,6 +23,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.util.UUID
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Disruptive Pitmage.
@@ -80,7 +81,7 @@ class DisruptivePitmageTest : FunSpec({
         val bolt = driver.putCardInHand(activePlayer, "Lightning Bolt")
         driver.giveMana(activePlayer, Color.RED, 1)
         val castResult = driver.castSpell(activePlayer, bolt, listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Lightning Bolt is now on the stack
         driver.stackSize shouldBe 1
@@ -97,7 +98,7 @@ class DisruptivePitmageTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(spellOnStack))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Stack: ability on top, Lightning Bolt below
         driver.stackSize shouldBe 2
@@ -264,7 +265,7 @@ class DisruptivePitmageTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(spellOnStack))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Both pass to resolve the Pitmage ability
         driver.bothPass()

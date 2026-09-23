@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Airship Crash.
@@ -44,7 +45,7 @@ class AirshipCrashScenarioTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 3)
 
         val castResult = driver.castSpell(activePlayer, crash, listOf(flyer))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(opponent, "Birds of Paradise") shouldBe null
@@ -66,7 +67,7 @@ class AirshipCrashScenarioTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 3)
 
         val castResult = driver.castSpell(activePlayer, crash, listOf(grounded))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
 
         driver.findPermanent(opponent, "Centaur Courser") shouldNotBe null
     }
@@ -83,7 +84,7 @@ class AirshipCrashScenarioTest : FunSpec({
 
         val handBefore = driver.getHandSize(activePlayer)
         val result = driver.submit(CycleCard(playerId = activePlayer, cardId = crash))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Cycling discards Airship Crash and draws a card; net hand size unchanged.

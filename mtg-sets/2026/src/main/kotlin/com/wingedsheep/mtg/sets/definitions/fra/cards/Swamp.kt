@@ -2,18 +2,22 @@ package com.wingedsheep.mtg.sets.definitions.fra.cards
 
 import com.wingedsheep.sdk.dsl.basicLand
 
+/**
+ * Reality Fracture Swamp arts: two regular-frame booster arts in the main set numbering, then
+ * three non-booster treatments above it. Scryfall reports `booster: false` for every FRA basic
+ * (pre-release data), so the regular arts are marked in-booster by hand — they are what
+ * limited deck building hands out (`BoosterGenerator.getBasicLands`).
+ */
 val RealityFractureSwamp285 = basicLand("Swamp") {
     collectorNumber = "285"
     artist = "Josu Solano"
     imageUri = "https://cards.scryfall.io/normal/front/3/0/30693b85-550d-4c98-8c5b-4fd4e91c9f28.jpg?1789599699"
-    inBooster = false
 }
 
 val RealityFractureSwamp286 = basicLand("Swamp") {
     collectorNumber = "286"
     artist = "Leon Tukker"
     imageUri = "https://cards.scryfall.io/normal/front/0/5/05465ed0-f511-4e6f-9561-49bf6608fb80.jpg?1789599687"
-    inBooster = false
 }
 
 val RealityFractureSwamp388 = basicLand("Swamp") {

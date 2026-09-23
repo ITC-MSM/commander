@@ -17,6 +17,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Anti-Venom, Horrifying Healer (SPM) — a 5/5 with two abilities:
@@ -97,7 +98,7 @@ class AntiVenomHorrifyingHealerScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(playerId = you, cardId = av, paymentStrategy = PaymentStrategy.AutoPay),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Anti-Venom; the was-cast ETB trigger goes on the stack, wants a target
 
         val courser = driver.getGraveyard(you).first {

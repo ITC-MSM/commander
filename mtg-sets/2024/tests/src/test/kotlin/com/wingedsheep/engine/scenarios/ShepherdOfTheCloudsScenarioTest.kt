@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Shepherd of the Clouds (OTJ #28) — {4}{W} Creature — Pegasus 4/3.
@@ -44,7 +45,7 @@ class ShepherdOfTheCloudsScenarioTest : FunSpec({
 
         val shepherd = driver.putCardInHand(me, "Shepherd of the Clouds")
         driver.giveMana(me, Color.WHITE, 5)
-        driver.castSpell(me, shepherd).isSuccess shouldBe true
+        driver.castSpell(me, shepherd).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve creature -> enters -> ETB trigger on stack
 
         val decision = driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
@@ -68,7 +69,7 @@ class ShepherdOfTheCloudsScenarioTest : FunSpec({
 
         val shepherd = driver.putCardInHand(me, "Shepherd of the Clouds")
         driver.giveMana(me, Color.WHITE, 5)
-        driver.castSpell(me, shepherd).isSuccess shouldBe true
+        driver.castSpell(me, shepherd).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val decision = driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()

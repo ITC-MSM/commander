@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * White Lotus Tile — "{4} Artifact. This artifact enters tapped. {T}: Add X mana of any one color,
@@ -82,7 +83,7 @@ class WhiteLotusTileScenarioTest : FunSpec({
         val tile = d.putPermanentOnBattlefield(you, "White Lotus Tile")
 
         val result = d.submit(ActivateAbility(playerId = you, sourceId = tile, abilityId = manaAbilityId))
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
         val decision = d.pendingDecision as ChooseColorDecision
         d.submitDecision(you, ColorChosenResponse(decision.id, Color.WHITE))
 

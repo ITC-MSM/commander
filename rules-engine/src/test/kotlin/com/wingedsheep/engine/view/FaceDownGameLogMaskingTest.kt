@@ -57,6 +57,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The game log must never print the name of a card that is face down on the battlefield.
@@ -372,7 +373,7 @@ class FaceDownGameLogMaskingTest : FunSpec({
         val bolt = d.putCardInHand(activePlayer, "Lightning Bolt")
         d.castSpellWithTargets(
             activePlayer, bolt, listOf(ChosenTarget.Permanent(hidden))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val wardId = d.state.stack.single { id ->
             d.state.getEntity(id)?.has<TriggeredAbilityOnStackComponent>() == true
@@ -427,7 +428,7 @@ class FaceDownGameLogMaskingTest : FunSpec({
         val counter = d.putCardInHand(opponent, "Counterspell")
         d.castSpellWithTargets(
             opponent, counter, listOf(ChosenTarget.Spell(cardId))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val log = d.logAsSeenBy(caster)
         withClue("log: $log") {

@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Regression tests for Lluwen, Imperfect Naturalist's ETB:
@@ -43,7 +44,7 @@ class LluwenImperfectNaturalistTest : FunSpec({
 
         val graveyardBefore = driver.state.getZone(ZoneKey(activePlayer, Zone.GRAVEYARD)).size
 
-        driver.castSpell(activePlayer, lluwen).isSuccess shouldBe true
+        driver.castSpell(activePlayer, lluwen).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lluwen spell -> ETB trigger goes on stack
         driver.bothPass() // resolve ETB trigger -> mill 4, pause for put-back decision
 
@@ -70,7 +71,7 @@ class LluwenImperfectNaturalistTest : FunSpec({
 
         val graveyardBefore = driver.state.getZone(ZoneKey(activePlayer, Zone.GRAVEYARD)).size
 
-        driver.castSpell(activePlayer, secondLluwen).isSuccess shouldBe true
+        driver.castSpell(activePlayer, secondLluwen).outcome shouldBe Outcome.Done
         driver.bothPass() // second Lluwen resolves; legend rule SBA pauses for choice
 
         // First stop: legend rule. Keep the just-cast Lluwen (older one goes to graveyard).

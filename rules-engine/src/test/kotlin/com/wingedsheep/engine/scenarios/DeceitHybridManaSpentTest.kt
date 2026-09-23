@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.dsl.basicLand
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bug repro: Deceit's black gate ({B}{B} spent) must trigger when its two {U/B}
@@ -110,7 +111,7 @@ class DeceitHybridManaSpentTest : FunSpec({
         // Tap the enchanted Mountain: produces {B} (overridden) + {B} (bonus) = {B}{B}.
         driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = mountain, abilityId = mountainManaAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         val pool = driver.state.getEntity(activePlayer)!!.get<ManaPoolComponent>()!!
         pool.black shouldBe 2
 

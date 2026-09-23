@@ -8,6 +8,7 @@ import com.wingedsheep.engine.core.YesNoResponse
 import com.wingedsheep.engine.handlers.effects.token.TokenCreationReplacementHelper
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Handles token-related continuation resumptions:
@@ -45,7 +46,7 @@ class TokenContinuationResumer(
                 cardRegistry = services.cardRegistry,
                 staticAbilityHandler = StaticAbilityHandler(services.cardRegistry)
             )
-            if (result.isPaused) return result.toExecutionResult()
+            if (result.outcome is Outcome.Paused) return result.toExecutionResult()
             return checkForMore(result.state, result.events)
         } else {
             // Player declined: execute original token creation effect
@@ -56,7 +57,7 @@ class TokenContinuationResumer(
                 continuation.originalEffect,
                 context
             )
-            if (effectResult.isPaused) return effectResult.toExecutionResult()
+            if (effectResult.outcome is Outcome.Paused) return effectResult.toExecutionResult()
             return checkForMore(effectResult.state, effectResult.events)
         }
     }

@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Temporal Cleansing.
@@ -64,7 +65,7 @@ class TemporalCleansingTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(courser)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val decision = driver.pendingDecision
@@ -109,7 +110,7 @@ class TemporalCleansingTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(courser)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val decision = driver.pendingDecision as ChooseOptionDecision

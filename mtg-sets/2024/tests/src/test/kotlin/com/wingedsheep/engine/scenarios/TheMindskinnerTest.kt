@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for The Mindskinner (DSK 66).
@@ -89,7 +90,7 @@ class TheMindskinnerTest : FunSpec({
         // Cast the zapper; its ETB deals 3 to the opponent — a source p1 controls.
         val zap = d.putCardInHand(p1, "Test Zapper")
         d.giveColorlessMana(p1, 1)
-        d.castSpell(p1, zap).isSuccess shouldBe true
+        d.castSpell(p1, zap).outcome shouldBe Outcome.Done
         var guard = 0
         while ((d.state.stack.isNotEmpty() || d.state.pendingDecision is ChooseTargetsDecision) && guard++ < 20) {
             if (d.state.pendingDecision is ChooseTargetsDecision) {

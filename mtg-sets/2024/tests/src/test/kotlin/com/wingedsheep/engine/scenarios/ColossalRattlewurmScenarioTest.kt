@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Colossal Rattlewurm (OTJ #159) — {2}{G}{G} 6/5 Creature — Wurm.
@@ -54,7 +55,7 @@ class ColossalRattlewurmScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = rattlewurm, abilityId = abilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         if (driver.isPaused) {

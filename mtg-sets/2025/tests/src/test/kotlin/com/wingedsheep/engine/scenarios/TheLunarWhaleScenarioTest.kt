@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for The Lunar Whale.
@@ -48,7 +49,7 @@ class TheLunarWhaleScenarioTest : FunSpec({
         val forestOnTop = driver.putCardOnTopOfLibrary(you, "Forest")
 
         // A land on top of library can only be played via the (currently inactive) permission.
-        driver.playLand(you, forestOnTop).isSuccess shouldBe false
+        driver.playLand(you, forestOnTop).outcome shouldNotBe Outcome.Done
         driver.findPermanent(you, "Forest") shouldBe null
     }
 
@@ -74,7 +75,7 @@ class TheLunarWhaleScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 
         val forestOnTop = driver.putCardOnTopOfLibrary(you, "Forest")
-        driver.playLand(you, forestOnTop).isSuccess shouldBe true
+        driver.playLand(you, forestOnTop).outcome shouldBe Outcome.Done
         driver.findPermanent(you, "Forest") shouldNotBe null
     }
 
@@ -99,7 +100,7 @@ class TheLunarWhaleScenarioTest : FunSpec({
         val frogmiteOnTop = driver.putCardOnTopOfLibrary(you, "Frogmite")
         driver.giveMana(you, Color.BLUE, 4)
 
-        driver.castSpell(you, frogmiteOnTop).isSuccess shouldBe true
+        driver.castSpell(you, frogmiteOnTop).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getBattlefield(you).contains(frogmiteOnTop) shouldBe true
     }

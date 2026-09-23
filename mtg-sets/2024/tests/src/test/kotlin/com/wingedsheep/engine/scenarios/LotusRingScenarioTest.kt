@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Lotus Ring — {3} Artifact — Equipment
@@ -69,7 +70,7 @@ class LotusRingScenarioTest : FunSpec({
         driver.giveColorlessMana(you, 3)
         driver.submit(
             ActivateAbility(you, ring, equipId, targets = listOf(ChosenTarget.Permanent(courser)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Attached to the chosen creature.
@@ -84,7 +85,7 @@ class LotusRingScenarioTest : FunSpec({
         // mana of any one color." mana ability. Activating it taps + sacrifices the creature
         // and lets the controller pick one color, producing three of it.
         val result = driver.submit(ActivateAbility(playerId = you, sourceId = courser, abilityId = grantedAbilityId))
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
         driver.pendingDecision.shouldBeInstanceOf<ChooseColorDecision>()
         val decision = driver.pendingDecision as ChooseColorDecision
         driver.submitDecision(you, ColorChosenResponse(decision.id, Color.GREEN))

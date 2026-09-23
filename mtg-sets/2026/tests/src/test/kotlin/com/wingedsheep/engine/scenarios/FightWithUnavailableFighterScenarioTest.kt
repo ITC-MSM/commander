@@ -16,6 +16,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * CR 701.14b — "If one or both creatures instructed to fight are no longer on the battlefield or are
@@ -41,7 +42,7 @@ class FightWithUnavailableFighterScenarioTest : FunSpec({
         val meanderer = driver.putCardInHand(driver.player1, "Mind Meanderer")
         driver.giveMana(driver.player1, Color.GREEN, 4)
         driver.giveMana(driver.player1, Color.BLUE, 2)
-        driver.castSpell(driver.player1, meanderer).isSuccess shouldBe true
+        driver.castSpell(driver.player1, meanderer).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature spell; its enters trigger asks for its target
 
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()

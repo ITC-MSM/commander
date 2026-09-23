@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dancing from Dark to Dawn — {3}{G}{G} Enchantment (HOB #123).
@@ -83,7 +84,7 @@ class DancingFromDarkToDawnScenarioTest : FunSpec({
         driver.putPermanentOnBattlefield(me, "Dancing from Dark to Dawn")
 
         val forest = driver.putCardInHand(me, "Forest")
-        driver.playLand(me, forest).isSuccess shouldBe true
+        driver.playLand(me, forest).outcome shouldBe Outcome.Done
         driver.settle()
 
         val bears = driver.getPermanents(me).filter { driver.getCardName(it) == "Bear Token" }

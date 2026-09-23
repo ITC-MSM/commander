@@ -25,6 +25,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Multiversal Passage (SPM #180): "As this land enters, choose a basic land type. Then you may
@@ -69,7 +70,7 @@ class MultiversalPassageScenarioTest : FunSpec({
 
     fun GameTestDriver.playPassageChoosing(player: EntityId, landType: String): EntityId {
         val passage = putCardInHand(player, "Multiversal Passage")
-        playLand(player, passage).isPaused shouldBe true
+        (playLand(player, passage).outcome is Outcome.Paused) shouldBe true
 
         // First decision: choose a basic land type.
         val choice = pendingDecision

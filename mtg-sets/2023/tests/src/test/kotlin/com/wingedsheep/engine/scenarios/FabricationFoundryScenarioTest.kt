@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Fabrication Foundry's reanimation ability — "{2}{W}, {T}, Exile one or more other artifacts you
@@ -118,7 +120,7 @@ class FabricationFoundryScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(variableCostPermanents = listOf(toExile))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error.shouldNotBeNull()
 
         // Nothing moved: the artifact is still on the battlefield and the target still in the GY.
@@ -169,7 +171,7 @@ class FabricationFoundryScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(variableCostPermanents = listOf(toExile))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error.shouldNotBeNull()
     }
 
@@ -191,7 +193,7 @@ class FabricationFoundryScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(variableCostPermanents = listOf(foundry))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error.shouldNotBeNull()
 
         // Foundry stays on the battlefield; nothing was reanimated.

@@ -356,6 +356,32 @@ object SetArchetypes {
                     "Ramp into expensive instants and sorceries that cascade for free value, snowballing card advantage with Increment counters. A go-big spells-matter ramp deck."),
             )
         ),
+        "FRA" to SetSynergies(
+            setCode = "FRA",
+            setName = "Reality Fracture",
+            archetypes = listOf(
+                Archetype("Fatehold", listOf(Color.WHITE, Color.BLUE),
+                    "Scry and surveil every turn, turning each look at the library into +1/+1 counters, pump and loyalty for your Jace token. A card-selection tempo deck that grows its fliers while it filters its draws."),
+                Archetype("Konstrari", listOf(Color.RED, Color.GREEN),
+                    "Make Heartwood tokens to ramp and fix, then cash that mana in for trampling threats and big modal creatures. An artifact-ramp midrange deck that goes over the top."),
+                Archetype("Stingerquill", listOf(Color.BLACK, Color.RED),
+                    "Flood the board with Cadet tokens and hasty attackers, pinging the opponent with every attack and every noncombat burn spell. A go-wide aggro deck that closes with reach."),
+                Archetype("Theorix", listOf(Color.BLUE, Color.BLACK),
+                    "Mill your own library to stock the graveyard, then recast spells with flashback and recursion as threshold payoffs come online. A graveyard-value control deck that out-grinds the opponent."),
+                Archetype("Vigorbloom", listOf(Color.GREEN, Color.WHITE),
+                    "Gain life every turn and spread +1/+1 counters across a sturdy board, drawing cards and turning lifegain into value. A counters-and-lifegain midrange deck that outlasts aggression."),
+                Archetype("Dedicated", listOf(Color.RED, Color.WHITE),
+                    "Curve out with small creatures that pile +1/+1 counters onto whatever just entered, then suit up with Equipment. A counters-matter aggro deck that snowballs early board presence."),
+                Archetype("Meticulous", listOf(Color.WHITE, Color.BLACK),
+                    "Sacrifice creatures and planeswalkers for value, drain life whenever your permanents die, and answer threats with hard removal. An aristocrats midrange deck that trades up."),
+                Archetype("Innovative", listOf(Color.BLUE, Color.RED),
+                    "Cast noncreature spells to make Thopter tokens and trigger prowess, tempoing the opponent with bounce and burn. A spells-matter artifact tempo deck."),
+                Archetype("Formidable", listOf(Color.BLACK, Color.GREEN),
+                    "Mill to fill the graveyard with lands and creatures, then return them to the battlefield while -1/-1 counters and deathtouch handle blockers. A graveyard ramp midrange deck."),
+                Archetype("Transformative", listOf(Color.GREEN, Color.BLUE),
+                    "Ramp with landfall and lean on planeswalkers, empowering Jace and using loyalty abilities to power unblockable attackers. A planeswalker-matters ramp deck."),
+            )
+        ),
         "BLB" to SetSynergies(
             setCode = "BLB",
             setName = "Bloomburrow",

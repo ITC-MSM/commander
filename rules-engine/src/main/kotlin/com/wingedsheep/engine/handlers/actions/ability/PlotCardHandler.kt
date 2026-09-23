@@ -9,8 +9,6 @@ import com.wingedsheep.engine.core.PlotCard
 import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.EngineServices
-import com.wingedsheep.engine.event.TriggerDetector
-import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.actions.ActionHandler
@@ -53,8 +51,6 @@ class PlotCardHandler(
     private val cardRegistry: CardRegistry,
     private val manaSolver: ManaSolver,
     private val manaAbilitySideEffectExecutor: com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor,
-    private val triggerDetector: TriggerDetector,
-    private val triggerProcessor: TriggerProcessor
 ) : ActionHandler<PlotCard> {
     override val actionType: KClass<PlotCard> = PlotCard::class
 
@@ -267,23 +263,6 @@ class PlotCardHandler(
 
         currentState = currentState.tick()
 
-        // Fire any "when this card becomes plotted" triggers (CR 718, e.g. Aloe Alchemist). The
-        // ActionProcessor does not run trigger detection centrally — each handler detects and
-        // processes its own triggers, like CycleCardHandler does for cycling triggers. The plotted
-        // card now sits in exile, so TriggerDetector.detectPlottedCardTriggers picks these up.
-        val triggers = triggerDetector.detectTriggers(currentState, events)
-        if (triggers.isNotEmpty()) {
-            val triggerResult = triggerProcessor.processTriggers(currentState, triggers)
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state,
-                    events + triggerResult.events
-                )
-            }
-            currentState = triggerResult.newState
-            events.addAll(triggerResult.events)
-        }
-
         // Plot is a special action — does not change priority and does not use the stack.
         return ExecutionResult.success(currentState, events)
     }
@@ -294,8 +273,6 @@ class PlotCardHandler(
                 services.cardRegistry,
                 services.manaSolver,
                 services.manaAbilitySideEffectExecutor,
-                services.triggerDetector,
-                services.triggerProcessor
             )
         }
     }

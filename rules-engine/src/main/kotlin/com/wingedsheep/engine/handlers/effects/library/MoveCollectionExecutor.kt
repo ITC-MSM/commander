@@ -95,14 +95,14 @@ class MoveCollectionExecutor(
             is CardDestination.ToZoneExiledFrom ->
                 moveToZonesExiledFrom(state, context, cards, destination, effect)
         }
-        if (effect.linkToSource && result.isSuccess) {
+        if (effect.linkToSource && result.outcome is Outcome.Done) {
             result = linkCardsToSource(result, context, cards)
         }
-        if (effect.unlinkFromSource && result.isSuccess) {
+        if (effect.unlinkFromSource && result.outcome is Outcome.Done) {
             result = unlinkCardsFromSource(result, context, cards)
         }
         val counterType = effect.addCounterType
-        if (counterType != null && result.isSuccess) {
+        if (counterType != null && result.outcome is Outcome.Done) {
             var newState = result.state
             for (cardId in cards) {
                 newState = newState.updateEntity(cardId) { c ->
@@ -112,7 +112,7 @@ class MoveCollectionExecutor(
             }
             result = EffectResult.success(newState, result.events).copy(updatedCollections = result.updatedCollections)
         }
-        if (effect.lookableInExile && result.isSuccess) {
+        if (effect.lookableInExile && result.outcome is Outcome.Done) {
             result = grantLookAtInExile(result, context, cards)
         }
         val marksBattlefieldEntries = when (destination) {
@@ -121,7 +121,7 @@ class MoveCollectionExecutor(
             // land on the battlefield, so let it inspect the whole set.
             is CardDestination.ToZoneExiledFrom -> true
         }
-        if (effect.markEnteredViaSourceAbility && marksBattlefieldEntries && result.isSuccess) {
+        if (effect.markEnteredViaSourceAbility && marksBattlefieldEntries && result.outcome is Outcome.Done) {
             result = markEnteredViaSourceAbility(result, context, cards)
         }
         return result
@@ -230,7 +230,7 @@ class MoveCollectionExecutor(
             groupResult.updatedCollections.forEach { (key, ids) ->
                 collections[key] = (collections[key] ?: emptyList()) + ids
             }
-            if (!groupResult.isSuccess || groupResult.pendingDecision != null) {
+            if (groupResult.outcome !is Outcome.Done || groupResult.pendingDecision != null) {
                 return groupResult.copy(
                     state = runningState,
                     events = events,
@@ -369,7 +369,7 @@ class MoveCollectionExecutor(
         // which calls LibraryRevealUtils.clearLibraryReveals() to wipe the whole library. Random
         // bottom-placement only obscures the cards being moved; any other cards in the library
         // whose positions the player legitimately knows (e.g. from a prior Brainstorm) stay revealed.
-        if (order == CardOrder.Random && destination.zone == Zone.LIBRARY && result.isSuccess) {
+        if (order == CardOrder.Random && destination.zone == Zone.LIBRARY && result.outcome is Outcome.Done) {
             return result.copy(state = LibraryRevealUtils.clearReveals(result.state, orderedCards))
         }
 

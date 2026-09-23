@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Woodwraith Corrupter (RAV #240) — "{1}{B}{G}, {T}: Target Forest becomes a 4/4 black and green
@@ -64,7 +65,7 @@ class WoodwraithCorrupterScenarioTest : FunSpec({
                 abilityId = animateAbility,
                 targets = listOf(ChosenTarget.Permanent(forest)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.drainStack()
         return forest
     }

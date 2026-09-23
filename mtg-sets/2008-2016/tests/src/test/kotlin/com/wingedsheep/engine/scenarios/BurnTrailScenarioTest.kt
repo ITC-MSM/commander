@@ -16,6 +16,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Burn Trail (SHM) — {3}{R} Sorcery
@@ -69,7 +71,7 @@ class BurnTrailScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay,
                 conspiredCreatures = listOf(goblin1, goblin2)
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Conspire's additional cost taps both creatures.
         driver.state.getEntity(goblin1)!!.has<TappedComponent>() shouldBe true
@@ -83,7 +85,7 @@ class BurnTrailScenarioTest : FunSpec({
         }
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
 
-        driver.submitTargetSelection(caster, listOf(caster)).isSuccess shouldBe true
+        driver.submitTargetSelection(caster, listOf(caster)).outcome shouldBe Outcome.Done
 
         val copyId = driver.state.stack.single { id ->
             val e = driver.state.getEntity(id)
@@ -106,7 +108,7 @@ class BurnTrailScenarioTest : FunSpec({
         repeat(4) { driver.putLandOnBattlefield(caster, "Mountain") }
         val burnTrail = driver.putCardInHand(caster, "Burn Trail")
 
-        driver.castSpell(caster, burnTrail, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, burnTrail, listOf(opponent)).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(goblin1)!!.has<TappedComponent>() shouldBe false
         driver.state.getEntity(goblin2)!!.has<TappedComponent>() shouldBe false
@@ -135,6 +137,6 @@ class BurnTrailScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay,
                 conspiredCreatures = listOf(redGoblin, greenCentaur)
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

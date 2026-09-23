@@ -27,6 +27,8 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Jade Seedstones // Jadeheart Attendant (LCI #195).
@@ -238,7 +240,7 @@ class JadeSeedstonesScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(artifact))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         // The front face is still on the battlefield, nothing exiled.
         d.state.getEntity(seedstones)!!.get<CardComponent>()!!.name shouldBe "Jade Seedstones"
         d.getExile(p1) shouldBe emptyList()
@@ -262,7 +264,7 @@ class JadeSeedstonesScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(first, second))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         d.state.getEntity(seedstones)!!.get<CardComponent>()!!.name shouldBe "Jade Seedstones"
         d.getExile(p1) shouldBe emptyList()
     }

@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Sagu Mauler:
@@ -81,7 +82,7 @@ class SaguMaulerTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 1
     }
 
@@ -106,7 +107,7 @@ class SaguMaulerTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Should now be face up with trample and hexproof
         driver.state.getEntity(mauler)!!.has<FaceDownComponent>() shouldBe false

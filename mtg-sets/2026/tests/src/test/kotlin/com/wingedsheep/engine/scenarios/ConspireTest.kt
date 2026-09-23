@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Conspire (CR 702.78): "As you cast this spell, you may tap two untapped creatures you
@@ -54,7 +55,7 @@ class ConspireTest : FunSpec({
                 conspiredCreatures = listOf(goblin1, goblin2)
             )
         )
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Conspire creatures are tapped by cost payment.
         driver.state.getEntity(goblin1)!!.has<TappedComponent>() shouldBe true
@@ -69,7 +70,7 @@ class ConspireTest : FunSpec({
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
 
         // Choose the caster as the copy's new target; the copy resolves before the original.
-        driver.submitTargetSelection(caster, listOf(caster)).isSuccess shouldBe true
+        driver.submitTargetSelection(caster, listOf(caster)).outcome shouldBe Outcome.Done
 
         val copyId = driver.state.stack.single { id ->
             val c = driver.state.getEntity(id)
@@ -94,7 +95,7 @@ class ConspireTest : FunSpec({
         driver.putLandOnBattlefield(caster, "Mountain")
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
 
-        driver.castSpell(caster, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
 
         // Goblins stay untapped because conspiredCreatures was empty.
         driver.state.getEntity(goblin1)!!.has<TappedComponent>() shouldBe false
@@ -132,7 +133,7 @@ class ConspireTest : FunSpec({
                 conspiredCreatures = listOf(redGoblin, greenCentaur)
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("Enumerator: Raiding Schemes grants Conspire to a noncreature spell when eligible creatures exist") {

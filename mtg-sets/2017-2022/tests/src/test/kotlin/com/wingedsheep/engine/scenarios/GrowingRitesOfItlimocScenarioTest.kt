@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun (LCI #188).
@@ -71,7 +72,7 @@ class GrowingRitesOfItlimocScenarioTest : FunSpec({
         val lion = driver.putCardOnTopOfLibrary(p1, "Savannah Lions")
         val rites = driver.putCardInHand(p1, "Growing Rites of Itlimoc")
         driver.giveMana(p1, Color.GREEN, 3) // {2}{G}
-        driver.castSpell(p1, rites).isSuccess shouldBe true
+        driver.castSpell(p1, rites).outcome shouldBe Outcome.Done
 
         driver.bothPass() // resolve the spell — Growing Rites enters, ETB queued
         driver.bothPass() // resolve the ETB — pauses for the reveal selection

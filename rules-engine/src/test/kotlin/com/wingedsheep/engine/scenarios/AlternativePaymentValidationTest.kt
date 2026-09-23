@@ -17,6 +17,8 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * The engine, not the client, decides what an alternative payment choice is worth.
@@ -132,7 +134,7 @@ class AlternativePaymentValidationTest : FunSpec({
                     convokedCreatures = mapOf(board.whiteCreature to ConvokePayment(Color.BLUE))
                 )
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "Savannah Lions can't pay blue mana"
             board.boardUntouched()
         }
@@ -150,7 +152,7 @@ class AlternativePaymentValidationTest : FunSpec({
                     )
                 )
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "Savannah Lions is already tapped"
             board.driver.stackSize shouldBe 0
             board.driver.isTapped(board.blueCreature) shouldBe false
@@ -164,7 +166,7 @@ class AlternativePaymentValidationTest : FunSpec({
                     convokedCreatures = mapOf(board.lands.first() to ConvokePayment(null))
                 )
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "isn't a creature"
             board.boardUntouched()
         }
@@ -179,7 +181,7 @@ class AlternativePaymentValidationTest : FunSpec({
                     )
                 )
             )
-            result.isSuccess shouldBe true
+            result.outcome shouldBe Outcome.Done
             board.driver.stackSize shouldBe 1
             board.driver.isTapped(board.whiteCreature) shouldBe true
             board.driver.isTapped(board.blueCreature) shouldBe true
@@ -199,7 +201,7 @@ class AlternativePaymentValidationTest : FunSpec({
                     ),
                 )
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "doesn't have convoke"
             board.boardUntouched()
         }
@@ -220,7 +222,7 @@ class AlternativePaymentValidationTest : FunSpec({
                 cardId = routine,
                 useAlternativeCost = true,
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "can't be tapped for both convoke and harmonize"
             board.boardUntouched()
         }
@@ -235,7 +237,7 @@ class AlternativePaymentValidationTest : FunSpec({
                 AlternativePaymentChoice(tapForGenericPermanents = setOf(board.blueCreature)),
                 cardId = blueprint,
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "Phantom Warrior can't be tapped for improvise"
             board.boardUntouched()
         }
@@ -245,7 +247,7 @@ class AlternativePaymentValidationTest : FunSpec({
             val result = board.cast(
                 AlternativePaymentChoice(tapForGenericPermanents = setOf(board.lands.first()))
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "doesn't have improvise or waterbend"
             board.boardUntouched()
         }
@@ -260,7 +262,7 @@ class AlternativePaymentValidationTest : FunSpec({
                 ),
                 cardId = blueprint,
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "can't be tapped for both convoke and improvise"
             board.boardUntouched()
         }
@@ -288,7 +290,7 @@ class AlternativePaymentValidationTest : FunSpec({
                     ),
                 )
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "Savannah Lions is already tapped"
             board.driver.stackSize shouldBe 0
             board.driver.isTapped(board.blueCreature) shouldBe false
@@ -304,7 +306,7 @@ class AlternativePaymentValidationTest : FunSpec({
             val lions = board.driver.putCardInHand(board.player, "Savannah Lions")
             val inGraveyard = board.driver.putCardInGraveyard(board.player, "Phantom Warrior")
             val result = board.cast(AlternativePaymentChoice(delvedCards = listOf(inGraveyard)), cardId = lions)
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "doesn't have delve"
             board.boardUntouched()
         }
@@ -332,7 +334,7 @@ class AlternativePaymentValidationTest : FunSpec({
                     alternativePayment = AlternativePaymentChoice(delvedCards = listOf(inGraveyard, inHand)),
                 )
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             result.error!! shouldContain "isn't in your graveyard"
             driver.stackSize shouldBe 0
             lands.none { driver.isTapped(it) } shouldBe true

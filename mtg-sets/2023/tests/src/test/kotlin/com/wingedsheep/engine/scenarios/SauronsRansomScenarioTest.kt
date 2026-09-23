@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sauron's Ransom: choose an opponent; they look at your top four and split them into a
@@ -67,7 +68,7 @@ class SauronsRansomScenarioTest : FunSpec({
         val handBefore = driver.getHandSize(active)
         val graveBefore = driver.state.getZone(ZoneKey(active, Zone.GRAVEYARD)).size
 
-        driver.castSpell(active, spell, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(active, spell, targets = listOf(opponent)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 1. The opponent — not the caster — separates the top four. The opponent looks at them
@@ -143,7 +144,7 @@ class SauronsRansomScenarioTest : FunSpec({
         driver.giveMana(active, Color.BLUE, 2)
         driver.giveMana(active, Color.BLACK, 1)
 
-        driver.castSpell(active, spell, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(active, spell, targets = listOf(opponent)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Opponent selects nothing → the whole face-down pile, an empty face-up pile (CR 700.3d).

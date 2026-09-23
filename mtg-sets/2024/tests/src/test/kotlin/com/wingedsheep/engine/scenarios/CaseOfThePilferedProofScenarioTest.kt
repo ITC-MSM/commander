@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Case of the Pilfered Proof — {1}{W} Enchantment — Case.
@@ -75,7 +76,7 @@ class CaseOfThePilferedProofScenarioTest : FunSpec({
     fun GameTestDriver.castCreature(name: String): EntityId {
         val card = putCardInHand(player1, name)
         giveMana(player1, Color.WHITE, 1)
-        castSpell(player1, card).isSuccess shouldBe true
+        castSpell(player1, card).outcome shouldBe Outcome.Done
         bothPass() // resolve the creature; any counter trigger goes on the stack
         bothPass() // resolve the counter trigger
         return card
@@ -131,7 +132,7 @@ class CaseOfThePilferedProofScenarioTest : FunSpec({
         // Unsolved: one Soldier, no Clue.
         val spell = driver.putCardInHand(driver.player1, "Test Deputize")
         driver.giveColorlessMana(driver.player1, 1)
-        driver.castSpell(driver.player1, spell).isSuccess shouldBe true
+        driver.castSpell(driver.player1, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.clueCount() shouldBe 0
 
@@ -151,7 +152,7 @@ class CaseOfThePilferedProofScenarioTest : FunSpec({
         // Solved: the same spell now also yields a Clue.
         val spell2 = driver.putCardInHand(driver.player1, "Test Deputize")
         driver.giveColorlessMana(driver.player1, 1)
-        driver.castSpell(driver.player1, spell2).isSuccess shouldBe true
+        driver.castSpell(driver.player1, spell2).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.clueCount() shouldBe 1
     }

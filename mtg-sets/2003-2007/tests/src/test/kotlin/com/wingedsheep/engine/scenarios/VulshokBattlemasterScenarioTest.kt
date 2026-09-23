@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Vulshok Battlemaster (MRD #110) — {4}{R} Creature — Human Warrior, 2/2.
@@ -43,7 +44,7 @@ class VulshokBattlemasterScenarioTest : FunSpec({
     fun GameTestDriver.castBattlemaster(player: EntityId): EntityId {
         val card = putCardInHand(player, "Vulshok Battlemaster")
         giveMana(player, Color.RED, 5)
-        castSpell(player, card).isSuccess shouldBe true
+        castSpell(player, card).outcome shouldBe Outcome.Done
         var guard = 0
         while ((stackSize > 0 || isPaused) && guard++ < 30) {
             if (isPaused) autoResolveDecision() else bothPass()

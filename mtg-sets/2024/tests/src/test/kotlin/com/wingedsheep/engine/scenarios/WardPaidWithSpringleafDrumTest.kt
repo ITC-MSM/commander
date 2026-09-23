@@ -18,6 +18,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Springleaf Drum ({T}, Tap an untapped creature you control: Add one mana of any color)
@@ -102,7 +103,7 @@ class WardPaidWithSpringleafDrumTest : FunSpec({
             )
         )
         tapTargetResult.error shouldBe null
-        tapTargetResult.isPaused shouldBe true
+        (tapTargetResult.outcome is Outcome.Paused) shouldBe true
 
         val followUp = driver.pendingDecision
         followUp.shouldBeInstanceOf<SelectCardsDecision>()
@@ -115,7 +116,7 @@ class WardPaidWithSpringleafDrumTest : FunSpec({
             activePlayer,
             CardsSelectedResponse(decisionId = followUp.id, selectedCards = listOf(lions))
         )
-        finalize.isSuccess shouldBe true
+        finalize.outcome shouldBe Outcome.Done
 
         // Drain anything left on the stack.
         repeat(6) { if (driver.state.priorityPlayerId != null && driver.pendingDecision == null) driver.bothPass() }

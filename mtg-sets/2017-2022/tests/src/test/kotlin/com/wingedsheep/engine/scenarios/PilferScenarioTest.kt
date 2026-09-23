@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Pilfer {1}{B} Sorcery (DMU canonical; reprinted in FDN).
@@ -39,7 +40,7 @@ class PilferScenarioTest : FunSpec({
         val pilfer = driver.putCardInHand(you, "Pilfer")
         driver.giveMana(you, Color.BLACK, 1)
         driver.giveColorlessMana(you, 1)
-        driver.castSpell(you, pilfer, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(you, pilfer, targets = listOf(opponent)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve into the spell's effect
 
         // Drain decisions: choose the nonland card to discard.
@@ -72,7 +73,7 @@ class PilferScenarioTest : FunSpec({
         val pilfer = driver.putCardInHand(you, "Pilfer")
         driver.giveMana(you, Color.BLACK, 1)
         driver.giveColorlessMana(you, 1)
-        driver.castSpell(you, pilfer, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(you, pilfer, targets = listOf(opponent)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val decision = driver.state.pendingDecision as? SelectCardsDecision

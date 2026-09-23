@@ -91,7 +91,7 @@ class OmenTest : FunSpec({
 
         // Cast Omen
         val castResult = driver.castSpell(activePlayer, omen)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the spell resolve
         driver.bothPass()

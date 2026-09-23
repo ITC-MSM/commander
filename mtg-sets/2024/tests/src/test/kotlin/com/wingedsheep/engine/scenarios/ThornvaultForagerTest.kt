@@ -17,6 +17,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 class ThornvaultForagerTest : FunSpec({
 
@@ -144,6 +145,6 @@ class ThornvaultForagerTest : FunSpec({
 
         val result = driver.castSpell(active, spear, targets = listOf(opponent))
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

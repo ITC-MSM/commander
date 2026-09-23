@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Tower of Coireall — "{T}: Target creature can't be blocked by Walls this turn."
@@ -51,18 +53,18 @@ class TowerOfCoireallScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, attacker)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("the Wall's block is illegal") {
-            driver.declareBlockers(opponent, mapOf(wall to listOf(attacker))).isSuccess shouldBe false
+            driver.declareBlockers(opponent, mapOf(wall to listOf(attacker))).outcome shouldNotBe Outcome.Done
         }
         withClue("a non-Wall on the same board still blocks fine") {
-            driver.declareBlockers(opponent, mapOf(bear to listOf(attacker))).isSuccess shouldBe true
+            driver.declareBlockers(opponent, mapOf(bear to listOf(attacker))).outcome shouldBe Outcome.Done
         }
     }
 
@@ -79,11 +81,11 @@ class TowerOfCoireallScenarioTest : FunSpec({
         val wall = driver.putCreatureOnBattlefield(opponent, "Wall of Granite")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("control: the restriction comes from the Tower, not from Walls generally") {
-            driver.declareBlockers(opponent, mapOf(wall to listOf(attacker))).isSuccess shouldBe true
+            driver.declareBlockers(opponent, mapOf(wall to listOf(attacker))).outcome shouldBe Outcome.Done
         }
     }
 })

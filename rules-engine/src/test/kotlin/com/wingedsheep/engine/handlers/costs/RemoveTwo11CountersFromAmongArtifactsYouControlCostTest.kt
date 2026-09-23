@@ -17,6 +17,8 @@ import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * BDD test for the cost primitive: "remove N counters of a given type from among
@@ -107,7 +109,7 @@ class RemoveTwo11CountersFromAmongArtifactsYouControlCostTest : FunSpec({
         )
 
         // THEN the cost is accepted as paid and the ability is queued
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // AND exactly one counter removed from each chosen artifact
         val artifact1Counters = driver.state.getEntity(artifact1)
@@ -154,6 +156,6 @@ class RemoveTwo11CountersFromAmongArtifactsYouControlCostTest : FunSpec({
 
         // THEN the engine rejects the activation: the filter restricts the cost to
         // artifacts, and no artifact has the required counters
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

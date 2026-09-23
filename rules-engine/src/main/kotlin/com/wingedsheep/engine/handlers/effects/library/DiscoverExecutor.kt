@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.scripting.effects.DiscoverEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.EmitDiscoveredEventEffect
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for [DiscoverEffect] (CR 701.57).
@@ -113,7 +114,7 @@ class DiscoverExecutor(
 
         for (cardId in exiledCards) {
             val result = ZoneMovementUtils.moveCardToZone(currentState, cardId, Zone.EXILE)
-            if (result.isSuccess) {
+            if (result.outcome is Outcome.Done) {
                 currentState = result.state
                 allEvents.addAll(result.events)
             }
@@ -146,7 +147,7 @@ class DiscoverExecutor(
                     pipeline = PipelineState.EMPTY.copy(storedCollections = discoveredCollections)
                 )
             )
-            return if (thenResult.isPaused) {
+            return if (thenResult.outcome is Outcome.Paused) {
                 EffectResult.propagatePause(thenResult.state, allEvents + bottomEvents + thenResult.events)
             } else {
                 EffectResult.success(thenResult.state, allEvents + bottomEvents + thenResult.events)

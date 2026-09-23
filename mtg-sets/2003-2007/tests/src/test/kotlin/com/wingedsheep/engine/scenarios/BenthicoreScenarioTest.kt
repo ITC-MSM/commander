@@ -15,6 +15,8 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Benthicore (LRW #53) — "When this creature enters, create two 1/1 blue Merfolk Wizard creature
@@ -55,7 +57,7 @@ class BenthicoreScenarioTest : FunSpec({
 
         val card = d.putCardInHand(me, "Benthicore")
         d.giveMana(me, Color.BLUE, 7)
-        d.castSpell(me, card).isSuccess shouldBe true
+        d.castSpell(me, card).outcome shouldBe Outcome.Done
         // One pass resolves the spell; the enters trigger then needs its own.
         var guard = 0
         while (guard++ < 10 && d.stackSize > 0) d.bothPass()
@@ -69,7 +71,7 @@ class BenthicoreScenarioTest : FunSpec({
 
         val benthicore = d.findPermanent(me, "Benthicore").shouldNotBeNull()
         withClue("the two tokens can pay for it right away — tapping as a cost ignores summoning sickness") {
-            activate(d, me, benthicore, tokens).isSuccess shouldBe true
+            activate(d, me, benthicore, tokens).outcome shouldBe Outcome.Done
         }
     }
 
@@ -81,7 +83,7 @@ class BenthicoreScenarioTest : FunSpec({
         d.tapPermanent(benthicore)
         val divers = List(2) { d.putCreatureOnBattlefield(me, "Inkfathom Divers") }
 
-        activate(d, me, benthicore, divers).isSuccess shouldBe true
+        activate(d, me, benthicore, divers).outcome shouldBe Outcome.Done
         d.bothPass()
 
         divers.forEach { d.isTapped(it) shouldBe true }
@@ -99,7 +101,7 @@ class BenthicoreScenarioTest : FunSpec({
         d.tapPermanent(benthicore)
         val diver = d.putCreatureOnBattlefield(me, "Inkfathom Divers")
 
-        activate(d, me, benthicore, listOf(diver)).isSuccess shouldBe false
+        activate(d, me, benthicore, listOf(diver)).outcome shouldNotBe Outcome.Done
         d.isTapped(benthicore) shouldBe true
     }
 
@@ -112,7 +114,7 @@ class BenthicoreScenarioTest : FunSpec({
         val divers = List(2) { d.putCreatureOnBattlefield(me, "Inkfathom Divers") }
         d.tapPermanent(divers.first())
 
-        activate(d, me, benthicore, divers).isSuccess shouldBe false
+        activate(d, me, benthicore, divers).outcome shouldNotBe Outcome.Done
         d.isTapped(benthicore) shouldBe true
     }
 
@@ -125,7 +127,7 @@ class BenthicoreScenarioTest : FunSpec({
         d.tapPermanent(benthicore)
         val theirs = List(2) { d.putCreatureOnBattlefield(opponent, "Inkfathom Divers") }
 
-        activate(d, me, benthicore, theirs).isSuccess shouldBe false
+        activate(d, me, benthicore, theirs).outcome shouldNotBe Outcome.Done
         d.isTapped(benthicore) shouldBe true
     }
 })

@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tribute to Hunger (ISD #119) — {2}{B} Instant.
@@ -41,7 +42,7 @@ class TributeToHungerScenarioTest : FunSpec({
         val spell = driver.putCardInHand(you, "Tribute to Hunger")
         driver.giveMana(you, Color.BLACK, 1)
         driver.giveColorlessMana(you, 2)
-        driver.castSpell(you, spell, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(you, spell, listOf(opponent)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getCreatures(opponent).size shouldBe 0

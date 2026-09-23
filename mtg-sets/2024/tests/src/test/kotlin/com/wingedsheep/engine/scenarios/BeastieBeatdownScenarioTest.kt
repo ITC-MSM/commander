@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Beastie Beatdown (DSK #210) — {R}{G} Sorcery.
@@ -44,7 +45,7 @@ class BeastieBeatdownScenarioTest : FunSpec({
         val beatdown = driver.putCardInHand(driver.player1, "Beastie Beatdown")
         driver.giveMana(driver.player1, Color.RED, 1)
         driver.giveMana(driver.player1, Color.GREEN, 1)
-        driver.castSpell(driver.player1, beatdown, listOf(yours, theirs)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, beatdown, listOf(yours, theirs)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // No delirium -> no counters; 2 damage to a toughness-3 creature is non-lethal.
@@ -66,7 +67,7 @@ class BeastieBeatdownScenarioTest : FunSpec({
         val beatdown = driver.putCardInHand(driver.player1, "Beastie Beatdown")
         driver.giveMana(driver.player1, Color.RED, 1)
         driver.giveMana(driver.player1, Color.GREEN, 1)
-        driver.castSpell(driver.player1, beatdown, listOf(yours, theirs)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, beatdown, listOf(yours, theirs)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Delirium -> two +1/+1 counters; the now-4-power creature deals 4 to the 2/3, killing it.

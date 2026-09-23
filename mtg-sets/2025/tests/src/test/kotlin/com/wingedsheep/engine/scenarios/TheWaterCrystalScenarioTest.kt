@@ -104,6 +104,9 @@ class TheWaterCrystalScenarioTest : ScenarioTestBase() {
                 val game = scenario()
                     .withPlayers("Player", "Opponent")
                     // Two crystals, each contributing its own +4 replacement (Scryfall ruling).
+                    // The Water Crystal is legendary: without the waiver the legend rule (CR 704.5j)
+                    // would remove one copy the moment a player next gets priority.
+                    .withCardOnBattlefield(1, "Legend Rule Waiver")
                     .withCardOnBattlefield(1, "The Water Crystal")
                     .withCardOnBattlefield(1, "The Water Crystal")
                     .withCardOnBattlefield(1, "Millstone")

@@ -6,6 +6,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Akawalli, the Seething Tower (LCI #220) — descend-8 "can't be blocked by more than one creature."
@@ -44,14 +46,14 @@ class AkawalliTheSeethingTowerScenarioTest : FunSpec({
         val blocker2 = driver.putCreatureOnBattlefield(defender, "Grizzly Bears")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(akawalli), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(akawalli), defender).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         // Two blockers on Akawalli violates its descend-8 "can't be blocked by more than one".
         driver.declareBlockers(
             defender,
             mapOf(blocker1 to listOf(akawalli), blocker2 to listOf(akawalli))
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 
     test("descend 8 active — a single blocker is still legal") {
@@ -67,10 +69,10 @@ class AkawalliTheSeethingTowerScenarioTest : FunSpec({
         val blocker1 = driver.putCreatureOnBattlefield(defender, "Grizzly Bears")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(akawalli), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(akawalli), defender).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(defender, mapOf(blocker1 to listOf(akawalli))).isSuccess shouldBe true
+        driver.declareBlockers(defender, mapOf(blocker1 to listOf(akawalli))).outcome shouldBe Outcome.Done
     }
 
     test("descend 8 inactive — Akawalli may be blocked by two creatures") {
@@ -88,12 +90,12 @@ class AkawalliTheSeethingTowerScenarioTest : FunSpec({
         val blocker2 = driver.putCreatureOnBattlefield(defender, "Grizzly Bears")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(akawalli), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(akawalli), defender).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         driver.declareBlockers(
             defender,
             mapOf(blocker1 to listOf(akawalli), blocker2 to listOf(akawalli))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
     }
 })

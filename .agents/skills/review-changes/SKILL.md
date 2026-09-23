@@ -123,8 +123,10 @@ scaffolding the earlier set is out of scope.
   hold; never `toMutableSet()` `ContinuousEffect` lists (dedupes equal lord effects).
 - **Events, not silent mutations.** Every state change emits a `GameEvent`. Flag bypasses.
 - **Trigger detection paths.** Battlefield → `detectTriggers`; phase/step →
-  `detectPhaseStepTriggers` (called by `PassPriorityHandler`, NOT `matchesTrigger`);
-  leaves-the-battlefield → `detectLeavesBattlefieldTriggers`.
+  `detectPhaseStepTriggers` (called by the settle boundary, NOT `matchesTrigger`);
+  leaves-the-battlefield → `detectLeavesBattlefieldTriggers`. Only `Settler` calls detection.
+  Flag any handler, resumer or executor that detects or places triggers from its own events: it
+  should emit the events and let the boundary queue them (`GameState.pendingTriggers`).
 - **Last-known information.** Dies/leaves triggers must read `triggerLastKnownPower`,
   `lastKnownCardDefinitionId`, `lastKnownCounters` from `ZoneChangeEvent` (tokens
   disappear in the same SBA pass).
@@ -195,14 +197,21 @@ Lead with the overview. The author needs to see that you understood the change b
 they'll trust a single finding, and a reviewer who can't summarize the diff hasn't read
 it.
 
-1. **Overview of the change** — what this PR does, written from the diff itself, *before*
-   any comment or judgement. A short prose paragraph (or a few grouped bullets when the
-   diff spans several areas) covering: the intent (what problem it solves / which cards
-   or mechanic it enables), the shape of the implementation (which modules and types it
-   touches, what's new vs. modified), and what the tests cover. Name the files that carry
-   the substance, not every touched path. Describe, don't evaluate — no praise, no
-   findings, no "but"; those start at step 2. If the PR body claims something the diff
-   doesn't do, note the discrepancy here as a plain fact.
+1. **Overview of the change** — the *idea* of the PR, written from the diff itself,
+   *before* any comment or judgement. Two to five sentences of prose: what problem it
+   solves or which cards / mechanic it enables, the one-line shape of the approach, and
+   what the tests establish. Pitch it at the level of "what would you tell a colleague
+   who asked what this PR is about" — the reader wants the concept, not an inventory.
+
+   This is a summary, **not** a file-by-file walkthrough. Do not list changed files, line
+   counts, class or method names, or per-file summaries; do not narrate the diff hunk by
+   hunk. Name a module or a type only when the idea is unintelligible without it (e.g.
+   "a new keyword executor in `rules-engine`"), and at most once or twice. Specific
+   `file:line` detail belongs in the findings, where it is actionable.
+
+   Describe, don't evaluate — no praise, no findings, no "but"; those start at step 2.
+   If the PR body claims something the diff doesn't do, note the discrepancy here as a
+   plain fact.
 2. **Verdict** (1–2 sentences) — is the behavior right? Is the SDK shape right?
 3. **What's good** — genuine positives worth keeping if the author rewrites: clean tests,
    right plumbing, good naming, well-chosen primitives. Skip filler; if there's nothing

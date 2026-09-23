@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Feature test for the predefined **Mutagen** token (Teenage Mutant Ninja Turtles).
@@ -78,7 +79,7 @@ class MutagenTokenScenarioTest : FunSpec({
                 abilityId = mutagenAbilityId,
                 targets = listOf(ChosenTarget.Permanent(bear))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // +1/+1 counter applied: 3/3 -> 4/4.

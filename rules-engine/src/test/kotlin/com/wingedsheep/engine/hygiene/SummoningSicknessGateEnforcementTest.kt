@@ -28,13 +28,12 @@ import java.io.File
  * an escape hatch.
  *
  * **Known limit, stated plainly:** the allowlist is per *file*, not per line, so a new open-coded
- * tap gate added inside **any** of the eight [ALLOWED_FILES] would not be caught — not just the two
- * biggest (`ManaSolver.kt`, `ActivateAbilityHandler.kt`) but `CastPermissionUtils.kt` and
- * `SacrificeAndPayContinuationResumer.kt` equally. Every *other* file in
+ * tap gate added inside **any** of the seven [ALLOWED_FILES] would not be caught — the biggest
+ * (`ManaSolver.kt`) as much as `LegalityKernel.kt` and `SacrificeAndPayContinuationResumer.kt`. Every *other* file in
  * `rules-engine/src/main/kotlin` is covered. The scan also does not cover `ai/`, `game-server/`,
  * `gym/` or `mtg-sets/` at all; the reads there are attack-evaluation heuristics and scenario setup.
  * A per-line allowlist (file → a regex the permitted line must match, e.g.
- * `ControlledSinceYourMostRecentTurn` / `canAttack`) would close six of the eight without new
+ * `ControlledSinceYourMostRecentTurn` / `canAttack`) would close most of the seven without new
  * machinery, and is the obvious next step if this ever catches nothing while a bypass ships.
  */
 class SummoningSicknessGateEnforcementTest : FunSpec({
@@ -72,16 +71,14 @@ class SummoningSicknessGateEnforcementTest : FunSpec({
             // The *attack* half of CR 302.6 (CR 702.10b). Reads plain haste on purpose — an
             // "activate as though hasty" grant must never make a creature able to attack.
             "com/wingedsheep/engine/mechanics/combat/rules/AttackRestrictionRules.kt",
-            // Two non-gate reads: ManaSource.canAttack (an auto-tap preference that models
-            // attacking, so plain haste is correct) and ActivationRestriction
-            // .ControlledSinceYourMostRecentTurn. See the class KDoc's "known limit".
+            // A non-gate read: ManaSource.canAttack, an auto-tap preference that models attacking,
+            // so plain haste is correct. See the class KDoc's "known limit".
             "com/wingedsheep/engine/mechanics/mana/ManaSolver.kt",
             // ActivationRestriction.ControlledSinceYourMostRecentTurn — a printed activation
             // restriction generalized beyond creatures; haste does not lift it (CR 702.10c covers
-            // only the tap/untap symbols). See the class KDoc's "known limit".
-            "com/wingedsheep/engine/handlers/actions/ability/ActivateAbilityHandler.kt",
-            // Same restriction, evaluated during enumeration.
-            "com/wingedsheep/engine/legalactions/utils/CastPermissionUtils.kt",
+            // only the tap/untap symbols). The legality kernel is the one place that decides it,
+            // for the activation handler, the enumerators and auto-tap alike.
+            "com/wingedsheep/engine/legality/LegalityKernel.kt",
             // The client's "summoning sick" badge, which reports attack-readiness.
             "com/wingedsheep/engine/view/ClientStateTransformer.kt",
         )

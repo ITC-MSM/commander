@@ -7,7 +7,6 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.CastFromTopOfLibraryUsesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
@@ -27,7 +26,6 @@ import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.CantCastSpellsSharingColorWithLastCast
-import com.wingedsheep.sdk.scripting.CastRestriction
 import com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.ExtraLoyaltyActivation
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -39,9 +37,7 @@ import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlotFromTopOfLibrary
-import com.wingedsheep.engine.mechanics.OnceOnlyActivationAllowance
 import com.wingedsheep.engine.mechanics.FlashTypeGrants
-import com.wingedsheep.sdk.scripting.ExtraOnceOnlyActivations
 import com.wingedsheep.sdk.scripting.PlayersCantActivateAbilities
 import com.wingedsheep.sdk.scripting.PlayersCantCastSpells
 import com.wingedsheep.sdk.scripting.PreventActivatedAbilities
@@ -52,115 +48,16 @@ import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import com.wingedsheep.sdk.scripting.references.Player
 
 /**
- * Extracted permission-checking helpers from LegalActionsCalculator.
- * These methods check cast restrictions, activation restrictions, flash grants, etc.
+ * Extracted permission-checking helpers from LegalActionsCalculator: per-player cast locks, flash
+ * grants, cost modifiers, play-from-zone permissions, etc. Whether an ability's own
+ * [ActivationRestriction]s or a spell's own cast restrictions hold is the
+ * [com.wingedsheep.engine.legality.LegalityKernel]'s question, not this class's.
  */
 class CastPermissionUtils(
     private val cardRegistry: CardRegistry,
     private val predicateEvaluator: PredicateEvaluator,
     private val conditionEvaluator: ConditionEvaluator
 ) {
-    /**
-     * @param ability the ability being checked — the single source of both the per-ability
-     *   identity the turn/lifetime trackers key on ([ActivatedAbility.id], read by
-     *   [ActivationRestriction.OncePerTurn] / [ActivationRestriction.MaxPerTurn]) and the
-     *   `isExhaust`/`isPowerUp` flags [ActivationRestriction.Once] reads: the once-only memory
-     *   those keywords install can be raised or waived by an [ExtraOnceOnlyActivations] permission
-     *   (Elvish Refueler, Wonder Man), while a plain `Once` restriction on an ordinary ability
-     *   never is. Passing the whole ability rather than an id plus a flag per keyword is
-     *   deliberate — a second keyword must not need a second boolean threaded through five call
-     *   sites, and a separate `abilityId` parameter beside it could disagree with `ability.id`.
-     *
-     *   Deliberately **required, with no default**. A defaulted `ability` would make a forgetful
-     *   call site silently disable the permission for that path — an enumerator that stops offering
-     *   a re-armed ability while the handler still accepts it — which is exactly the
-     *   enumerator-vs-handler drift this helper exists to prevent. Omission has to be a compile
-     *   error, not a behaviour difference.
-     */
-    fun checkActivationRestriction(
-        state: GameState,
-        playerId: EntityId,
-        restriction: ActivationRestriction,
-        sourceId: EntityId? = null,
-        ability: ActivatedAbility
-    ): Boolean {
-        return when (restriction) {
-            is ActivationRestriction.AnyPlayerMay -> true
-            is ActivationRestriction.OnlyDuringYourTurn -> state.isActiveTurnFor(playerId)
-            is ActivationRestriction.BeforeStep -> state.step.ordinal < restriction.step.ordinal
-            is ActivationRestriction.DuringPhase -> state.phase == restriction.phase
-            is ActivationRestriction.DuringStep -> state.step == restriction.step
-            is ActivationRestriction.OnlyIfCondition -> {
-                val context = EffectContext(
-                    sourceId = sourceId,
-                    controllerId = playerId,
-                    targets = emptyList(),
-                    xValue = 0
-                )
-                conditionEvaluator.evaluate(state, restriction.condition, context)
-            }
-            is ActivationRestriction.OncePerTurn -> {
-                if (sourceId == null) true
-                else {
-                    val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
-                    tracker == null || !tracker.hasActivated(ability.id)
-                }
-            }
-            is ActivationRestriction.MaxPerTurn -> {
-                if (sourceId == null) true
-                else {
-                    val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
-                    (tracker?.activationCount(ability.id) ?: 0) < restriction.count
-                }
-            }
-            is ActivationRestriction.Once -> {
-                if (sourceId == null) true
-                else mayActivateOnceOnlyAbility(state, playerId, sourceId, ability)
-            }
-            is ActivationRestriction.ControlledSinceYourMostRecentTurn -> {
-                // "Controlled continuously since the beginning of your most recent turn" — the
-                // summoning-sickness condition (CR 302.6) generalized to any permanent. The engine
-                // re-stamps SummoningSicknessComponent on entry and on every control change and
-                // clears it at the controller's untap, so its absence is exactly this predicate.
-                if (sourceId == null) true
-                else state.getEntity(sourceId)
-                    ?.has<com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent>() != true
-            }
-            is ActivationRestriction.All -> restriction.restrictions.all {
-                checkActivationRestriction(state, playerId, it, sourceId, ability)
-            }
-        }
-    }
-
-    fun checkCastRestrictions(
-        state: GameState,
-        playerId: EntityId,
-        restrictions: List<CastRestriction>
-    ): Boolean {
-        if (restrictions.isEmpty()) return true
-
-        val context = EffectContext(
-            sourceId = null,
-            controllerId = playerId,
-            targets = emptyList(),
-            xValue = 0
-        )
-
-        for (restriction in restrictions) {
-            val satisfied = when (restriction) {
-                is CastRestriction.OnlyDuringStep -> state.step == restriction.step
-                is CastRestriction.OnlyDuringPhase -> state.phase == restriction.phase
-                is CastRestriction.OnlyIfCondition -> conditionEvaluator.evaluate(state, restriction.condition, context)
-                is CastRestriction.TimingRequirement -> true
-                is CastRestriction.All -> restriction.restrictions.all { subRestriction ->
-                    checkCastRestrictions(state, playerId, listOf(subRestriction))
-                }
-            }
-            if (!satisfied) return false
-        }
-        return true
-    }
-
     /**
      * Whether [playerId] has already cast as many spells this turn as a [RestrictSpellsCastPerTurn]
      * permanent allows. Two scopes are folded:
@@ -648,29 +545,6 @@ class CastPermissionUtils(
         }
         return false
     }
-
-    /**
-     * True when [playerId] may activate [ability] of [sourceId] despite its
-     * [ActivationRestriction.Once] — because the object hasn't used it up yet, or because an
-     * [ExtraOnceOnlyActivations] permission on [playerId]'s battlefield raises or waives the
-     * keyword's limit (Elvish Refueler for exhaust, Wonder Man for power-up).
-     *
-     * Scans printed and granted permissions and evaluates each one's condition in the granting
-     * permanent's controller's context, so Elvish Refueler's "During your turn, as long as you
-     * haven't activated an exhaust ability this turn" gate is re-checked every frame — the waiver
-     * disappears the moment the turn's first exhaust ability is activated. Consulted by both this
-     * class's restriction check (the enumerators' offered actions) and [ActivateAbilityHandler]'s
-     * (the executed action), so the two can't drift.
-     */
-    fun mayActivateOnceOnlyAbility(
-        state: GameState,
-        playerId: EntityId,
-        sourceId: EntityId,
-        ability: ActivatedAbility
-    ): Boolean =
-        OnceOnlyActivationAllowance.mayActivate(
-            state, playerId, sourceId, ability, cardRegistry, conditionEvaluator
-        )
 
     /**
      * Sum the [ReduceEquipCost] amounts across [playerId]'s battlefield, unwrapping a

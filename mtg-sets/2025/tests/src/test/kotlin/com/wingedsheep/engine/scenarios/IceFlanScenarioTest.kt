@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Ice Flan (FIN #55).
@@ -44,7 +45,7 @@ class IceFlanScenarioTest : FunSpec({
         driver.giveMana(active, Color.BLUE, 2)
         driver.giveColorlessMana(active, 4)
 
-        driver.castSpell(active, flan).isSuccess shouldBe true
+        driver.castSpell(active, flan).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature; ETB trigger goes on the stack and asks for a target
 
         val decision = driver.pendingDecision

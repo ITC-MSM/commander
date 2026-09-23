@@ -507,18 +507,6 @@ class ModalAndCloneContinuationResumer(
             copyOfOriginalName = copyOfOriginalName,
             oldObject = continuation.entryOldObject, newObject = continuation.entryNewObject,
         )
-        val triggers = services.triggerDetector.detectTriggers(newState, listOf(zoneChangeEvent))
-        if (triggers.isNotEmpty()) {
-            val triggerResult = services.triggerProcessor.processTriggers(newState, triggers)
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state,
-                    outEvents + zoneChangeEvent + triggerResult.events
-                )
-            }
-            return checkForMore(triggerResult.newState, outEvents + zoneChangeEvent + triggerResult.events)
-        }
-
         return checkForMore(newState, outEvents + zoneChangeEvent)
     }
 
@@ -640,7 +628,7 @@ class ModalAndCloneContinuationResumer(
                         syntheticRiot = true,
                         syntheticRiotRemaining = continuation.syntheticRiotRemaining - 1
                     )
-                    if (repause != null && repause.isPaused) {
+                    if (repause != null && repause.outcome is Outcome.Paused) {
                         return ExecutionResult.propagatePause(
                             repause.state, syntheticRiotEvents + repause.events
                         )
@@ -699,7 +687,7 @@ class ModalAndCloneContinuationResumer(
         if (onEnterResult != null) {
             // A pause carries the entry events with it so the ETB triggers are deferred to the
             // resume path rather than lost — exactly as the spell path documents.
-            if (onEnterResult.isPaused) {
+            if (onEnterResult.outcome is Outcome.Paused) {
                 return ExecutionResult.propagatePause(
                     onEnterResult.state, events + onEnterResult.events
                 )
@@ -856,10 +844,9 @@ class ModalAndCloneContinuationResumer(
             // null means the chained choice couldn't be presented — fall through to fire triggers.
         }
 
-        // Final choice resolved — fire any triggers from the permanent entering (e.g. landfall,
-        // "when ~ enters"). The permanent already moved to the battlefield when it was placed; we
-        // synthesize the matching ZoneChangeEvent here so triggers can react now that the chosen
-        // value is recorded.
+        // Final choice resolved — emit the entry event, so the permanent's enters triggers (landfall,
+        // "when ~ enters") fire now that the chosen value is recorded. The permanent already moved to
+        // the battlefield when it was placed; the caller deliberately left this event to us.
         val zoneChangeEvent = ZoneChangeEvent(
             entityId,
             cardComponent?.name ?: "Unknown",
@@ -868,27 +855,15 @@ class ModalAndCloneContinuationResumer(
             continuation.controllerId,
             oldObject = continuation.entryOldObject, newObject = continuation.entryNewObject,
         )
-        val triggerEvents = listOf(zoneChangeEvent)
-        val triggers = services.triggerDetector.detectTriggers(newState, triggerEvents)
-        if (triggers.isNotEmpty()) {
-            val triggerResult = services.triggerProcessor.processTriggers(newState, triggers)
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state,
-                    syntheticRiotEvents + triggerResult.events
-                )
-            }
-            return checkForMore(triggerResult.newState, syntheticRiotEvents + triggerResult.events)
-        }
-
-        return checkForMore(newState, syntheticRiotEvents)
+        return checkForMore(newState, syntheticRiotEvents + zoneChangeEvent)
     }
 
     /**
      * Resume after player answers yes/no to "pay life or enter tapped" for a land played directly.
      *
      * The land is already on the battlefield. If yes -> pay life, land stays untapped.
-     * If no -> land gets tapped. Then detect and process triggers from the land entering.
+     * If no -> land gets tapped. Then emit the land's entry event, which its enters triggers
+     * (landfall) fire from.
      */
     fun resumePayLifeOrEnterTappedLand(
         state: GameState,
@@ -917,7 +892,7 @@ class ModalAndCloneContinuationResumer(
             }
         }
 
-        // Detect and process any triggers from the land entering (e.g., landfall)
+        // The land's entry event, which PlayLandHandler left to this resumer (landfall, etc.)
         val landContainer = newState.getEntity(continuation.landId)
         val cardComponent = landContainer?.get<CardComponent>()
         val zoneChangeEvent = ZoneChangeEvent(
@@ -928,25 +903,7 @@ class ModalAndCloneContinuationResumer(
             continuation.controllerId,
             oldObject = continuation.entryOldObject, newObject = continuation.entryNewObject,
         )
-        val triggerEvents = listOf(zoneChangeEvent)
-        val triggers = services.triggerDetector.detectTriggers(newState, triggerEvents)
-        if (triggers.isNotEmpty()) {
-            val triggerResult = services.triggerProcessor.processTriggers(newState, triggers)
-
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state,
-                    events + triggerResult.events
-                )
-            }
-
-            return ExecutionResult.success(
-                triggerResult.newState,
-                events + triggerResult.events
-            )
-        }
-
-        return checkForMore(newState, events)
+        return checkForMore(newState, events + zoneChangeEvent)
     }
 
     /**
@@ -1035,34 +992,13 @@ class ModalAndCloneContinuationResumer(
             chosenCreatureType = chosenType
         )
 
-        if (!castResult.isSuccess) {
+        if (castResult.outcome !is Outcome.Done) {
             return castResult
-        }
-
-        var allEvents = castResult.events
-
-        // Detect and process triggers from casting (same as CastSpellHandler does)
-        val triggers = services.triggerDetector.detectTriggers(castResult.newState, allEvents)
-        if (triggers.isNotEmpty()) {
-            val triggerResult = services.triggerProcessor.processTriggers(castResult.newState, triggers)
-
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state.withPriority(continuation.casterId),
-                    allEvents + triggerResult.events
-                )
-            }
-
-            allEvents = allEvents + triggerResult.events
-            return ExecutionResult.success(
-                triggerResult.newState.withPriority(continuation.casterId),
-                allEvents
-            )
         }
 
         return ExecutionResult.success(
             castResult.newState.withPriority(continuation.casterId),
-            allEvents
+            castResult.events
         )
     }
 
@@ -1367,7 +1303,7 @@ class ModalAndCloneContinuationResumer(
 
         // The mint can pause again (a devour creature that also has an as-enters choice); carry the
         // sacrifice events across that pause so they are not lost.
-        if (minted.isPaused) {
+        if (minted.outcome is Outcome.Paused) {
             return ExecutionResult.propagatePause(
                 minted.state,
                 sacrificeEvents + minted.events
@@ -1438,7 +1374,7 @@ class ModalAndCloneContinuationResumer(
         )
 
         val result = services.effectExecutorRegistry.execute(state, CompositeEffect(effects), context).toExecutionResult()
-        if (result.isPaused) return result
+        if (result.outcome is Outcome.Paused) return result
         return checkForMore(result.state, result.events.toList())
     }
 
@@ -1465,7 +1401,7 @@ class ModalAndCloneContinuationResumer(
             state, chosenId, continuation.controllerId,
             staticAbilityHandler, services.cardRegistry
         ).toExecutionResult()
-        if (result.isPaused) return result
+        if (result.outcome is Outcome.Paused) return result
         return checkForMore(result.state, result.events.toList())
     }
 
@@ -1515,7 +1451,7 @@ class ModalAndCloneContinuationResumer(
         // host prompt cannot be stacked on top of it; asking anyway trips the guard in
         // `suspendForDecision`. Report it rather than throwing out of the action processor.
         // Chaining the remaining prompts underneath that choice needs a continuation of its own.
-        if (created.isPaused) {
+        if (created.outcome is Outcome.Paused) {
             return ExecutionResult.error(
                 created.state,
                 "Cannot ask for the next Aura token host while the previous copy owes an as-enters choice"
@@ -1615,7 +1551,7 @@ class ModalAndCloneContinuationResumer(
 
         val result = services.effectExecutorRegistry.execute(state, chosenEffect, context).toExecutionResult()
 
-        return if (result.isPaused) {
+        return if (result.outcome is Outcome.Paused) {
             result
         } else {
             checkForMore(result.state, result.events.toList())
@@ -1824,7 +1760,7 @@ private fun executeChosenModeWithTail(
     val result = services.effectExecutorRegistry.execute(stateForExecution, effect, context).toExecutionResult()
     val events = accumulatedEvents + result.events
 
-    if (result.isPaused) {
+    if (result.outcome is Outcome.Paused) {
         return ExecutionResult.propagatePause(result.state, events)
     }
     if (result.error != null) {

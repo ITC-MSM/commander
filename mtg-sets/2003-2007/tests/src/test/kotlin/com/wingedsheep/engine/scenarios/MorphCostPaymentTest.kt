@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.scripting.costs.PayCost
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the non-mana morph costs, which turn the creature face up through the shared
@@ -121,7 +122,7 @@ class MorphCostPaymentTest : FunSpec({
         val cutthroat = driver.putFaceDownCreature(player, "Zombie Cutthroat")
         driver.setLifeTotal(player, 4) // less than the 5-life morph cost
 
-        driver.submit(TurnFaceUp(playerId = player, sourceId = cutthroat)).isSuccess shouldBe false
+        driver.submit(TurnFaceUp(playerId = player, sourceId = cutthroat)).outcome shouldNotBe Outcome.Done
         driver.state.getEntity(cutthroat)?.get<FaceDownComponent>() shouldBe FaceDownComponent
     }
 

@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Evershrike's Gift — graveyard-activated ability with a Blight cost.
@@ -84,7 +85,7 @@ class EvershrikesGiftTest : FunSpec({
                 costPayment = AdditionalCostPayment(blightTargets = listOf(target))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the MoveToZone(Self, HAND) effect
         driver.bothPass()

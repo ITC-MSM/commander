@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Boom Box — {2} Artifact
@@ -55,7 +56,7 @@ class BoomBoxScenarioTest : FunSpec({
                 ),
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Boom Box is sacrificed as a cost immediately.
         driver.assertInGraveyard(me, "Boom Box")
@@ -84,7 +85,7 @@ class BoomBoxScenarioTest : FunSpec({
                 targets = emptyList(),
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.assertInGraveyard(me, "Boom Box")
 
         driver.bothPass() // resolve the ability

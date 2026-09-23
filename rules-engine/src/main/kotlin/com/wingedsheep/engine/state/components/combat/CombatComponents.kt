@@ -12,8 +12,27 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class AttackingComponent(
-    val defenderId: EntityId,  // Player or planeswalker being attacked
-    val bandId: String? = null
+    val defenderId: EntityId,  // Player, planeswalker, or battle being attacked
+    val bandId: String? = null,
+    /**
+     * The planeswalker or battle this creature was attacking has been removed from combat
+     * (CR 506.4). The creature is still attacking and may be blocked, but it is attacking nothing
+     * and deals no combat damage if unblocked (CR 506.4c, 510.1b). [defenderId] is kept: "the
+     * defending player" still means the one it was attacking before (CR 508.5).
+     */
+    val attackTargetRemoved: Boolean = false,
+) : Component
+
+/**
+ * On a planeswalker or battle that is being attacked: its controller and protector at the moment
+ * it was first attacked. CR 506.4 removes an attacked permanent from combat when either changes, so
+ * [com.wingedsheep.engine.mechanics.sba.permanent.AttackedPermanentRemovedFromCombatCheck] compares
+ * the live values against this snapshot. Cleared with the rest of combat.
+ */
+@Serializable
+data class BeingAttackedComponent(
+    val controllerId: EntityId,
+    val protectorId: EntityId?,
 ) : Component
 
 /**

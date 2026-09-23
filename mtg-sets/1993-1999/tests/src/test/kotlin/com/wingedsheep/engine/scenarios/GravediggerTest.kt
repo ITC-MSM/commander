@@ -15,6 +15,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 class GravediggerTest : FunSpec({
 
@@ -61,7 +62,7 @@ class GravediggerTest : FunSpec({
 
         // Cast Gravedigger
         val castResult = driver.castSpell(activePlayer, gravedigger)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the creature spell resolve (both players pass priority)
         driver.bothPass()
@@ -106,7 +107,7 @@ class GravediggerTest : FunSpec({
 
         // Cast Gravedigger
         val castResult = driver.castSpell(activePlayer, gravedigger)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the creature spell resolve
         driver.bothPass()
@@ -146,7 +147,7 @@ class GravediggerTest : FunSpec({
 
         // Cast Gravedigger
         val castResult = driver.castSpell(activePlayer, gravedigger)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the creature spell resolve
         driver.bothPass()

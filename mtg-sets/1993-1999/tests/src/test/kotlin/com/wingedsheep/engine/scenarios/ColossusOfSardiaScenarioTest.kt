@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Colossus of Sardia — mandatory "doesn't untap" plus a pay-{9}-to-untap ability restricted to
@@ -53,7 +55,7 @@ class ColossusOfSardiaScenarioTest : FunSpec({
         val result = d.submit(
             ActivateAbility(playerId = p, sourceId = colossus, abilityId = abilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         d.bothPass()
         d.state.getEntity(colossus)?.has<TappedComponent>() shouldBe false
     }
@@ -74,7 +76,7 @@ class ColossusOfSardiaScenarioTest : FunSpec({
         val result = d.submit(
             ActivateAbility(playerId = p, sourceId = colossus, abilityId = abilityId)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         d.state.getEntity(colossus)?.has<TappedComponent>() shouldBe true
     }
 })

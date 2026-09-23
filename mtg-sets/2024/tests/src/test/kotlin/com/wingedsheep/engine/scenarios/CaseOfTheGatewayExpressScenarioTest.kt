@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Case of the Gateway Express — {1}{W} Enchantment — Case.
@@ -41,7 +42,7 @@ class CaseOfTheGatewayExpressScenarioTest : FunSpec({
     fun GameTestDriver.playCaseAt(victim: EntityId): EntityId {
         val card = putCardInHand(player1, "Case of the Gateway Express")
         giveMana(player1, Color.WHITE, 2)
-        castSpell(player1, card).isSuccess shouldBe true
+        castSpell(player1, card).outcome shouldBe Outcome.Done
         bothPass() // resolve the Case; its enters trigger goes on the stack and asks for a target
         submitTargetSelection(player1, listOf(victim))
         bothPass() // resolve the trigger

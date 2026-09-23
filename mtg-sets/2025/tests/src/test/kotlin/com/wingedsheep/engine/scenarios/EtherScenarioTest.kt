@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ether (FIN #53) — {3}{U} Artifact.
@@ -48,7 +49,7 @@ class EtherScenarioTest : FunSpec({
         // Cast Shock at the opponent (its {R} cost is paid from the {R} we give here).
         val shock = driver.putCardInHand(me, "Shock")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, shock, listOf(opp)).isSuccess shouldBe true
+        driver.castSpell(me, shock, listOf(opp)).outcome shouldBe Outcome.Done
 
         // Resolve the copy (keeping the opponent as its target) and the original Shock.
         var guard = 0

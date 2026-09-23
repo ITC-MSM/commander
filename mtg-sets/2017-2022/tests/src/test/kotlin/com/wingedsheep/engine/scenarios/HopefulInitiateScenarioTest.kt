@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import com.wingedsheep.sdk.scripting.DistributedCounterRemoval
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Hopeful Initiate (VOW #20, canonical printing) — {W} 1/2 Creature — Human Warlock, Training + a
@@ -77,7 +78,7 @@ class HopefulInitiateScenarioTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // The two +1/+1 counters were removed and the enchantment destroyed.
@@ -115,7 +116,7 @@ class HopefulInitiateScenarioTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.state.getEntity(initiate)

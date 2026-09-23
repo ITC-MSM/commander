@@ -19,6 +19,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Dragonfire Blade (TDM) — exercises gap item 18:
@@ -63,7 +64,7 @@ class DragonfireBladeTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(player, blade, equipAbilityId, targets = listOf(ChosenTarget.Permanent(beast)))
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getEntity(blade)?.get<AttachedToComponent>()?.targetId shouldBe beast
@@ -87,7 +88,7 @@ class DragonfireBladeTest : FunSpec({
         driver.giveColorlessMana(player, 1)
         driver.submit(
             ActivateAbility(player, blade, equipAbilityId, targets = listOf(ChosenTarget.Permanent(beast)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(blade)?.get<AttachedToComponent>()?.targetId shouldBe beast
     }
@@ -109,7 +110,7 @@ class DragonfireBladeTest : FunSpec({
         driver.giveColorlessMana(player, 1)
         driver.submit(
             ActivateAbility(player, blade, equipAbilityId, targets = listOf(ChosenTarget.Permanent(golem)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(blade)?.get<AttachedToComponent>()?.targetId shouldBe golem
     }
@@ -124,7 +125,7 @@ class DragonfireBladeTest : FunSpec({
         driver.giveColorlessMana(player, 1)
         driver.submit(
             ActivateAbility(player, blade, equipAbilityId, targets = listOf(ChosenTarget.Permanent(beast)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val validator = TargetValidator()

@@ -13,6 +13,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Steal the Show {2}{R} Sorcery (SOS canonical).
@@ -97,7 +98,7 @@ class StealTheShowScenarioTest : FunSpec({
                 chosenModes = listOf(1),
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(courser)))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 3 damage kills the 3/3.

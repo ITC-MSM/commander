@@ -19,6 +19,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * End-to-end checks for Dawnhand Dissident's third ability:
@@ -124,7 +125,7 @@ class DawnhandDissidentTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Grizzly Bears should now have 1 +1/+1 counter remaining (4 - 3)
         val remaining = driver.game.state.getEntity(piggy)
@@ -151,7 +152,7 @@ class DawnhandDissidentTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("linked-exile cast is unavailable for cards owned by opponent") {
@@ -228,7 +229,7 @@ class DawnhandDissidentTest : FunSpec({
                 )
             )
         )
-        typedResult.isSuccess shouldBe true
+        typedResult.outcome shouldBe Outcome.Done
         driver.game.state.getEntity(bear1)?.get<CountersComponent>()
             ?.getCount(CounterType.MINUS_ONE_MINUS_ONE) shouldBe 0
         driver.game.state.getEntity(bear2)?.get<CountersComponent>()
@@ -290,7 +291,7 @@ class DawnhandDissidentTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         val countersAfter = driver.game.state.getEntity(giant)?.get<CountersComponent>()
         countersAfter?.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 1
         countersAfter?.getCount(CounterType.STUN) shouldBe 0

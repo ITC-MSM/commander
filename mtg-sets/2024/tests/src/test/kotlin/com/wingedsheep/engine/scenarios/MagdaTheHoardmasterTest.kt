@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Magda, the Hoardmaster {1}{R} — Dwarf Berserker 2/2.
@@ -112,7 +113,7 @@ class MagdaTheHoardmasterTest : FunSpec({
         val abilityId = MagdaTheHoardmaster.activatedAbilities.first().id
         // Sorcery-speed: cannot activate during another player's turn.
         driver.submit(ActivateAbility(playerId = me, sourceId = magda, abilityId = abilityId))
-            .isSuccess shouldBe false
+            .outcome shouldNotBe Outcome.Done
         // No dragon, treasures untouched.
         driver.getPermanents(me).none { driver.getCardName(it) == "Scorpion Dragon Token" } shouldBe true
         driver.treasures(me).size shouldBe 3

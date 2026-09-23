@@ -11,7 +11,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.mechanics.combat.AttackSacrificeCosts
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
-import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.mechanics.combat.CombatDefenders
 import com.wingedsheep.engine.state.components.player.InAdditionalCombatPhaseComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.model.EntityId
@@ -31,6 +31,11 @@ class MustBeCreatureAttackRule : AttackRestrictionRule {
         if (!ctx.projected.isCreature(ctx.attackerId)) {
             val name = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Entity"
             return "Only creatures can attack: $name"
+        }
+        // CR 508.1a / 506.3f: a creature that is also a battle can't attack.
+        if (ctx.projected.isBattle(ctx.attackerId)) {
+            val name = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Entity"
+            return "A battle can't attack: $name"
         }
         return null
     }
@@ -280,7 +285,7 @@ class CantBeAttackedWhileAttachedDefenderRule : AttackDefenderRule {
 
 /**
  * AttackMode (CR 802 / 803): when the game uses attack-left or attack-right, a creature may only
- * attack the opponent in the adjacent seat (or a planeswalker/battle that opponent controls). The
+ * attack the opponent in the adjacent seat (or a planeswalker that opponent controls or a battle they protect). The
  * set of legal opponents is computed centrally by
  * [com.wingedsheep.engine.mechanics.combat.CombatDefenders.legalDefendingPlayers], so this rule and
  * the legal-action enumerator never disagree. A no-op under [com.wingedsheep.sdk.core.AttackMode.MULTIPLE]
@@ -310,7 +315,8 @@ private fun findDefendingPlayer(ctx: AttackCheckContext, defenderId: EntityId): 
     if (ctx.state.getEntity(defenderId)?.has<LifeTotalComponent>() == true) {
         return defenderId
     }
-    return ctx.state.getEntity(defenderId)?.get<ControllerComponent>()?.playerId ?: defenderId
+    // A battle is defended by its protector, not its controller (CR 310.9d).
+    return CombatDefenders.defendingPlayerOf(ctx.state, defenderId)
 }
 
 // =========================================================================

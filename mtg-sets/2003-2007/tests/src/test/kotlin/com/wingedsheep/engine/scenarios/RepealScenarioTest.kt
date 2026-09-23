@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Repeal: {X}{U} — return target nonland permanent with mana value X to its owner's hand, then
@@ -37,7 +38,7 @@ class RepealScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 2) // X = 2
 
         val result = driver.castXSpell(player, repeal, xValue = 2, targets = listOf(target))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Forest Walker bounced back to its owner's hand.
@@ -75,7 +76,7 @@ class RepealScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 2) // X = 2
 
         val result = driver.castXSpell(player, repeal, xValue = 2, targets = listOf(tooBig))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.findPermanent(player, "Phantom Warrior") shouldBe tooBig
     }
 })

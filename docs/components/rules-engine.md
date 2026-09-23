@@ -98,31 +98,25 @@ The rules engine is typically used by the `mtg-api` module, which orchestrates t
     val actionProcessor = ActionProcessor(cardRegistry = cardRegistry /* other dependencies */)
     val gameAction: GameAction = ... // Received from client
 
-    val result = actionProcessor.process(gameState, gameAction)
+    val result = actionProcessor.process(gameState, gameAction).result
 
-    // Handle the result (Success, PausedForDecision, Failure, GameOver)
-    gameState = when (result) {
-        is ExecutionResult.Success -> result.newState
-        is ExecutionResult.PausedForDecision -> {
-            // Send decision to client
-            sendDecisionToClient(result.decision, result.state)
-            return // Wait for response
+    // Handle the result by its outcome: Done, Paused or Rejected. Game over is `state.gameOver`.
+    when (val outcome = result.outcome) {
+        Outcome.Done -> gameState = result.state
+        is Outcome.Paused -> {
+            // Send the decision to the client and wait for its SubmitDecision
+            gameState = result.state
+            sendDecisionToClient(outcome.decision, result.state)
         }
-        is ExecutionResult.Failure -> {
-            // Handle error, inform client
-            sendErrorToClient(result.message)
-            return // Don't change state
-        }
-        is ExecutionResult.GameOver -> {
-            // Handle game over
-            handleGameOver(result)
-            return
+        is Outcome.Rejected -> {
+            // The state is unchanged. IllegalAction is routine; ExecutionFailed deserves a log.
+            sendErrorToClient(outcome.reason.message)
         }
     }
     ```
 
 3.  **Handling Paused States:**
-    *   If `process()` returns `PausedForDecision`, send the `PendingDecision` to the client.
+    *   If `process()` returns an `Outcome.Paused`, send its `PendingDecision` to the client.
     *   When the client response arrives, create a `SubmitDecision` action and process it.
     *   The `ContinuationHandler` will then resume the interrupted effect/ability.
 

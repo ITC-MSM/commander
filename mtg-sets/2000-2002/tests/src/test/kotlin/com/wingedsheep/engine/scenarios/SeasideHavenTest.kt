@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Seaside Haven.
@@ -71,7 +72,7 @@ class SeasideHavenTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(bird))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Let the ability resolve
         driver.bothPass()
@@ -111,7 +112,7 @@ class SeasideHavenTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(goblin))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Hand size should not change
         driver.getHandSize(activePlayer) shouldBe initialHandSize
@@ -142,7 +143,7 @@ class SeasideHavenTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(bird))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Hand size should not change
         driver.getHandSize(activePlayer) shouldBe initialHandSize

@@ -33,6 +33,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.util.UUID
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * BDD: Connive — draw a card, discard a card; if the discarded card is a nonland,
@@ -75,7 +76,7 @@ class ConniveTest : FunSpec({
         val activateResult = driver.submit(
             ActivateAbility(playerId = player, sourceId = creature, abilityId = conniveAbilityId)
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe true

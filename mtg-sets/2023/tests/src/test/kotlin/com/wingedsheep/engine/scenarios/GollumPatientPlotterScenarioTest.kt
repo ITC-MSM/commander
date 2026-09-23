@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Gollum, Patient Plotter — "{B}, Sacrifice a creature: Return this card from your graveyard to
@@ -40,7 +42,7 @@ class GollumPatientPlotterScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(fodder))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Gollum returns to hand; the sacrificed creature is gone; Gollum left the graveyard.
@@ -70,6 +72,6 @@ class GollumPatientPlotterScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(fodder))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Two-Headed Giant — Phase 4: shared team turns (CR 805 / 810.6).
@@ -153,7 +154,7 @@ class TwoHeadedGiantSharedTurnTest : FunSpec({
         val forestInHand = s.getZone(ZoneKey(p[1], Zone.HAND)).first()
         val landsBefore = s.getZone(ZoneKey(p[1], Zone.BATTLEFIELD)).size
         val result = proc.process(s, PlayLand(p[1], forestInHand))
-        result.result.isSuccess shouldBe true
+        result.result.outcome shouldBe Outcome.Done
         // The teammate's land resolved onto the battlefield even though they are not the active player.
         result.result.newState.getZone(ZoneKey(p[1], Zone.BATTLEFIELD)).size shouldBe landsBefore + 1
     }

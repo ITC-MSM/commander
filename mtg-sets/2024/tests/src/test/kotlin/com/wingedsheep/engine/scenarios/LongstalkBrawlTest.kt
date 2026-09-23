@@ -22,6 +22,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Longstalk Brawl - a Gift a tapped Fish sorcery from Bloomburrow.
@@ -71,7 +72,7 @@ class LongstalkBrawlTest : FunSpec({
                 ChosenTarget.Permanent(theirs)
             ))
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -116,7 +117,7 @@ class LongstalkBrawlTest : FunSpec({
             chosenModes = listOf(1)
             // NOTE: modeTargetsOrdered is intentionally omitted (client doesn't populate it).
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -148,7 +149,7 @@ class LongstalkBrawlTest : FunSpec({
         // Cast WITHOUT pre-choosing the mode. Per CR 601.2b mode selection happens during
         // the cast procedure, so the engine pauses immediately for `ChooseOptionDecision`
         // before the spell hits the stack.
-        driver.submit(CastSpell(playerId = activePlayer, cardId = spell)).isPaused shouldBe true
+        (driver.submit(CastSpell(playerId = activePlayer, cardId = spell)).outcome is Outcome.Paused) shouldBe true
 
         // Mode selection (cast-time)
         val modeDecision = driver.pendingDecision

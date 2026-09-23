@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for City of Shadows.
@@ -55,7 +56,7 @@ class CityOfShadowsScenarioTest : FunSpec({
                 abilityId = chargeAbilityId,
                 costPayment = AdditionalCostPayment(exiledCards = listOf(first)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("the creature paid the cost and is in exile") {
@@ -72,12 +73,12 @@ class CityOfShadowsScenarioTest : FunSpec({
                 abilityId = chargeAbilityId,
                 costPayment = AdditionalCostPayment(exiledCards = listOf(second)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.untapPermanent(city)
         driver.submit(ActivateAbility(playerId = me, sourceId = city, abilityId = manaAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         withClue("two storage counters -> {C}{C}") {
             pool(driver, me).colorless shouldBe 2

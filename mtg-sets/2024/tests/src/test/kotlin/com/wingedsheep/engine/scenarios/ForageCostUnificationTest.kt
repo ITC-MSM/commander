@@ -24,6 +24,7 @@ import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.collections.shouldNotContainAnyOf
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Forage is "exile three cards from your graveyard or sacrifice a Food" — a *choice* cost. These
@@ -102,7 +103,7 @@ class ForageCostUnificationTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(food))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // The Food was sacrificed; not a single graveyard card was exiled.
         driver.state.getBattlefield(active) shouldNotContain food
@@ -168,7 +169,7 @@ class ForageCostUnificationTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(exiledCards = chosen)
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val exile = driver.state.getZone(ZoneKey(active, Zone.EXILE))
         exile.size shouldBe 3
@@ -212,7 +213,7 @@ class ForageCostUnificationTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(sacrificedPermanents = listOf(food))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.state.getBattlefield(active) shouldNotContain food
         driver.state.getZone(ZoneKey(active, Zone.EXILE)) shouldNotContainAnyOf filler
@@ -250,7 +251,7 @@ class ForageCostUnificationTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(exiledCards = chosen)
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Forage was paid: exactly the three chosen cards were exiled (not silently skipped).
         val exile = driver.state.getZone(ZoneKey(active, Zone.EXILE))

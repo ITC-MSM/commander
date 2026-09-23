@@ -9,6 +9,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Demystify.
@@ -47,7 +48,7 @@ class DemystifyTest : FunSpec({
 
         // Cast Demystify targeting the enchantment
         val castResult = driver.castSpell(activePlayer, demystify, listOf(enchantment))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.bothPass()
@@ -78,7 +79,7 @@ class DemystifyTest : FunSpec({
 
         // Trying to cast Demystify targeting a creature should fail
         val castResult = driver.castSpell(activePlayer, demystify, listOf(creature))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
 
         // Grizzly Bears should still be on the battlefield
         driver.findPermanent(opponent, "Grizzly Bears") shouldNotBe null

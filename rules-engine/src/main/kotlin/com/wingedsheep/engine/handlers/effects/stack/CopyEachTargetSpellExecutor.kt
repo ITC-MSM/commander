@@ -102,7 +102,7 @@ class CopyEachTargetSpellExecutor(
                         sourceSpellId = spellId,
                         controllerId = controllerId
                     )
-                    if (!copyResult.isSuccess) return copyResult
+                    if (copyResult.outcome !is Outcome.Done) return copyResult
                     currentState = StormCopyEffectExecutor.applyCopyMutations(
                         copyResult.newState, copyResult.events, keywordsForCopy, removeLegendary
                     )
@@ -127,7 +127,7 @@ class CopyEachTargetSpellExecutor(
                         sourceSpellId = spellId,
                         controllerId = controllerId
                     )
-                    if (!copyResult.isSuccess) return copyResult
+                    if (copyResult.outcome !is Outcome.Done) return copyResult
                     currentState = StormCopyEffectExecutor.applyCopyMutations(
                         copyResult.newState, copyResult.events, keywordsForCopy, removeLegendary
                     )

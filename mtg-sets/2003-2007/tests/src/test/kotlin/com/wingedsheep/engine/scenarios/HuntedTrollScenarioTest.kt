@@ -10,6 +10,7 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Hunted Troll (RAV #170) — {2}{G}{G} Creature — Troll Warrior 8/4.
@@ -39,7 +40,7 @@ class HuntedTrollScenarioTest : ScenarioTestBase() {
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                game.castSpell(1, "Hunted Troll").isSuccess shouldBe true
+                game.castSpell(1, "Hunted Troll").outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val troll = game.findPermanent("Hunted Troll")!!
@@ -89,7 +90,7 @@ class HuntedTrollScenarioTest : ScenarioTestBase() {
                 // Rend Flesh destroys a non-Spirit creature and carries no "can't be
                 // regenerated" rider, so the shield is the only thing standing between the Troll
                 // and the graveyard.
-                game.castSpell(1, "Rend Flesh", troll).isSuccess shouldBe true
+                game.castSpell(1, "Rend Flesh", troll).outcome shouldBe Outcome.Done
                 game.resolveStack()
                 game.checkStateBasedActions()
 

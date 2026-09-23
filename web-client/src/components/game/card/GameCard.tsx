@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 import { useHasLegalActions } from '@/store/selectors.ts'
 import type { ClientCard, EntityId, LegalActionInfo } from '@/types'
-import { Color, ColorSymbols, Keyword } from '@/types/enums'
+import { Color, ColorSymbols, CounterType, Keyword } from '@/types/enums'
+import { isBattle } from '@/utils/combatTargets'
 import { getCardImageUrl, getScryfallFallbackUrl, faceDownImageUrl } from '@/utils/cardImages.ts'
 import { useInteraction } from '@/hooks/useInteraction.ts'
 import { useOpenCardMenuOnTap } from '@/hooks/useOpenCardMenuOnTap.ts'
@@ -398,6 +399,17 @@ function GameCardImpl({
   // Applied wherever a chip counter-rotates by `-totalRotateDeg`: it has to ease alongside the
   // card's own turn instead of snapping to its final angle the instant the permanent taps.
   const counterRotateTransition = battlefield && !prefersReducedMotion() ? CARD_COUNTER_ROTATE_TRANSITION : undefined
+  // A battle drawn across the table is still controlled by whoever cast it; the tooltip says who
+  // protects it and who controls it, since only one of the two is implied by where it sits.
+  const battleTooltip = useGameStore((state) => {
+    if (!battlefield || !isBattle(card)) return undefined
+    const players = (state.spectatingState?.gameState ?? state.gameState)?.players ?? []
+    const nameOf = (id: EntityId | null | undefined) =>
+      players.find((p) => p.playerId === id)?.name ?? 'unknown'
+    const defense = `Defense ${card.counters[CounterType.DEFENSE] ?? 0}`
+    if (!card.protectorId) return defense
+    return `${defense} — protected by ${nameOf(card.protectorId)}, controlled by ${nameOf(card.controllerId)}`
+  })
   const needsLandscapeContainer = Math.abs(totalRotateDeg) % 180 === 90
   const isInTargetingMode = targetingState !== null
   const isValidTarget = targetingState?.validTargets.includes(card.id) ?? false
@@ -1677,6 +1689,37 @@ function GameCardImpl({
         </div>
       )}
 
+      {/* Defense badge for battles — the live defense (CR 310.4c: its defense counters), the number
+          attackers are whittling down. It sits over the printed defense shield: for a landscape
+          print the element is turned +90°, so the printed bottom-right corner is the element's
+          top-right. Counter-rotated so the number stays upright. */}
+      {battlefield && !faceDown && isBattle(card) && (
+        <div
+          title={battleTooltip}
+          style={{
+            ...styles.ptOverlay,
+            // Element-space offsets for the turned card: `top` becomes the gap to the printed
+            // right edge and `right` the gap to the printed bottom, putting the badge on the shield.
+            ...(isLandscapePrint ? { bottom: undefined, top: 3, right: -5 } : {}),
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            backgroundColor: 'rgba(50, 14, 14, 0.92)',
+            border: '1px solid rgba(240, 120, 110, 0.7)',
+            boxShadow: '0 0 6px rgba(0, 0, 0, 0.6)',
+            color: '#ffd0c8',
+            zIndex: 6,
+            transform: totalRotateDeg ? `rotate(${-totalRotateDeg}deg)` : undefined,
+            transition: counterRotateTransition,
+          }}
+        >
+          <i className="ms ms-defense" style={{ fontSize: responsive.badges.counterIconFontSize, color: '#f08878' }} />
+          <span style={{ fontWeight: 700, fontSize: responsive.badges.ptFontSize }}>
+            {card.counters[CounterType.DEFENSE] ?? 0}
+          </span>
+        </div>
+      )}
+
       {/* Threshold progress badge (graveyard-gated static abilities) */}
       {card.thresholdInfo && (
         <div
@@ -2480,8 +2523,10 @@ function GameCardImpl({
         </>
       )}
 
-      {/* DFC (double-faced card) indicator badge */}
-      {!faceDown && battlefield && card.isDoubleFaced && (
+      {/* DFC (double-faced card) indicator badge. Not on a landscape print (a battle's Siege
+          front): its frame already prints the transform marker beside the name, and the turned
+          card has no bottom-edge strip clear of the rules text for a badge to sit on. */}
+      {!faceDown && battlefield && card.isDoubleFaced && !isLandscapePrint && (
         <div style={{
           position: 'absolute',
           bottom: 4,

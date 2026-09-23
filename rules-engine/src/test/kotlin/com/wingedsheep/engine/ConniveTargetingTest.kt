@@ -26,6 +26,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.util.UUID
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * BDD: connive whose +1/+1 counter lands on a *reflexively chosen* target — the Teo, Spirited
@@ -82,7 +83,7 @@ class ConniveTargetingTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = conniver, abilityId = abilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // First pause is the DISCARD selection — the counter target has NOT been chosen yet.

@@ -72,7 +72,7 @@ class StateBasedActionChecker(
             val result = checkOnce(currentState, pendingTriggerSources)
 
             // If an SBA needs player input (e.g., legend rule choice), return paused
-            if (result.isPaused) {
+            if (result.outcome is Outcome.Paused) {
                 return ExecutionResult.propagatePause(
                     result.state,
                     allEvents + result.events
@@ -105,7 +105,7 @@ class StateBasedActionChecker(
             // stood before the batch started gets it rather than reconstructing it.
             val result = check.check(newState, state, pendingTriggerSources)
 
-            if (result.isPaused) {
+            if (result.outcome is Outcome.Paused) {
                 // Return paused with events accumulated so far + this check's events
                 return ExecutionResult.propagatePause(
                     result.state,

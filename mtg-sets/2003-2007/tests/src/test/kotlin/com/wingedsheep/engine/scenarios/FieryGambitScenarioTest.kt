@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.GameRng
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Fiery Gambit (MRD #90) — "Flip a coin until you lose a flip or choose to stop flipping. … If you
@@ -71,7 +72,7 @@ class FieryGambitScenarioTest : FunSpec({
     /** Cast at the Bears and let it start resolving. Returns the hand size just before resolution. */
     fun Board.cast(): Int {
         val cast = d.castSpell(me, gambit, targets = listOf(bears))
-        withClue("cast failed: ${cast.error}") { cast.isSuccess shouldBe true }
+        withClue("cast failed: ${cast.error}") { cast.outcome shouldBe Outcome.Done }
         val handBeforeResolution = handSize()
         d.bothPass()
         return handBeforeResolution
@@ -169,9 +170,8 @@ private infix fun Any?.shouldNotBeNullClue(clue: String) {
 /**
  * Answer "flip again" and assert only that nothing errored.
  *
- * Deliberately not `isSuccess`: that reads `error == null && pendingDecision == null`, so a
- * continue-answer that correctly pauses on the *next* "flip again?" reports `isSuccess == false`.
- * Asserting it would fail on precisely the runs that work.
+ * Deliberately not `Outcome.Done`: a continue-answer that correctly pauses on the *next* "flip
+ * again?" ends in `Outcome.Paused`. Asserting `Done` would fail on precisely the runs that work.
  */
 private fun GameTestDriver.keepFlipping() {
     val result = submitYesNo(player1, true)

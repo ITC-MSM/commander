@@ -60,7 +60,7 @@ class ColorChoiceContinuationResumer(
             contextWithColor
         )
 
-        if (effectResult.isPaused) return effectResult.toExecutionResult()
+        if (effectResult.outcome is Outcome.Paused) return effectResult.toExecutionResult()
         return checkForMore(effectResult.state, effectResult.events.toList())
     }
 
@@ -82,7 +82,7 @@ class ColorChoiceContinuationResumer(
             contextWithNumber
         )
 
-        if (effectResult.isPaused) return effectResult.toExecutionResult()
+        if (effectResult.outcome is Outcome.Paused) return effectResult.toExecutionResult()
         return checkForMore(effectResult.state, effectResult.events.toList())
     }
 
@@ -178,7 +178,7 @@ class ColorChoiceContinuationResumer(
             contextWithDecider
         )
 
-        if (effectResult.isPaused) return effectResult.toExecutionResult()
+        if (effectResult.outcome is Outcome.Paused) return effectResult.toExecutionResult()
         // The re-run finished without pausing (nothing left to decide). Publish whatever it
         // stored so the composite's remaining steps still see it.
         val published = exposeCollectionsToNextFrame(effectResult.state, effectResult.updatedCollections)
@@ -202,7 +202,7 @@ class ColorChoiceContinuationResumer(
             contextWithColor
         )
 
-        if (effectResult.isPaused) return effectResult.toExecutionResult()
+        if (effectResult.outcome is Outcome.Paused) return effectResult.toExecutionResult()
 
         // The mana ability itself is now done, but only its *effect* ran — `ActivateAbilityHandler`
         // returned at the pause, before the rest of the tap pipeline. Everything downstream of the
@@ -236,7 +236,7 @@ class ColorChoiceContinuationResumer(
         val finished = manaPipeline.finishTapBonuses(
             dampening.state, sourceId, sourceCard, tapperId, producedMana, events
         )
-        if (finished.isPaused) return finished
+        if (finished.outcome is Outcome.Paused) return finished
         return checkForMore(finished.newState, finished.events.toList())
     }
 

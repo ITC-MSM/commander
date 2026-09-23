@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Thalia, Guardian of Thraben (DKA #24) — {1}{W} Legendary Creature — Human Soldier, 2/1.
@@ -58,7 +60,7 @@ class ThaliaGuardianOfThrabenScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(playerId = player, cardId = enchantment, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 
     test("noncreature spell can be cast with enough mana to pay the tax") {
@@ -75,7 +77,7 @@ class ThaliaGuardianOfThrabenScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(playerId = player, cardId = enchantment, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
     }
 
     test("Thalia does not tax creature spells") {
@@ -93,7 +95,7 @@ class ThaliaGuardianOfThrabenScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(playerId = player, cardId = bears, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
     }
 
     test("Thalia taxes the opponent's noncreature spells too") {
@@ -113,6 +115,6 @@ class ThaliaGuardianOfThrabenScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(playerId = opponent, cardId = enchantment, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Regression test for last-known-information (LKI) plumbing on **sacrifice-as-an-additional-cost**.
@@ -72,7 +73,7 @@ class SacrificeAsCostDeathTriggerTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Fanatical Offering
         driver.bothPass() // resolve the Cache's dies trigger
 

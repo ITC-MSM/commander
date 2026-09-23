@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the three Duskmourn: House of Horror common dual lands:
@@ -36,7 +37,7 @@ class DskSurveilLandsScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val woods = driver.putCardInHand(p1, "Bleeding Woods")
-        driver.playLand(p1, woods).isSuccess shouldBe true
+        driver.playLand(p1, woods).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(woods)?.has<TappedComponent>() shouldBe true
     }
@@ -49,7 +50,7 @@ class DskSurveilLandsScenarioTest : FunSpec({
 
         driver.setLifeTotal(driver.getOpponent(p1), 13)
         val woods = driver.putCardInHand(p1, "Bleeding Woods")
-        driver.playLand(p1, woods).isSuccess shouldBe true
+        driver.playLand(p1, woods).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(woods)?.has<TappedComponent>() shouldBe false
     }
@@ -61,11 +62,11 @@ class DskSurveilLandsScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val red = driver.putPermanentOnBattlefield(p1, "Bleeding Woods")
-        driver.submit(ActivateAbility(p1, red, BleedingWoods.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, red, BleedingWoods.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.red shouldBe 1
 
         val green = driver.putPermanentOnBattlefield(p1, "Bleeding Woods")
-        driver.submit(ActivateAbility(p1, green, BleedingWoods.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, green, BleedingWoods.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.green shouldBe 1
     }
 
@@ -76,15 +77,15 @@ class DskSurveilLandsScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val field = driver.putCardInHand(p1, "Etched Cornfield")
-        driver.playLand(p1, field).isSuccess shouldBe true
+        driver.playLand(p1, field).outcome shouldBe Outcome.Done
         driver.state.getEntity(field)?.has<TappedComponent>() shouldBe true
 
         val green = driver.putPermanentOnBattlefield(p1, "Etched Cornfield")
-        driver.submit(ActivateAbility(p1, green, EtchedCornfield.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, green, EtchedCornfield.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.green shouldBe 1
 
         val white = driver.putPermanentOnBattlefield(p1, "Etched Cornfield")
-        driver.submit(ActivateAbility(p1, white, EtchedCornfield.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, white, EtchedCornfield.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.white shouldBe 1
     }
 
@@ -96,15 +97,15 @@ class DskSurveilLandsScenarioTest : FunSpec({
 
         driver.setLifeTotal(p1, 10)
         val sewer = driver.putCardInHand(p1, "Murky Sewer")
-        driver.playLand(p1, sewer).isSuccess shouldBe true
+        driver.playLand(p1, sewer).outcome shouldBe Outcome.Done
         driver.state.getEntity(sewer)?.has<TappedComponent>() shouldBe false
 
         val blue = driver.putPermanentOnBattlefield(p1, "Murky Sewer")
-        driver.submit(ActivateAbility(p1, blue, MurkySewer.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, blue, MurkySewer.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.blue shouldBe 1
 
         val black = driver.putPermanentOnBattlefield(p1, "Murky Sewer")
-        driver.submit(ActivateAbility(p1, black, MurkySewer.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, black, MurkySewer.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.black shouldBe 1
     }
 })

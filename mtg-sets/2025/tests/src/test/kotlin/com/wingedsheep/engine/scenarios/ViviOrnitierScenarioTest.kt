@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Vivi Ornitier (FIN #248) — {1}{U}{R} Legendary Creature — Wizard 0/3.
@@ -45,7 +46,7 @@ class ViviOrnitierScenarioTest : FunSpec({
         driver.giveMana(active, Color.BLUE, 1)
         driver.giveColorlessMana(active, 2)
 
-        driver.castSpell(active, divination).isSuccess shouldBe true
+        driver.castSpell(active, divination).outcome shouldBe Outcome.Done
         driver.bothPass() // the cast trigger resolves (counter + ping), then Divination resolves
 
         plusOneCounters(driver, vivi) shouldBe 1

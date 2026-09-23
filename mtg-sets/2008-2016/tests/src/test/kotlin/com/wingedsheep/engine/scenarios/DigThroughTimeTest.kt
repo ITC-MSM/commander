@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 class DigThroughTimeTest : FunSpec({
 
@@ -49,7 +50,7 @@ class DigThroughTimeTest : FunSpec({
         val initialHandSize = driver.getHandSize(activePlayer)
 
         val castResult = driver.castSpell(activePlayer, spellCard)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

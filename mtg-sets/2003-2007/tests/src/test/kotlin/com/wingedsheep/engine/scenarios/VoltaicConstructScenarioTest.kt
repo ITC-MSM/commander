@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Voltaic Construct (DST #156) — {4} 2/2 Artifact Creature — Golem Construct,
@@ -60,7 +62,7 @@ class VoltaicConstructScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(target)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.state.getEntity(target)?.has<TappedComponent>() shouldBe false
@@ -82,7 +84,7 @@ class VoltaicConstructScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(bear)),
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 
     // …and the other half of the same disjunction.
@@ -100,6 +102,6 @@ class VoltaicConstructScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(ingot)),
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

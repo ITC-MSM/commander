@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Orc General — "{T}, Sacrifice another Orc or Goblin: Other Orc creatures get
@@ -62,7 +64,7 @@ class OrcGeneralScenarioTest : FunSpec({
                 abilityId = abilityId,
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(goblin)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("the General does not pump himself") {
@@ -97,7 +99,7 @@ class OrcGeneralScenarioTest : FunSpec({
                     abilityId = abilityId,
                     costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(general)),
                 )
-            ).isSuccess shouldBe false
+            ).outcome shouldNotBe Outcome.Done
         }
     }
 })

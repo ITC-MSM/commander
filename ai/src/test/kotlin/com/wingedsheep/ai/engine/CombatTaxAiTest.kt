@@ -17,6 +17,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The AI and combat taxes — Baird, Steward of Argive ("creatures can't attack you unless their
@@ -69,7 +70,7 @@ class CombatTaxAiTest : FunSpec({
         val chosen = ai.chooseFrom(driver.state, listOf(driver.attackAction(p1))).action as DeclareAttackers
 
         chosen.attackers.keys.shouldBeEmpty()
-        driver.submit(chosen).isSuccess shouldBe true
+        driver.submit(chosen).outcome shouldBe Outcome.Done
         driver.state.pendingDecision shouldBe null
     }
 
@@ -91,7 +92,7 @@ class CombatTaxAiTest : FunSpec({
         paused.error shouldBe null
         val decision = driver.state.pendingDecision
         decision shouldNotBe null
-        driver.submitDecision(p1, ai.respondToDecision(driver.state, decision!!)).isSuccess shouldBe true
+        driver.submitDecision(p1, ai.respondToDecision(driver.state, decision!!)).outcome shouldBe Outcome.Done
         driver.state.pendingDecision shouldBe null
         driver.getUntappedLands(p1).shouldBeEmpty()
     }
@@ -131,7 +132,7 @@ class CombatTaxAiTest : FunSpec({
         val chosen = ai.chooseFrom(driver.state, listOf(driver.attackAction(p1))).action as DeclareAttackers
 
         chosen.attackers.keys.shouldBeEmpty()
-        driver.submit(chosen).isSuccess shouldBe true
+        driver.submit(chosen).outcome shouldBe Outcome.Done
         driver.state.pendingDecision shouldBe null
     }
 
@@ -188,7 +189,7 @@ class CombatTaxAiTest : FunSpec({
         val chosen = ai.chooseFrom(driver.state, listOf(blockAction)).action as DeclareBlockers
 
         chosen.blockers.filterValues { it.isNotEmpty() }.keys.shouldBeEmpty()
-        driver.submit(chosen).isSuccess shouldBe true
+        driver.submit(chosen).outcome shouldBe Outcome.Done
         driver.state.pendingDecision shouldBe null
     }
 })

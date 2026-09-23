@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Tarnation Vista (BIG #30).
@@ -50,7 +51,7 @@ class TarnationVistaScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = vista, abilityId = chosenColorAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         manaPool(driver, player).red shouldBe 1
     }
@@ -78,7 +79,7 @@ class TarnationVistaScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = vista, abilityId = eachColorAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val pool = manaPool(driver, player)
         pool.white shouldBe 1

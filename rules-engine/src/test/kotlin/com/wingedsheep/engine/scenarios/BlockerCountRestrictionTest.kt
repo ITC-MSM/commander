@@ -8,6 +8,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for the `CantBeBlockedByMoreThan` static ability (CR 509.1b).
@@ -61,7 +63,7 @@ class BlockerCountRestrictionTest : FunSpec({
         driver.activePlayer shouldBe driver.player1
 
         driver.declareAttackers(driver.player1, listOf(cavalry), driver.player2)
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
@@ -76,7 +78,7 @@ class BlockerCountRestrictionTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "more than one"
     }
 
@@ -93,7 +95,7 @@ class BlockerCountRestrictionTest : FunSpec({
         driver.currentStep shouldBe Step.DECLARE_ATTACKERS
 
         driver.declareAttackers(driver.player1, listOf(cavalry), driver.player2)
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
@@ -101,7 +103,7 @@ class BlockerCountRestrictionTest : FunSpec({
         driver.declareBlockers(
             driver.player2,
             mapOf(bears to listOf(cavalry))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
     }
 
 })

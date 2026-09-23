@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the Domain ability word — read end-to-end via [DynamicAmounts.domain].
@@ -72,7 +73,7 @@ class DomainTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = drawer, abilityId = abilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
         return driver.getHandSize(activePlayer) - handBefore
     }

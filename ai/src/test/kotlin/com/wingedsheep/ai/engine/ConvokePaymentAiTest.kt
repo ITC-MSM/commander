@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 class ConvokePaymentAiTest : FunSpec({
     fun driver(): GameTestDriver = GameTestDriver().apply {
@@ -36,7 +37,7 @@ class ConvokePaymentAiTest : FunSpec({
         val chosen = AIPlayer.create(driver.cardRegistry, player).chooseFrom(driver.state, listOf(legal)).action
             as CastSpell
         chosen.alternativePayment?.convokedCreatures?.size shouldBe 3
-        driver.submit(chosen).isSuccess shouldBe true
+        driver.submit(chosen).outcome shouldBe Outcome.Done
     }
 
     test("AI preserves targets while materializing Convoke payment for Lofty Dreams") {
@@ -52,6 +53,6 @@ class ConvokePaymentAiTest : FunSpec({
             as CastSpell
         chosen.alternativePayment?.convokedCreatures?.size shouldBe 3
         (chosen.targets.single() as ChosenTarget.Permanent).entityId shouldBe auraTarget
-        driver.submit(chosen).isSuccess shouldBe true
+        driver.submit(chosen).outcome shouldBe Outcome.Done
     }
 })

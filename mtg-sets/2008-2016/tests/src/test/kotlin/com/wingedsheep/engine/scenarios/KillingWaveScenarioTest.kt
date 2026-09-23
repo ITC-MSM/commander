@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Killing Wave — {X}{B} Sorcery
@@ -41,7 +42,7 @@ class KillingWaveScenarioTest : FunSpec({
 
         val wave = driver.putCardInHand(caster, "Killing Wave")
         driver.giveMana(caster, Color.BLACK, 3)
-        driver.castXSpell(caster, wave, xValue = 2).isSuccess shouldBe true
+        driver.castXSpell(caster, wave, xValue = 2).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Active player first (APNAP): the caster is asked about their own Bears.
@@ -72,7 +73,7 @@ class KillingWaveScenarioTest : FunSpec({
 
         val wave = driver.putCardInHand(caster, "Killing Wave")
         driver.giveMana(caster, Color.BLACK, 3)
-        driver.castXSpell(caster, wave, xValue = 2).isSuccess shouldBe true
+        driver.castXSpell(caster, wave, xValue = 2).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Two creatures, two character-identical prompts: the only thing telling them apart is the
@@ -99,7 +100,7 @@ class KillingWaveScenarioTest : FunSpec({
 
         val wave = driver.putCardInHand(caster, "Killing Wave")
         driver.giveMana(caster, Color.BLACK, 6)
-        driver.castXSpell(caster, wave, xValue = 5).isSuccess shouldBe true
+        driver.castXSpell(caster, wave, xValue = 5).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The caster controls no creatures, and the opponent cannot afford 5 life — no prompt at all.

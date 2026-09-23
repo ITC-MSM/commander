@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.SelfAlternativeCost
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Coverage for the existing [SelfAlternativeCost] + [AdditionalCost.PayLife] pipeline used to
@@ -61,7 +63,7 @@ class SelfAlternativeCostPayLifeTest : FunSpec({
         )
 
         // THEN the spell is successfully cast and placed on the stack
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 1
 
         // AND the player's life total becomes 15 (reduced by exactly the spell's mana value of 5)
@@ -87,6 +89,6 @@ class SelfAlternativeCostPayLifeTest : FunSpec({
         )
 
         // THEN the engine rejects the cast as an illegal cost payment
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

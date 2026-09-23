@@ -23,6 +23,8 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Clay-Fired Bricks // Cosmium Kiln (LCI #6, CR 702.167).
@@ -96,7 +98,7 @@ class ClayFiredBricksScenarioTest : FunSpec({
         driver.giveMana(p1, Color.WHITE, 2)
         val lifeBefore = driver.getLifeTotal(p1)
 
-        driver.castSpell(p1, bricks).isSuccess shouldBe true
+        driver.castSpell(p1, bricks).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the artifact spell -> ETB trigger on the stack
         driver.bothPass() // resolve the trigger -> pauses on the library search selection
 
@@ -193,7 +195,7 @@ class ClayFiredBricksScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(lions))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Nothing moved: still the front face on the battlefield, no exile.
         driver.state.getEntity(bricks)!!.get<CardComponent>()!!.name shouldBe "Clay-Fired Bricks"

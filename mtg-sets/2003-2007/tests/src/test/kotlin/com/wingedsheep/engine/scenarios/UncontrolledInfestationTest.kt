@@ -23,6 +23,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Uncontrolled Infestation.
@@ -143,7 +144,7 @@ class UncontrolledInfestationTest : FunSpec({
         val aura = driver.putCardInHand(activePlayer, "Uncontrolled Infestation")
         driver.giveMana(activePlayer, Color.RED, 2)
         val result = driver.castSpell(activePlayer, aura, listOf(basicLand))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("tapping enchanted land before aura is attached does not trigger") {

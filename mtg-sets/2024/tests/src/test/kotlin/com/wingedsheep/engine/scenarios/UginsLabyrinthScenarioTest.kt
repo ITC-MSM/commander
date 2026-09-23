@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ugin's Labyrinth (MH3 #233) — Land.
@@ -97,7 +98,7 @@ class UginsLabyrinthScenarioTest : FunSpec({
         val plainLand = driver.putPermanentOnBattlefield(me, "Ugin's Labyrinth")
 
         driver.submit(ActivateAbility(playerId = me, sourceId = plainLand, abilityId = manaAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.state.getEntity(me)?.get<ManaPoolComponent>()?.colorless shouldBe 1
 
         val linkedLand = driver.putPermanentOnBattlefield(me, "Ugin's Labyrinth")
@@ -109,7 +110,7 @@ class UginsLabyrinthScenarioTest : FunSpec({
         )
 
         driver.submit(ActivateAbility(playerId = me, sourceId = linkedLand, abilityId = manaAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.state.getEntity(me)?.get<ManaPoolComponent>()?.colorless shouldBe (1 + 2)
     }
 
@@ -128,7 +129,7 @@ class UginsLabyrinthScenarioTest : FunSpec({
         )
 
         driver.submit(ActivateAbility(playerId = me, sourceId = land, abilityId = returnAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         // Unlike the mana ability, this one isn't a mana ability — it goes on the stack and needs
         // resolving before the card actually moves.

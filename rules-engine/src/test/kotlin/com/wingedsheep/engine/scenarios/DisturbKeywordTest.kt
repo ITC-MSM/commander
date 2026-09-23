@@ -35,6 +35,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the Disturb [cost] keyword (CR 702.146, Innistrad: Midnight Hunt / Crimson Vow).
@@ -204,7 +205,7 @@ class DisturbKeywordTest : FunSpec({
             )
         )
         io.kotest.assertions.withClue("error=${result.error} pending=${result.pendingDecision}") {
-            result.isSuccess shouldBe true
+            result.outcome shouldBe Outcome.Done
         }
 
         // On the stack it is already the back face — its name, types and P/T all come from there.
@@ -249,7 +250,7 @@ class DisturbKeywordTest : FunSpec({
                 useAlternativeCost = true, alternativeCostType = AlternativeCostType.DISTURB,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val record = driver.state.spellsCastThisTurnByPlayer[player]?.last()
         record.shouldNotBeNull()
@@ -300,7 +301,7 @@ class DisturbKeywordTest : FunSpec({
             )
         )
         io.kotest.assertions.withClue("error=${result.error} pending=${result.pendingDecision}") {
-            result.isSuccess shouldBe true
+            result.outcome shouldBe Outcome.Done
         }
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
@@ -330,7 +331,7 @@ class DisturbKeywordTest : FunSpec({
                 useAlternativeCost = true, alternativeCostType = AlternativeCostType.DISTURB,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.passPriority(player)
         val countered = driver.submit(
@@ -340,7 +341,7 @@ class DisturbKeywordTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        io.kotest.assertions.withClue("error=${countered.error}") { countered.isSuccess shouldBe true }
+        io.kotest.assertions.withClue("error=${countered.error}") { countered.outcome shouldBe Outcome.Done }
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // The back face's "would be put into a graveyard from anywhere, exile it instead" clause
@@ -371,7 +372,7 @@ class DisturbKeywordTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        io.kotest.assertions.withClue("error=${result.error}") { result.isSuccess shouldBe true }
+        io.kotest.assertions.withClue("error=${result.error}") { result.outcome shouldBe Outcome.Done }
 
         val castEvent = result.events.filterIsInstance<SpellCastEvent>().single()
         castEvent.castFromZone shouldBe Zone.GRAVEYARD
@@ -408,7 +409,7 @@ class DisturbKeywordTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = player, cardId = geist, paymentStrategy = PaymentStrategy.FromPool)
         )
-        io.kotest.assertions.withClue("error=${result.error}") { result.isSuccess shouldBe true }
+        io.kotest.assertions.withClue("error=${result.error}") { result.outcome shouldBe Outcome.Done }
 
         result.events.filterIsInstance<SpellCastEvent>().single().alternativeCost shouldBe null
         ClientEventTransformer.transform(result.events, opponent)
@@ -432,7 +433,7 @@ class DisturbKeywordTest : FunSpec({
                 useAlternativeCost = true, alternativeCostType = AlternativeCostType.DISTURB,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // Kill it for real, so the battlefield → graveyard move runs through the replacement pipeline.
@@ -442,7 +443,7 @@ class DisturbKeywordTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(geist)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.state.getExile(player).shouldContain(geist)

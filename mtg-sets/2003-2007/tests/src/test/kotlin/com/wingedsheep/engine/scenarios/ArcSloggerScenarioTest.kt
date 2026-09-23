@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Arc-Slogger (MRD #85) — "{R}, Exile the top ten cards of your library: This creature deals 2
@@ -60,7 +61,7 @@ class ArcSloggerScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, slogger, sloggerAbility, targets = listOf(ChosenTarget.Player(opponent)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("exactly ten leave the library") {
@@ -82,7 +83,7 @@ class ArcSloggerScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, slogger, sloggerAbility, targets = listOf(ChosenTarget.Player(opponent)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("the cost is affordable down to the last card") {
@@ -125,7 +126,7 @@ class ArcSloggerScenarioTest : FunSpec({
         repeat(2) {
             d.submit(
                 ActivateAbility(d.player1, slogger, sloggerAbility, targets = listOf(ChosenTarget.Player(opponent)))
-            ).isSuccess shouldBe true
+            ).outcome shouldBe Outcome.Done
             d.bothPass()
         }
 

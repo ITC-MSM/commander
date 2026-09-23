@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.scripting.values.ContextPropertyKey
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Gap 12 substrate: `DealsDamageEvent(requireExcess = true)` fires only when the recipient took
@@ -237,9 +238,9 @@ class ExcessDamageTriggerScenarioTest : FunSpec({
         driver.removeSummoningSickness(attacker)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(active, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(active, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 
@@ -269,9 +270,9 @@ class ExcessDamageTriggerScenarioTest : FunSpec({
         driver.removeSummoningSickness(adder)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(active, listOf(adder), opponent).isSuccess shouldBe true
+        driver.declareAttackers(active, listOf(adder), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(adder))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(adder))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 

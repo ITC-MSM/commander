@@ -16,6 +16,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Bind.
@@ -82,14 +84,14 @@ class BindTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(fodder))
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         val abilityOnStack = driver.getTopOfStack()!!
 
         // Player 2 passes; Player 1 responds with Bind targeting the activated ability
         driver.passPriority(player2)
         val castResult = driver.castSpellWithTargets(player1, bind, listOf(ChosenTarget.Spell(abilityOnStack)))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -129,7 +131,7 @@ class BindTest : FunSpec({
         val castResult = driver.castSpellWithTargets(
             player1, bind, listOf(ChosenTarget.Spell(triggeredAbilityOnStack))
         )
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
 
         // Trigger still resolves normally
         driver.bothPass()

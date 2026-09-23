@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Rattleclaw Mystic:
@@ -75,7 +76,7 @@ class RattleclawMysticTest : FunSpec({
                 abilityId = greenAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = getManaPool(driver, activePlayer)
         pool.green shouldBe 1
@@ -98,7 +99,7 @@ class RattleclawMysticTest : FunSpec({
                 abilityId = blueAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = getManaPool(driver, activePlayer)
         pool.blue shouldBe 1
@@ -121,7 +122,7 @@ class RattleclawMysticTest : FunSpec({
                 abilityId = redAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = getManaPool(driver, activePlayer)
         pool.red shouldBe 1
@@ -145,7 +146,7 @@ class RattleclawMysticTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 1
     }
 
@@ -170,7 +171,7 @@ class RattleclawMysticTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the turn-face-up triggered ability
         driver.bothPass()

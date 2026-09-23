@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Razia's Purification (RAV #224) — "Each player chooses three permanents they control, then
@@ -50,7 +51,7 @@ class RaziasPurificationScenarioTest : FunSpec({
         giveColorlessMana(caster, 4)
         giveMana(caster, Color.RED, 1)
         giveMana(caster, Color.WHITE, 1)
-        castSpell(caster, spell).isSuccess shouldBe true
+        castSpell(caster, spell).outcome shouldBe Outcome.Done
         bothPass()
 
         var guard = 0

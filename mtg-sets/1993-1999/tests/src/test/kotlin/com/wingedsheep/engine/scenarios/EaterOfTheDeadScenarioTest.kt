@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Eater of the Dead — "{0}: If this creature is tapped, exile target creature
@@ -48,7 +49,7 @@ class EaterOfTheDeadScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, corpse)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("the creature card left the graveyard for exile") {
@@ -79,7 +80,7 @@ class EaterOfTheDeadScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, corpse)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getGraveyardCardNames(opponent) shouldBe emptyList()
@@ -104,7 +105,7 @@ class EaterOfTheDeadScenarioTest : FunSpec({
                     abilityId = abilityId,
                     targets = listOf(entityIdToChosenTarget(driver.state, corpse)),
                 )
-            ).isSuccess shouldBe true
+            ).outcome shouldBe Outcome.Done
         }
         driver.bothPass()
 

@@ -20,6 +20,8 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * One Last Job — {2}{W} Sorcery, Spree.
@@ -86,7 +88,7 @@ class OtjOneLastJobScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Card(courser, me, Zone.GRAVEYARD))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(me, "Centaur Courser") shouldBe courser
@@ -113,7 +115,7 @@ class OtjOneLastJobScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Card(mount, me, Zone.GRAVEYARD))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(me, "Test Mustang") shouldBe mount
@@ -140,7 +142,7 @@ class OtjOneLastJobScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Card(equip, me, Zone.GRAVEYARD))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The mode pauses for the controller to choose the host creature.
@@ -177,7 +179,7 @@ class OtjOneLastJobScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Card(aura, me, Zone.GRAVEYARD))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe true
@@ -206,6 +208,6 @@ class OtjOneLastJobScenarioTest : FunSpec({
                 chosenModes = emptyList(),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

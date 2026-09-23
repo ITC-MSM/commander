@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Makeshift Mannequin (LRW #124) — "Return target creature card from your graveyard to the
@@ -49,7 +50,7 @@ class MakeshiftMannequinScenarioTest : FunSpec({
         val mannequin = d.putCardInHand(me, "Makeshift Mannequin")
         d.giveMana(me, Color.BLACK, 4)
         d.castSpellWithTargets(me, mannequin, listOf(entityIdToChosenTarget(d.state, corpse)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         d.bothPass()
         return d.findPermanent(me, "Centaur Courser").shouldNotBeNull()
     }
@@ -74,7 +75,7 @@ class MakeshiftMannequinScenarioTest : FunSpec({
         d.giveMana(me, Color.GREEN, 1)
         val growth = d.putCardInHand(me, "Giant Growth")
         d.castSpellWithTargets(me, growth, listOf(ChosenTarget.Permanent(courser)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         withClue("the granted trigger is on the stack above Giant Growth") {
             d.stackSize shouldBe 2
@@ -99,7 +100,7 @@ class MakeshiftMannequinScenarioTest : FunSpec({
         d.giveMana(me, Color.GREEN, 1)
         val growth = d.putCardInHand(me, "Giant Growth")
         d.castSpellWithTargets(me, growth, listOf(ChosenTarget.Permanent(courser)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         withClue("no counter, no granted ability, so only Giant Growth is on the stack") {
             d.stackSize shouldBe 1

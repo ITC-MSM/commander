@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario coverage for Gap 17 (`SacrificedPermanentWasLegendary`) via Nasty End:
@@ -65,7 +66,7 @@ class NastyEndTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(sacrificedPermanents = listOf(fodder))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
@@ -94,7 +95,7 @@ class NastyEndTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(sacrificedPermanents = listOf(fodder))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 

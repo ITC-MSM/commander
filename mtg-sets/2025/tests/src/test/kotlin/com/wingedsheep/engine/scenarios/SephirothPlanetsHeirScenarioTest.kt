@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sephiroth, Planet's Heir (FIN #553) — {4}{U}{B} Legendary Creature 4/4, Vigilance.
@@ -48,7 +49,7 @@ class SephirothPlanetsHeirScenarioTest : FunSpec({
         giveMana(you, Color.BLUE, 1)
         giveMana(you, Color.BLACK, 1)
         giveColorlessMana(you, 4)
-        castSpell(you, card).isSuccess shouldBe true
+        castSpell(you, card).outcome shouldBe Outcome.Done
         bothPass()
         return card
     }

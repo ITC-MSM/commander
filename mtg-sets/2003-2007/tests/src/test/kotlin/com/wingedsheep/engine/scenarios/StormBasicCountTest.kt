@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.effects.StormCopyEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Baseline integration tests for the Storm keyword (CR 702.40).
@@ -35,7 +36,7 @@ class StormBasicCountTest : FunSpec({
 
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val stormTriggers = driver.state.stack.mapNotNull {
             driver.state.getEntity(it)?.get<TriggeredAbilityOnStackComponent>()
@@ -56,7 +57,7 @@ class StormBasicCountTest : FunSpec({
         // No prior spells — spellsCastThisTurn defaults to 0.
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val stormTriggers = driver.state.stack.mapNotNull {
             driver.state.getEntity(it)?.get<TriggeredAbilityOnStackComponent>()
@@ -77,7 +78,7 @@ class StormBasicCountTest : FunSpec({
         driver.replaceState(driver.state.copy(spellsCastThisTurn = 2))
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         // Storm trigger created 2 copies, but 707.10 — copies aren't cast, so the counter
         // only advances for the original Tendrils spell itself.
@@ -96,7 +97,7 @@ class StormBasicCountTest : FunSpec({
         driver.replaceState(driver.state.copy(spellsCastThisTurn = 1))
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         // Original Tendrils is on the stack.
         driver.state.getEntity(tendrils)?.get<SpellOnStackComponent>() shouldBe driver.state.getEntity(tendrils)!!.get<SpellOnStackComponent>()

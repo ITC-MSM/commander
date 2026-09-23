@@ -20,6 +20,8 @@ import com.wingedsheep.sdk.scripting.GrantKeywordToOwnSpells
 import com.wingedsheep.engine.core.PaymentStrategy
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for [GrantKeywordToOwnSpells] — the static ability behind Eirdu's
@@ -159,7 +161,7 @@ class GrantKeywordToOwnSpellsTest : FunSpec({
         )
 
         val result = driver.submit(action)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // The convoked creature is now tapped.
         driver.state.getEntity(tapper)?.has<TappedComponent>() shouldBe true
@@ -196,6 +198,6 @@ class GrantKeywordToOwnSpellsTest : FunSpec({
 
         val result = driver.submit(action)
         // Convoke is not granted to noncreature spells, so the attempt to pay with convoke fails.
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

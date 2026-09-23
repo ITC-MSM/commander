@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for [Duration.WhileYouControlSource] — the "for as long as you control this [source]"
@@ -81,7 +82,7 @@ class WhileYouControlSourceDurationTest : FunSpec({
                 targets = listOf(com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent(target))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         bothPass()
         return stealer
     }

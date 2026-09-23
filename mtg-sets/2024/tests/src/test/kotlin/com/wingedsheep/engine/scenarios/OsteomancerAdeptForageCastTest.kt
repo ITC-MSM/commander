@@ -19,6 +19,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
+import com.wingedsheep.engine.core.Outcome
 
 class OsteomancerAdeptForageCastTest : FunSpec({
 
@@ -65,7 +66,7 @@ class OsteomancerAdeptForageCastTest : FunSpec({
 
         // Cast Bonebind Orator from the graveyard via the forage permission
         val castResult = driver.castSpell(active, orator)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Food sacrificed as the forage cost
         driver.state.getZone(com.wingedsheep.engine.state.ZoneKey(active, Zone.GRAVEYARD)) shouldContain food
@@ -93,7 +94,7 @@ class OsteomancerAdeptForageCastTest : FunSpec({
 
         driver.giveMana(active, Color.BLACK, 2)
         val castResult = driver.castSpell(active, orator)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         val exile = driver.state.getZone(com.wingedsheep.engine.state.ZoneKey(active, Zone.EXILE))
         exile.size shouldBe 3
@@ -121,7 +122,7 @@ class OsteomancerAdeptForageCastTest : FunSpec({
 
         driver.giveMana(active, Color.BLACK, 2)
         val castResult = driver.castSpell(active, orator)
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
     }
 
     test("A creature cast from graveyard via forage enters with a finality counter") {
@@ -141,7 +142,7 @@ class OsteomancerAdeptForageCastTest : FunSpec({
 
         // Cast Bonebind Orator from the graveyard via forage (Food sacrificed as the cost).
         driver.giveMana(active, Color.BLACK, 2)
-        driver.castSpell(active, orator).isSuccess shouldBe true
+        driver.castSpell(active, orator).outcome shouldBe Outcome.Done
 
         // Resolve it onto the battlefield.
         var guard = 0

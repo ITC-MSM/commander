@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Brigid, Hero of Kinsbaile (LRW #6) — "{T}: Brigid deals 2 damage to each attacking or blocking
@@ -64,7 +66,7 @@ class BrigidHeroOfKinsbaileScenarioTest : FunSpec({
                 brigidAbility,
                 targets = listOf(ChosenTarget.Player(opponent))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("the attacking 2/2 took 2 and died") {
@@ -105,7 +107,7 @@ class BrigidHeroOfKinsbaileScenarioTest : FunSpec({
                 brigidAbility,
                 targets = listOf(ChosenTarget.Player(opponent))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("the blocking 2/2 took 2 and died before combat damage") {
@@ -120,7 +122,7 @@ class BrigidHeroOfKinsbaileScenarioTest : FunSpec({
                     brigidAbility,
                     targets = listOf(ChosenTarget.Player(opponent))
                 )
-            ).isSuccess shouldBe false
+            ).outcome shouldNotBe Outcome.Done
         }
     }
 })

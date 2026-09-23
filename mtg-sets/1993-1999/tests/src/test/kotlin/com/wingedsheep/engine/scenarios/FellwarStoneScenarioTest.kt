@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Fellwar Stone — "{T}: Add one mana of any color that a land an opponent
@@ -47,7 +48,7 @@ class FellwarStoneScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(me, stone, abilityId, manaColorChoice = Color.BLACK)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         pool(driver, me).black shouldBe 1
     }
 
@@ -63,7 +64,7 @@ class FellwarStoneScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(me, stone, abilityId, manaColorChoice = Color.BLUE)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         pool(driver, me).blue shouldBe 1
     }
 

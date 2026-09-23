@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Lava Dart {R} — Instant.
@@ -48,7 +49,7 @@ class LavaDartScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Player(opp)),
                 paymentStrategy = PaymentStrategy.AutoPay
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getLifeTotal(opp) shouldBe 19
@@ -74,7 +75,7 @@ class LavaDartScenarioTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(sacrificedPermanents = listOf(mountain)),
                 paymentStrategy = PaymentStrategy.AutoPay
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Damage dealt.

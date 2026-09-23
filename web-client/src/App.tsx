@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { Suspense, lazy, memo, useEffect, useMemo, useRef } from 'react'
 import { GameBoard } from './components/game/GameBoard'
 import { GameUI } from './components/ui/GameUI'
 import { MulliganUI } from './components/mulligan/MulliganUI'
@@ -19,11 +19,6 @@ import { DisconnectCountdown } from './components/ui/DisconnectCountdown'
 import { SessionReplacedOverlay } from './components/ui/SessionReplacedOverlay'
 import { MatchIntroAnimation } from './components/animations/MatchIntroAnimation'
 import { StandaloneConcedeButton } from './components/game/overlay'
-import { DeckBuilderOverlay } from './components/sealed/DeckBuilderOverlay'
-import { DraftPickOverlay } from './components/draft/DraftPickOverlay'
-import { WinstonDraftOverlay } from './components/draft/WinstonDraftOverlay'
-import { GridDraftOverlay } from './components/draft/GridDraftOverlay'
-import { SpectatorGameBoard } from './components/spectating/SpectatorGameBoard'
 import { trackPageView } from './utils/analytics'
 import { randomBackground } from './utils/background'
 import { useNavigate } from 'react-router-dom'
@@ -34,6 +29,79 @@ import { LearnCoach } from '@/components/learn/LearnCoach'
 import { useViewingPlayer, useBattlefieldCards } from './store/selectors'
 import type { ClientAttacker, EntityId } from './types'
 import { GameOverReason } from './types'
+import { defendingPlayerOf } from './utils/combatTargets'
+
+// Limited-format and spectator screens are a minority of sessions but about a third of this
+// chunk, so they load on demand. Each keeps its own <Suspense> — the one in main.tsx would blank
+// the whole app while a chunk streams in. `preloadSecondaryScreens` warms them once the browser
+// is idle, so opening a draft still feels instant.
+const importDeckBuilderOverlay = () => import('./components/sealed/DeckBuilderOverlay')
+const importDraftPickOverlay = () => import('./components/draft/DraftPickOverlay')
+const importWinstonDraftOverlay = () => import('./components/draft/WinstonDraftOverlay')
+const importGridDraftOverlay = () => import('./components/draft/GridDraftOverlay')
+const importSpectatorGameBoard = () => import('./components/spectating/SpectatorGameBoard')
+const DeckBuilderOverlay = lazy(() => importDeckBuilderOverlay().then((m) => ({ default: m.DeckBuilderOverlay })))
+const DraftPickOverlay = lazy(() => importDraftPickOverlay().then((m) => ({ default: m.DraftPickOverlay })))
+const WinstonDraftOverlay = lazy(() => importWinstonDraftOverlay().then((m) => ({ default: m.WinstonDraftOverlay })))
+const GridDraftOverlay = lazy(() => importGridDraftOverlay().then((m) => ({ default: m.GridDraftOverlay })))
+const SpectatorGameBoard = lazy(() => importSpectatorGameBoard().then((m) => ({ default: m.SpectatorGameBoard })))
+
+function preloadSecondaryScreens() {
+  const load = () => {
+    void importDeckBuilderOverlay()
+    void importDraftPickOverlay()
+    void importWinstonDraftOverlay()
+    void importGridDraftOverlay()
+    void importSpectatorGameBoard()
+  }
+  if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(load, { timeout: 5000 })
+  else setTimeout(load, 2000)
+}
+
+/**
+ * The in-game interaction overlays. None takes props beyond the epoch key — each reads its own
+ * store slice — so memoizing the group keeps App's own re-render on every server message (it
+ * watches gameState and legalActions to drive combat mode) from re-rendering all of them.
+ */
+const InGameOverlays = memo(function InGameOverlays({ interactionEpoch }: { interactionEpoch: string | null }) {
+  return (
+    <>
+      {/* X cost selection overlay (when casting spells with X in cost) */}
+      <XCostSelector key={interactionEpoch} />
+
+      {/* Blight X variable additional cost overlay (e.g., Soul Immolation) */}
+      <BlightVariableSelector key={interactionEpoch} />
+      <PayXLifeSelector key={interactionEpoch} />
+
+      {/* Choose-N modal (Spree / "choose one or more") mode-selection panel */}
+      <ModalModeSelector key={interactionEpoch} />
+
+      {/* Convoke selection overlay (when casting spells with Convoke) */}
+      <ConvokeSelector key={interactionEpoch} />
+
+      {/* Tap-for-generic selection overlay (improvise CR 702.126 / waterbend costs) */}
+      <TapForGenericSelector key={interactionEpoch} />
+
+      {/* Harmonize creature-tap overlay (when casting from graveyard via Harmonize) */}
+      <HarmonizeSelector key={interactionEpoch} />
+
+      {/* Tap-for-power selection overlay (crewing Vehicles / saddling Mounts) */}
+      <TapForPowerSelector key={interactionEpoch} />
+
+      {/* Delve selection overlay (when casting spells with Delve) */}
+      <DelveSelector key={interactionEpoch} />
+
+      {/* Damage distribution overlay (for DividedDamageEffect spells like Forked Lightning) */}
+      <DamageDistributionModal key={interactionEpoch} />
+
+      {/* Decision overlay (for pending decisions like discard to hand size) */}
+      <DecisionUI />
+
+      {/* Revealed cards overlay (hand reveals and library reveals) */}
+      <RevealedCardsUI />
+    </>
+  )
+})
 
 export default function App() {
   const interactionEpoch = useGameStore((state) => state.interactionEpoch)
@@ -75,6 +143,8 @@ export default function App() {
   const hasDeclareBlockersAction = legalActions.some(
     (a) => a.actionType === 'DeclareBlockers' || a.action.type === 'DeclareBlockers'
   )
+
+  useEffect(preloadSecondaryScreens, [])
 
   useEffect(() => {
     if (connectionStatus !== 'disconnected' || hasConnectedRef.current) return
@@ -254,7 +324,7 @@ export default function App() {
       const attacksSeat = (a: ClientAttacker): boolean => {
         if (!defendingSeat) return true
         if (a.attackingTarget.type === 'Player') return a.attackingTarget.playerId === defendingSeat
-        return gameState?.cards[a.attackingTarget.permanentId]?.controllerId === defendingSeat
+        return defendingPlayerOf(a.attackingTarget.permanentId, gameState?.cards) === defendingSeat
       }
       const relevantAttackers = (gameState?.combat?.attackers ?? []).filter(attacksSeat)
       const attackingCreatures: EntityId[] = relevantAttackers.map((a) => a.creatureId)
@@ -354,16 +424,16 @@ export default function App() {
       )}
 
       {/* Deck building overlay (sealed/draft) */}
-      {showDeckBuilder && <DeckBuilderOverlay />}
+      {showDeckBuilder && <Suspense fallback={null}><DeckBuilderOverlay /></Suspense>}
 
       {/* Draft picking overlay */}
-      {showDraftPick && <DraftPickOverlay />}
+      {showDraftPick && <Suspense fallback={null}><DraftPickOverlay /></Suspense>}
 
       {/* Winston Draft overlay */}
-      {showWinstonDraft && <WinstonDraftOverlay />}
+      {showWinstonDraft && <Suspense fallback={null}><WinstonDraftOverlay /></Suspense>}
 
       {/* Grid Draft overlay */}
-      {showGridDraft && <GridDraftOverlay />}
+      {showGridDraft && <Suspense fallback={null}><GridDraftOverlay /></Suspense>}
 
       {/* Match intro animation (plays before mulligan) */}
       {matchIntro && <MatchIntroAnimation />}
@@ -375,45 +445,13 @@ export default function App() {
       {!mulliganState && !matchIntro && waitingForOpponentMulligan && <WaitingForMulliganOverlay />}
 
 
-      {/* X cost selection overlay (when casting spells with X in cost) */}
-      {showGame && <XCostSelector key={interactionEpoch} />}
-
-      {/* Blight X variable additional cost overlay (e.g., Soul Immolation) */}
-      {showGame && <BlightVariableSelector key={interactionEpoch} />}
-      {showGame && <PayXLifeSelector key={interactionEpoch} />}
-
-      {/* Choose-N modal (Spree / "choose one or more") mode-selection panel */}
-      {showGame && <ModalModeSelector key={interactionEpoch} />}
-
-      {/* Convoke selection overlay (when casting spells with Convoke) */}
-      {showGame && <ConvokeSelector key={interactionEpoch} />}
-
-      {/* Tap-for-generic selection overlay (improvise CR 702.126 / waterbend costs) */}
-      {showGame && <TapForGenericSelector key={interactionEpoch} />}
-
-      {/* Harmonize creature-tap overlay (when casting from graveyard via Harmonize) */}
-      {showGame && <HarmonizeSelector key={interactionEpoch} />}
-
-      {/* Tap-for-power selection overlay (crewing Vehicles / saddling Mounts) */}
-      {showGame && <TapForPowerSelector key={interactionEpoch} />}
-
-      {/* Delve selection overlay (when casting spells with Delve) */}
-      {showGame && <DelveSelector key={interactionEpoch} />}
-
-      {/* Damage distribution overlay (for DividedDamageEffect spells like Forked Lightning) */}
-      {showGame && <DamageDistributionModal key={interactionEpoch} />}
-
-      {/* Decision overlay (for pending decisions like discard to hand size) */}
-      {showGame && <DecisionUI />}
-
-      {/* Revealed cards overlay (hand reveals and library reveals) */}
-      {showGame && <RevealedCardsUI />}
+      {showGame && <InGameOverlays interactionEpoch={interactionEpoch} />}
 
       {/* Game over overlay (rendered independently so it persists after game state clears) */}
       <GameOverlay />
 
       {/* Spectator view (when watching another game — skip when ReplayViewer handles its own UI) */}
-      {spectatingState && !spectatingState.isReplay && <SpectatorGameBoard />}
+      {spectatingState && !spectatingState.isReplay && <Suspense fallback={null}><SpectatorGameBoard /></Suspense>}
 
       {/* Session takeover overlay (this tab's identity connected from another tab/device) */}
       <SessionReplacedOverlay />

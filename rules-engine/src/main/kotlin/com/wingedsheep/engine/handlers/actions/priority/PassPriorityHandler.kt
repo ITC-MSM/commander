@@ -1,33 +1,19 @@
 package com.wingedsheep.engine.handlers.actions.priority
 
 import com.wingedsheep.engine.core.ExecutionResult
-import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.PassPriority
-import com.wingedsheep.engine.core.PendingTriggersContinuation
 import com.wingedsheep.engine.core.PriorityChangedEvent
-import com.wingedsheep.engine.core.StepChangedEvent
 import com.wingedsheep.engine.core.TurnManager
-import com.wingedsheep.engine.core.ZoneChangeEvent
-import com.wingedsheep.engine.event.StateTriggerPoller
-import com.wingedsheep.engine.event.TriggerDetector
-import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.actions.ActionHandler
-import com.wingedsheep.engine.mechanics.StateBasedActionChecker
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombatComponent
-import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.TokenComponent
-import com.wingedsheep.engine.state.components.player.CreaturesDiedThisTurnComponent
-import com.wingedsheep.engine.state.components.player.EndTheTurnRequestedComponent
-import com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.sdk.core.Step
-import com.wingedsheep.sdk.core.Zone
 import kotlin.reflect.KClass
 
 /**
@@ -39,11 +25,7 @@ import kotlin.reflect.KClass
  */
 class PassPriorityHandler(
     private val turnManager: TurnManager,
-    private val stackResolver: StackResolver,
-    private val sbaChecker: StateBasedActionChecker,
-    private val triggerDetector: TriggerDetector,
-    private val triggerProcessor: TriggerProcessor,
-    private val stateTriggerPoller: StateTriggerPoller
+    private val stackResolver: StackResolver
 ) : ActionHandler<PassPriority> {
     override val actionType: KClass<PassPriority> = PassPriority::class
 
@@ -101,53 +83,9 @@ class PassPriorityHandler(
             return if (newState.stack.isNotEmpty()) {
                 resolveTopOfStack(newState)
             } else {
-                val advanceResult = advanceGame(newState)
-                if (!advanceResult.isSuccess || advanceResult.events.isEmpty()) {
-                    return advanceResult
-                }
-                // Track nontoken creature deaths from step advancement (e.g., combat damage)
-                var currentState = trackNonTokenCreatureDeaths(advanceResult.newState, advanceResult.events)
-                val triggers = triggerDetector.detectTriggers(currentState, advanceResult.events).toMutableList()
-
-                // Also detect delayed triggers and phase/step triggers for the new step
-                val stepChangedEvent = advanceResult.events.filterIsInstance<StepChangedEvent>().lastOrNull()
-                if (stepChangedEvent != null) {
-                    val (delayedTriggers, consumedIds) = triggerDetector.detectDelayedTriggers(currentState, stepChangedEvent.newStep)
-                    if (consumedIds.isNotEmpty()) {
-                        currentState = currentState.removeDelayedTriggers(consumedIds)
-                    }
-                    triggers.addAll(delayedTriggers)
-
-                    // Detect phase/step triggers (e.g., "At the beginning of your upkeep")
-                    val activePlayer = currentState.activePlayerId
-                    if (activePlayer != null) {
-                        val phaseStepTriggers = triggerDetector.detectPhaseStepTriggers(
-                            currentState, stepChangedEvent.newStep, activePlayer
-                        )
-                        triggers.addAll(phaseStepTriggers)
-                    }
-                }
-
-                // CR 603.8: poll state-triggered abilities. The poll updates per-permanent
-                // latch components and yields any false-to-true transitions as triggers.
-                val stateTriggerResult = stateTriggerPoller.poll(currentState)
-                currentState = stateTriggerResult.newState
-                triggers.addAll(stateTriggerResult.pendingTriggers)
-
-                if (triggers.isNotEmpty()) {
-                    val triggerResult = triggerProcessor.processTriggers(currentState, triggers)
-                    if (triggerResult.isPaused) {
-                        return ExecutionResult.propagatePause(
-                            triggerResult.state,
-                            advanceResult.events + triggerResult.events
-                        )
-                    }
-                    return ExecutionResult.success(
-                        triggerResult.newState.withPriority(state.activePlayerId),
-                        advanceResult.events + triggerResult.events
-                    )
-                }
-                ExecutionResult.success(currentState, advanceResult.events)
+                // The settle boundary picks up the step's triggers (phase/step, delayed, and the
+                // events of its turn-based actions); the step machine already handed priority on.
+                turnManager.advanceStep(newState)
             }
         }
 
@@ -173,210 +111,16 @@ class PassPriorityHandler(
                 ?: container.get<ActivatedAbilityOnStackComponent>()?.controllerId
         } ?: state.activePlayerId
 
-        val preResolutionStackSize = state.continuationStack.size
         val result = stackResolver.resolveTop(state)
-
-        // If resolution paused mid-way (e.g., Broken Bond destroys a creature then asks
-        // "may put a land from hand"), triggers from events emitted before the pause
-        // would otherwise be lost — they never reach detectTriggers because the paused
-        // branch below returns early. Detect them now and queue them as a
-        // PendingTriggersContinuation beneath the frames this resolution pushed, so
-        // they fire after the spell finishes resolving (via checkForMoreContinuations).
-        if (result.isPaused) {
-            val triggers = triggerDetector.detectTriggers(
-                trackNonTokenCreatureDeaths(result.newState, result.events),
-                result.events
-            )
-            if (triggers.isNotEmpty()) {
-                val pendingTriggers = PendingTriggersContinuation(
-                    remainingTriggers = triggers
-                )
-                val stack = result.newState.continuationStack
-                val newStack = stack.subList(0, preResolutionStackSize) +
-                    pendingTriggers +
-                    stack.subList(preResolutionStackSize, stack.size)
-                return ExecutionResult.propagatePause(
-                    result.newState.copy(continuationStack = newStack),
-                    result.events
-                )
-            }
-            return result
-        }
-
-        if (!result.isSuccess) {
-            return result
-        }
-
-        // CR 720: an "end the turn" effect (e.g. Final Fantasy's Ultima) resolved. Divert to the
-        // end-the-turn sequence instead of the normal trigger/SBA/priority flow — the triggers
-        // detected from this resolution (dies triggers from a preceding board wipe, etc.) are
-        // intentionally dropped and never put on the stack (CR 720.1c).
-        val endTheTurnPlayer = result.newState.activePlayerId
-        if (endTheTurnPlayer != null &&
-            result.newState.getEntity(endTheTurnPlayer)?.has<EndTheTurnRequestedComponent>() == true
-        ) {
-            return endTheTurn(result.newState, result.events)
-        }
-
-        // Track nontoken creature deaths from resolution events
-        val trackedState = trackNonTokenCreatureDeaths(result.newState, result.events)
-
-        // Detect triggers from resolution events BEFORE SBAs (so damage triggers
-        // see the creature still on the battlefield, per MTG rules 603.10)
-        val preSbaTriggers = triggerDetector.detectTriggers(trackedState, result.events)
-
-        // Check state-based actions after resolution
-        val preSbaStackSize = trackedState.continuationStack.size
-        val sbaResult = sbaChecker.checkAndApply(trackedState, preSbaTriggers.mapNotNull { it.objectReferences.origin }.toSet())
-
-        // If SBA needs player input (e.g., legend rule for two copies of a legendary
-        // creature entering at once), return paused. Queue preSbaTriggers beneath the
-        // SBA's continuation so they fire after the SBA decision resolves — otherwise
-        // ETB triggers on the entering permanent would be silently dropped.
-        if (sbaResult.isPaused) {
-            var pausedState = sbaResult.state
-            if (preSbaTriggers.isNotEmpty()) {
-                val pendingTriggers = PendingTriggersContinuation(
-                    remainingTriggers = preSbaTriggers
-                )
-                val stack = pausedState.continuationStack
-                val newStack = stack.subList(0, preSbaStackSize) +
-                    pendingTriggers +
-                    stack.subList(preSbaStackSize, stack.size)
-                pausedState = pausedState.copy(continuationStack = newStack)
-            }
-            return ExecutionResult.propagatePause(
-                pausedState,
-                result.events + sbaResult.events
-            )
-        }
-
-        var combinedEvents = result.events + sbaResult.events
-
-        if (sbaResult.newState.gameOver) {
-            return ExecutionResult.success(sbaResult.newState, combinedEvents)
-        }
-
-        // Track nontoken creature deaths from SBA events
-        val sbaTrackedState = trackNonTokenCreatureDeaths(sbaResult.newState, sbaResult.events)
-
-        // Detect triggers from SBA events (e.g., death triggers) on post-SBA state
-        val sbaTriggers = triggerDetector.detectTriggers(sbaTrackedState, sbaResult.events)
-
-        // CR 603.8: state-trigger poll happens at every priority check (here, after stack
-        // resolution + SBA), once events have settled. Polls battlefield permanents'
-        // state-triggered abilities and emits triggers for false→true transitions; updates
-        // per-entity latch components on the returned state.
-        val statePollResult = stateTriggerPoller.poll(sbaTrackedState)
-        val postPollState = statePollResult.newState
-        val triggers = preSbaTriggers + sbaTriggers + statePollResult.pendingTriggers
-        if (triggers.isNotEmpty()) {
-            val triggerResult = triggerProcessor.processTriggers(postPollState, triggers)
-
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state,
-                    combinedEvents + triggerResult.events
-                )
-            }
-
-            combinedEvents = combinedEvents + triggerResult.events
-            return ExecutionResult.success(
-                triggerResult.newState.withPriority(stackItemController),
-                combinedEvents
-            )
-        }
-
-        return ExecutionResult.success(
-            postPollState.withPriority(stackItemController),
-            combinedEvents
-        )
-    }
-
-    /**
-     * Run the "end the turn" sequence (CR 720) triggered by an [EndTheTurnRequestedComponent] that
-     * was set while [state]'s current spell/ability resolved. [TurnManager.performEndTheTurn] exiles
-     * the rest of the stack, removes creatures from combat and skips to the cleanup step + next turn;
-     * this method then fires only the freshly-begun turn's step/phase triggers (e.g. "at the
-     * beginning of your upkeep"). Battlefield event triggers from the end-the-turn actions and the
-     * preceding resolution are intentionally NOT processed (CR 720.1c).
-     */
-    private fun endTheTurn(state: GameState, resolutionEvents: List<GameEvent>): ExecutionResult {
-        val endResult = turnManager.performEndTheTurn(state)
-        val priorEvents = resolutionEvents + endResult.events
-
-        if (endResult.isPaused) {
-            return ExecutionResult.propagatePause(endResult.newState, priorEvents)
-        }
-        if (!endResult.isSuccess || endResult.newState.gameOver) {
-            return ExecutionResult.success(endResult.newState, priorEvents)
-        }
-
-        var currentState = endResult.newState
-        val stepChangedEvent = priorEvents.filterIsInstance<StepChangedEvent>().lastOrNull()
-            ?: return ExecutionResult.success(
-                currentState.withPriority(currentState.activePlayerId),
-                priorEvents
-            )
-
-        val (delayedTriggers, consumedIds) = triggerDetector.detectDelayedTriggers(currentState, stepChangedEvent.newStep)
-        if (consumedIds.isNotEmpty()) {
-            currentState = currentState.removeDelayedTriggers(consumedIds)
-        }
-        val triggers = delayedTriggers.toMutableList()
-        currentState.activePlayerId?.let { activePlayer ->
-            triggers.addAll(
-                triggerDetector.detectPhaseStepTriggers(currentState, stepChangedEvent.newStep, activePlayer)
-            )
-        }
-
-        val statePollResult = stateTriggerPoller.poll(currentState)
-        currentState = statePollResult.newState
-        triggers.addAll(statePollResult.pendingTriggers)
-
-        if (triggers.isNotEmpty()) {
-            val triggerResult = triggerProcessor.processTriggers(currentState, triggers)
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state,
-                    priorEvents + triggerResult.events
-                )
-            }
-            return ExecutionResult.success(
-                triggerResult.newState.withPriority(currentState.activePlayerId),
-                priorEvents + triggerResult.events
-            )
-        }
-
-        return ExecutionResult.success(
-            currentState.withPriority(currentState.activePlayerId),
-            priorEvents
-        )
-    }
-
-    private fun advanceGame(state: GameState): ExecutionResult {
-        return turnManager.advanceStep(state)
-    }
-
-    /**
-     * No-op: creature death tracking is now done inline in ZoneTransitionService.moveToZone()
-     * so that subsequent effects in the same chain can see updated counts.
-     * This method is kept for API compatibility with the call sites.
-     */
-    @Suppress("UNUSED_PARAMETER")
-    private fun trackNonTokenCreatureDeaths(state: GameState, events: List<GameEvent>): GameState {
-        return state
+        if (result.error != null || result.pendingDecision != null) return result
+        return ExecutionResult.success(result.newState.withPriority(stackItemController), result.events)
     }
 
     companion object {
         fun create(services: EngineServices): PassPriorityHandler {
             return PassPriorityHandler(
                 services.turnManager,
-                services.stackResolver,
-                services.sbaChecker,
-                services.triggerDetector,
-                services.triggerProcessor,
-                services.stateTriggerPoller
+                services.stackResolver
             )
         }
     }

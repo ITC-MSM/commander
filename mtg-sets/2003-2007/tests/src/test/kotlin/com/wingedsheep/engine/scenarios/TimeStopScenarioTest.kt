@@ -13,12 +13,12 @@ import io.kotest.matchers.shouldBe
 
 /**
  * Engine coverage for Time Stop (CHK #97 — {4}{U}{U} instant, "End the turn.") over the
- * shared [com.wingedsheep.sdk.dsl.Effects.EndTheTurn] effect (CR 720).
+ * shared [com.wingedsheep.sdk.dsl.Effects.EndTheTurn] effect (CR 724.1).
  *
  * The card just wires an instant to `EndTheTurn`, so these tests pin the two consequences
- * players actually see: Time Stop exiles itself with the stack (CR 720.1a) and the turn
+ * players actually see: Time Stop exiles itself with the stack (CR 724.1b) and the turn
  * ends into the opponent's turn, and any other spell still on the stack is exiled unresolved
- * (CR 720.1a — "exile all spells and abilities, including this spell").
+ * (CR 724.1b — "exile all spells and abilities, including this spell").
  */
 class TimeStopScenarioTest : FunSpec({
 
@@ -43,7 +43,7 @@ class TimeStopScenarioTest : FunSpec({
         driver.castSpell(p1, timeStop)
         driver.bothPass() // resolve Time Stop -> end the turn
 
-        // CR 720.1a: Time Stop is exiled with the stack, not put into the graveyard.
+        // CR 724.1b: Time Stop is exiled with the stack, not put into the graveyard.
         driver.getExileCardNames(p1) shouldContain "Time Stop"
         driver.getGraveyardCardNames(p1) shouldNotContain "Time Stop"
 

@@ -11,6 +11,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * BDD specification for "activate only as a sorcery" timing enforcement.
@@ -63,7 +65,7 @@ class ActivateOnlyAsASorceryTest : FunSpec({
                     )
                 )
 
-                result.isSuccess shouldBe false
+                result.outcome shouldNotBe Outcome.Done
                 result.error.shouldNotBeNull() shouldContain "sorcery"
                 driver.state.stack.size shouldBe stackSizeBefore
             }
@@ -93,7 +95,7 @@ class ActivateOnlyAsASorceryTest : FunSpec({
                 )
             )
 
-            result.isSuccess shouldBe true
+            result.outcome shouldBe Outcome.Done
         }
     }
 })

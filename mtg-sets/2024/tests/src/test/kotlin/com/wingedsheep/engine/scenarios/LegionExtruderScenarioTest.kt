@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Legion Extruder (BIG #12) — {1}{R} Artifact.
@@ -48,7 +49,7 @@ class LegionExtruderScenarioTest : FunSpec({
         val before = artifactCreatureTokens(driver.state, player).toSet()
         driver.submit(
             ActivateAbility(playerId = player, sourceId = extruder, abilityId = activateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val newTokens = artifactCreatureTokens(driver.state, player) - before

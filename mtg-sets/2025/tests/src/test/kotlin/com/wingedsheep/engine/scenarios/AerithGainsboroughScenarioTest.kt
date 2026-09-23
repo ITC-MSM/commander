@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Aerith Gainsborough — {2}{W} Legendary Creature — Human Cleric 2/2
@@ -103,7 +104,7 @@ class AerithGainsboroughScenarioTest : FunSpec({
         // counter information captured on the ZoneChangeEvent.
         val doomBlade = driver.putCardInHand(active, "Doom Blade")
         driver.giveMana(active, com.wingedsheep.sdk.core.Color.BLACK, 2)
-        driver.castSpell(active, doomBlade, targets = listOf(aerith)).isSuccess shouldBe true
+        driver.castSpell(active, doomBlade, targets = listOf(aerith)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Doom Blade -> Aerith is destroyed, queuing its dies trigger
         driver.state.getBattlefield().contains(aerith) shouldBe false
         driver.bothPass() // resolve Aerith's dies trigger

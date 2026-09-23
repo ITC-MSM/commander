@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests C1 from [`backlog/modal-cast-time-choices-plan.md`]: once modes and targets are
@@ -81,7 +82,7 @@ class ModalCounteredTest : FunSpec({
                     listOf(ChosenTarget.Permanent(centaur), ChosenTarget.Permanent(goblin))
                 )
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Command sits on the stack; per Rule 117.3c the active player retains priority
         // immediately after casting a spell. P1 passes so P2 gets priority.
@@ -98,7 +99,7 @@ class ModalCounteredTest : FunSpec({
                 cardId = cancel,
                 targets = listOf(ChosenTarget.Spell(commandOnStackId))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Stack order: Cancel on top, Command below.
         d.state.stack.size shouldBe 2

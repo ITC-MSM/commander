@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.scripting.TimingRule
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Joshua, Phoenix's Dominant // Phoenix, Warden of Fire (FIN #229).
@@ -134,7 +135,7 @@ class JoshuaPhoenixsDominantScenarioTest : FunSpec({
         driver.giveColorlessMana(me, 3)
         val abilityId = JoshuaPhoenixsDominant.activatedAbilities.first().id
         driver.submit(ActivateAbility(playerId = me, sourceId = joshua, abilityId = abilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         declineOptionalDecisions(driver)
         resolveStack(driver)

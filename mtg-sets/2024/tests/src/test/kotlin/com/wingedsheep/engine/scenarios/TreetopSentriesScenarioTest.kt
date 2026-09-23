@@ -14,6 +14,7 @@ import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Treetop Sentries (BLB).
@@ -40,7 +41,7 @@ class TreetopSentriesScenarioTest : FunSpec({
     fun GameTestDriver.castSentries(playerId: EntityId): EntityId {
         val card = putCardInHand(playerId, "Treetop Sentries")
         giveMana(playerId, Color.GREEN, 4)
-        castSpell(playerId, card).isSuccess shouldBe true
+        castSpell(playerId, card).outcome shouldBe Outcome.Done
         bothPass() // creature resolves, ETB trigger goes on the stack
         bothPass() // ETB trigger resolves
         return card
@@ -129,7 +130,7 @@ class TreetopSentriesScenarioTest : FunSpec({
 
         val card = driver.putCardInHand(active, "Treetop Sentries")
         driver.giveMana(active, Color.GREEN, 4)
-        driver.castSpell(active, card).isSuccess shouldBe true
+        driver.castSpell(active, card).outcome shouldBe Outcome.Done
         driver.bothPass() // creature resolves, ETB trigger goes on the stack
         val handBefore = driver.getHandSize(active)
         driver.bothPass() // ETB trigger resolves — and asks nothing

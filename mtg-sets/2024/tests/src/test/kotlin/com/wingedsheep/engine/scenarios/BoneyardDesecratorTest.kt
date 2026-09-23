@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Boneyard Desecrator (OTJ #81).
@@ -83,7 +84,7 @@ class BoneyardDesecratorTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(pirate))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // +1/+1 counter on Boneyard Desecrator.
@@ -115,7 +116,7 @@ class BoneyardDesecratorTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(beast))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // +1/+1 counter still added.

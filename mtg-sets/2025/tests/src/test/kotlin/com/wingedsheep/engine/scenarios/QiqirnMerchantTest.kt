@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Qiqirn Merchant (FIN) — proves activated-ability cost reduction *by permanent count*.
@@ -84,7 +85,7 @@ class QiqirnMerchantTest : FunSpec({
 
         // The seventh mana covers it; the ability resolves and draws three.
         driver.giveColorlessMana(player, 1)
-        driver.submit(ActivateAbility(player, merchant, drawThreeAbilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(player, merchant, drawThreeAbilityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getHandSize(player) shouldBe handBefore + 3
@@ -106,7 +107,7 @@ class QiqirnMerchantTest : FunSpec({
 
         // ...the fourth mana is.
         driver.giveColorlessMana(player, 1)
-        driver.submit(ActivateAbility(player, merchant, drawThreeAbilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(player, merchant, drawThreeAbilityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getHandSize(player) shouldBe handBefore + 3
@@ -121,7 +122,7 @@ class QiqirnMerchantTest : FunSpec({
         val handBefore = driver.getHandSize(player)
 
         // {7} - 8 Towns floors at {0}: activatable with no mana at all (CR 118.9a — never below zero).
-        driver.submit(ActivateAbility(player, merchant, drawThreeAbilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(player, merchant, drawThreeAbilityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getHandSize(player) shouldBe handBefore + 3
@@ -139,7 +140,7 @@ class QiqirnMerchantTest : FunSpec({
         // The Town count must not reduce the looter's {1} — zero mana fails, one mana succeeds.
         driver.submitExpectFailure(ActivateAbility(player, merchant, looterAbilityId))
         driver.giveColorlessMana(player, 1)
-        driver.submit(ActivateAbility(player, merchant, looterAbilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(player, merchant, looterAbilityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Drew one, then discard the card we planted: net hand unchanged, Merchant still in play.

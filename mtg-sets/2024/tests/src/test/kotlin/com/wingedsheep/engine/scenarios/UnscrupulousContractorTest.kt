@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Unscrupulous Contractor ({2}{B}, 3/2 Human Assassin):
@@ -36,7 +37,7 @@ class UnscrupulousContractorTest : FunSpec({
         driver.giveMana(me, Color.BLACK, 1)
         driver.giveColorlessMana(me, 2)
         val card = driver.putCardInHand(me, "Unscrupulous Contractor")
-        driver.castSpell(me, card).isSuccess shouldBe true
+        driver.castSpell(me, card).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature spell
         driver.bothPass() // resolve the enters trigger off the stack
         return card

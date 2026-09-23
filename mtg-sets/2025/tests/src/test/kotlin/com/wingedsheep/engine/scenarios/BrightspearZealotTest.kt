@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Brightspear Zealot:
@@ -53,7 +54,7 @@ class BrightspearZealotTest : FunSpec({
         // Cast a single spell — count = 1, still under the threshold of 2.
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, listOf(you)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(you)).outcome shouldBe Outcome.Done
 
         projector.getProjectedPower(driver.state, zealot) shouldBe 2
         projector.getProjectedToughness(driver.state, zealot) shouldBe 4
@@ -71,8 +72,8 @@ class BrightspearZealotTest : FunSpec({
         val bolt2 = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 2)
 
-        driver.castSpell(you, bolt1, listOf(you)).isSuccess shouldBe true
-        driver.castSpell(you, bolt2, listOf(you)).isSuccess shouldBe true
+        driver.castSpell(you, bolt1, listOf(you)).outcome shouldBe Outcome.Done
+        driver.castSpell(you, bolt2, listOf(you)).outcome shouldBe Outcome.Done
 
         // Two spells cast this turn — bonus is live even while spells are still on the stack.
         projector.getProjectedPower(driver.state, zealot) shouldBe 4
@@ -90,8 +91,8 @@ class BrightspearZealotTest : FunSpec({
         val bolt1 = driver.putCardInHand(you, "Lightning Bolt")
         val bolt2 = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 2)
-        driver.castSpell(you, bolt1, listOf(you)).isSuccess shouldBe true
-        driver.castSpell(you, bolt2, listOf(you)).isSuccess shouldBe true
+        driver.castSpell(you, bolt1, listOf(you)).outcome shouldBe Outcome.Done
+        driver.castSpell(you, bolt2, listOf(you)).outcome shouldBe Outcome.Done
         projector.getProjectedPower(driver.state, zealot) shouldBe 4
 
         // End the active player's turn — the per-turn cast tracker clears.

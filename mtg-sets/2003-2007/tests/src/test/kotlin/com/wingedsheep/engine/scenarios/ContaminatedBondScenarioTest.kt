@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Contaminated Bond (MRD #61) — "Whenever enchanted creature attacks or blocks, its controller
@@ -34,7 +35,7 @@ class ContaminatedBondScenarioTest : FunSpec({
     fun GameTestDriver.enchant(caster: EntityId, creature: EntityId) {
         val aura = putCardInHand(caster, "Contaminated Bond")
         giveMana(caster, Color.BLACK, 2)
-        castSpell(caster, aura, listOf(creature)).isSuccess shouldBe true
+        castSpell(caster, aura, listOf(creature)).outcome shouldBe Outcome.Done
         bothPass()
     }
 

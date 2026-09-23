@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Callous Oppressor.
@@ -111,7 +112,7 @@ class CallousOppressorTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(elf))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the ability
         driver.bothPass()
@@ -151,7 +152,7 @@ class CallousOppressorTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(goblin))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("Control persists while Callous Oppressor remains tapped") {

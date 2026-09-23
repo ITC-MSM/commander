@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Quandrix, the Proof {4}{G}{U} — Flying, trample, Cascade, and "Instant and sorcery spells you
@@ -53,7 +54,7 @@ class QuandrixTheProofScenarioTest : FunSpec({
         driver.giveColorlessMana(me, 4)
         driver.submit(
             CastSpell(playerId = me, cardId = quandrix, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // cascade trigger resolves -> finds Lightning Bolt -> may-cast pause
 
         driver.isPaused shouldBe true
@@ -76,7 +77,7 @@ class QuandrixTheProofScenarioTest : FunSpec({
         driver.giveColorlessMana(me, 4)
         driver.submit(
             CastSpell(playerId = me, cardId = blast, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // granted cascade trigger resolves -> may-cast pause
 
         driver.isPaused shouldBe true
@@ -99,7 +100,7 @@ class QuandrixTheProofScenarioTest : FunSpec({
         driver.giveColorlessMana(me, 2)
         driver.submit(
             CastSpell(playerId = me, cardId = courser, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // No cascade decision — the creature simply resolves.

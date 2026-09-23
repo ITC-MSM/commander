@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dreadlight Monstrosity (VOW #57) — {4}{U}{U} Creature — Crab Horror, 5/5.
@@ -68,7 +69,7 @@ class DreadlightMonstrosityScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = crab, abilityId = unblockableAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the ability
 
         driver.state.projectedState.hasKeyword(crab, AbilityFlag.CANT_BE_BLOCKED) shouldBe true

@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Lairwatch Giant (LRW #29) — "This creature can block an additional creature each combat.
@@ -51,11 +52,11 @@ class LairwatchGiantScenarioTest : FunSpec({
         val giant = d.putCreatureOnBattlefield(p2, "Lairwatch Giant")
 
         d.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        d.declareAttackers(d.player1, bears, p2).isSuccess shouldBe true
+        d.declareAttackers(d.player1, bears, p2).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("the extra-block static must let one Giant block both attackers") {
-            d.declareBlockers(p2, mapOf(giant to bears)).isSuccess shouldBe true
+            d.declareBlockers(p2, mapOf(giant to bears)).outcome shouldBe Outcome.Done
         }
 
         withClue("'blocks two or more creatures' is one event, not one per blocked attacker") {
@@ -76,12 +77,12 @@ class LairwatchGiantScenarioTest : FunSpec({
         val giant = d.putCreatureOnBattlefield(p2, "Lairwatch Giant")
 
         d.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        d.declareAttackers(d.player1, bears, p2).isSuccess shouldBe true
+        d.declareAttackers(d.player1, bears, p2).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // Blocking only one of the two attackers — the Giant *could* block both, and that is the
         // point: the bar is on the blocks actually declared, not on what it was allowed to do.
-        d.declareBlockers(p2, mapOf(giant to listOf(bears[0]))).isSuccess shouldBe true
+        d.declareBlockers(p2, mapOf(giant to listOf(bears[0]))).outcome shouldBe Outcome.Done
 
         withClue("one block is below the bar, so nothing goes on the stack") {
             d.stackSize shouldBe 0

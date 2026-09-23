@@ -12,6 +12,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Victor, Valgavoth's Seneschal (DSK) — the escalating Eerie ability.
@@ -43,7 +44,7 @@ class VictorValgavothsSeneschalScenarioTest : FunSpec({
         }
         val ench = putCardInHand(you, "Test Enchantment") // {1}{W}
         giveMana(you, Color.WHITE, 2)
-        castSpell(you, ench).isSuccess shouldBe true
+        castSpell(you, ench).outcome shouldBe Outcome.Done
         // Resolve the enchantment spell, then its on-enter Eerie trigger, until something pauses.
         var guard = 0
         while (!isPaused && state.stack.isNotEmpty() && guard++ < 20) bothPass()

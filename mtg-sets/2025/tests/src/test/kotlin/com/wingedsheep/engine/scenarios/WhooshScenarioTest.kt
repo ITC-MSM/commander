@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Whoosh! (SPM #48) — {1}{U} Instant, Kicker {1}{U}: "Return target nonland permanent to its
@@ -51,7 +52,7 @@ class WhooshScenarioTest : FunSpec({
                 declaredCostSlot = null,
                 paymentStrategy = PaymentStrategy.AutoPay
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         resolveStack(driver)
 
         // Creature bounced off the battlefield; no card drawn (hand only shrank by the spell itself).
@@ -78,7 +79,7 @@ class WhooshScenarioTest : FunSpec({
                 declaredCostSlot = ChoiceSlot.KICKED,
                 paymentStrategy = PaymentStrategy.AutoPay
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         resolveStack(driver)
 
         // Creature bounced, and the kicker drew a card: -1 (spell cast) +1 (draw) = net unchanged.

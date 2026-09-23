@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for War Barge.
@@ -50,7 +51,7 @@ class WarBargeScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, passenger)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("the passenger is aboard") {
@@ -67,7 +68,7 @@ class WarBargeScenarioTest : FunSpec({
                 cardId = shatter,
                 targets = listOf(entityIdToChosenTarget(driver.state, barge)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         var guard = 0
         while (guard++ < 10 && (driver.state.stack.isNotEmpty() || driver.pendingDecision != null)) {
             if (driver.pendingDecision != null) driver.autoResolveDecision() else driver.bothPass()
@@ -99,7 +100,7 @@ class WarBargeScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, passenger)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.passPriorityUntil(Step.END)

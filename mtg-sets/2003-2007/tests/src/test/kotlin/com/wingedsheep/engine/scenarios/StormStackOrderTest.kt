@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.effects.StormCopyEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * CR 603.3b: when a spell with Storm is cast, the Storm trigger is put onto the
@@ -33,7 +34,7 @@ class StormStackOrderTest : FunSpec({
         driver.replaceState(driver.state.copy(spellsCastThisTurn = 1))
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val stack = driver.state.stack
         stack.size shouldBe 2
@@ -74,7 +75,7 @@ class StormStackOrderTest : FunSpec({
 
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val stack = driver.state.stack
         stack.first() shouldBe tendrils

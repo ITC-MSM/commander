@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Fate of the Sun-Cryst — {4}{W} Instant
@@ -58,7 +59,7 @@ class FateOfTheSunCrystTest : FunSpec({
         val fate = driver.putCardInHand(me, "Fate of the Sun-Cryst")
         driver.giveColorlessMana(me, 2)
         driver.giveMana(me, Color.WHITE, 1)
-        driver.castSpell(me, fate, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(me, fate, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(opp, "Glory Seeker") shouldBe null

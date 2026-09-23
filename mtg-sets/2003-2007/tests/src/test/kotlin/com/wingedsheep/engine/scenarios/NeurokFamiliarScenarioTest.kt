@@ -10,6 +10,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Neurok Familiar (MRD) — "When this creature enters, reveal the top card of your library. If it's
@@ -31,7 +32,7 @@ class NeurokFamiliarScenarioTest : FunSpec({
     fun GameTestDriver.castFamiliar(you: EntityId) {
         val familiar = putCardInHand(you, "Neurok Familiar")
         giveMana(you, Color.BLUE, 2)
-        castSpell(you, familiar).isSuccess shouldBe true
+        castSpell(you, familiar).outcome shouldBe Outcome.Done
         while (!isPaused && state.stack.isNotEmpty()) bothPass()
     }
 

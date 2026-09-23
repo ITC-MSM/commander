@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Untimely Malfunction (DSK #161) — {1}{R} Instant.
@@ -53,7 +54,7 @@ class UntimelyMalfunctionScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(artifact))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(driver.player2, "Artifact Creature") shouldBe null
@@ -84,7 +85,7 @@ class UntimelyMalfunctionScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Spell(boltOnStack))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve Untimely Malfunction -> pause to choose the bolt's new (single) target.
         driver.bothPass()
@@ -118,7 +119,7 @@ class UntimelyMalfunctionScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(blocker))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.projectedState.cantBlock(blocker) shouldBe true
@@ -145,7 +146,7 @@ class UntimelyMalfunctionScenarioTest : FunSpec({
                 ),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.projectedState.cantBlock(blockerA) shouldBe true

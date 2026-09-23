@@ -24,6 +24,8 @@ import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Devoid (CR 702.114) in the engine.
@@ -154,7 +156,7 @@ class DevoidKeywordScenarioTest : FunSpec({
         // …and on the stack, the zone the keyword's own reminder text is about.
         driver.giveMana(me, Color.BLUE, 2)
         driver.giveColorlessMana(me, 2)
-        driver.castSpell(me, inHand).isSuccess shouldBe true
+        driver.castSpell(me, inHand).outcome shouldBe Outcome.Done
         val onStack = driver.getTopOfStack() ?: error("the spell should be on the stack")
         withClue("colors on the stack") { driver.state.colorsOf(onStack) shouldBe emptySet() }
     }
@@ -187,11 +189,11 @@ class DevoidKeywordScenarioTest : FunSpec({
 
         driver.giveColorlessMana(me, 4)
         withClue("four colorless mana can't pay {2}{U}{U} just because the card is colorless") {
-            driver.castSpell(me, card).isSuccess shouldBe false
+            driver.castSpell(me, card).outcome shouldNotBe Outcome.Done
         }
 
         driver.giveMana(me, Color.BLUE, 2)
-        driver.castSpell(me, card).isSuccess shouldBe true
+        driver.castSpell(me, card).outcome shouldBe Outcome.Done
     }
 
     // CR 613.3 applies CDAs first within a layer, then everything else in timestamp order. Devoid
@@ -234,19 +236,19 @@ class DevoidKeywordScenarioTest : FunSpec({
             safety++
         }
 
-        driver.declareAttackers(driver.player1, listOf(attacker), driver.player2).isSuccess shouldBe true
+        driver.declareAttackers(driver.player1, listOf(attacker), driver.player2).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
         withClue("devoid strips the black the {B} pip would otherwise give the blocker") {
             driver.submitExpectFailure(
                 DeclareBlockers(driver.player2, mapOf(devoidBlocker to listOf(attacker)))
-            ).isSuccess shouldBe false
+            ).outcome shouldNotBe Outcome.Done
         }
         withClue("the printed-black control still blocks, so the restriction itself is intact") {
             driver.submitSuccess(
                 DeclareBlockers(driver.player2, mapOf(blackBlocker to listOf(attacker)))
-            ).isSuccess shouldBe true
+            ).outcome shouldBe Outcome.Done
         }
     }
 
@@ -260,7 +262,7 @@ class DevoidKeywordScenarioTest : FunSpec({
         val spell = driver.putCardInHand(me, "Test Token Copy")
         driver.giveMana(me, Color.BLUE, 1)
         driver.giveColorlessMana(me, 1)
-        driver.castSpell(me, spell, targets = listOf(original)).isSuccess shouldBe true
+        driver.castSpell(me, spell, targets = listOf(original)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val copy = driver.getCreatures(me).single { it != original }

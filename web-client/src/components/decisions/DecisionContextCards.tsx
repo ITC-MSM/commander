@@ -48,6 +48,18 @@ export function resolveDecisionCards(
   }
 }
 
+/** A context card image, turned to read landscape when its shown face is printed sideways. */
+function ContextCardImage({ entry, className }: { entry: { card: ClientCard; imageUrl: string }; className: string | undefined }) {
+  const landscape = entry.card.isLandscapeFace === true
+  return (
+    <img
+      src={entry.imageUrl}
+      alt={entry.card.name}
+      className={landscape ? `${className ?? ''} ${styles.contextCardLandscape}` : className}
+    />
+  )
+}
+
 export function hasDecisionContextCards(cards: DecisionCards): boolean {
   return cards.source != null || cards.subject != null || cards.triggering != null
 }
@@ -57,45 +69,59 @@ export function hasDecisionContextCards(cards: DecisionCards): boolean {
  * `--color-decision-subject` — the same orange `GameCard` puts around it on the battlefield, so
  * minimizing the modal to look at the board keeps the connection.
  */
-export function DecisionContextCards({ cards }: { cards: DecisionCards }) {
+export function DecisionContextCards({ cards, showSourceBackFace = false }: {
+  cards: DecisionCards
+  /**
+   * Also show the source's back face — for "cast it transformed" (a defeated Siege, CR 310.12b),
+   * where the face being offered is the one the player can't see on the source card.
+   */
+  showSourceBackFace?: boolean
+}) {
   if (!hasDecisionContextCards(cards)) return null
+
+  const source = cards.source
+  const backFaceUrl = showSourceBackFace && source?.card.backFaceImageUri
+    ? getCardImageUrl(source.card.backFaceName ?? source.card.name, source.card.backFaceImageUri)
+    : null
+  const backFace = source && backFaceUrl
+    ? {
+        card: { ...source.card, name: source.card.backFaceName ?? source.card.name, isLandscapeFace: source.card.backFaceIsLandscape === true },
+        imageUrl: backFaceUrl,
+      }
+    : null
 
   // A lone source card needs no caption — the prompt right below it already says what it does.
   // Once a second role is on screen, every card gets labelled so the roles can't be confused.
-  const labelled = [cards.source, cards.subject, cards.triggering].filter(Boolean).length > 1
+  const labelled = [cards.source, cards.subject, cards.triggering, backFace].filter(Boolean).length > 1
 
   return (
     <div className={styles.contextCards}>
       {cards.source && (
         <div className={styles.contextCard}>
           {labelled && <p className={styles.contextCardLabel}>Source</p>}
-          <img
-            src={cards.source.imageUrl}
-            alt={cards.source.card.name}
-            className={styles.contextCardImage}
-          />
+          <ContextCardImage entry={cards.source} className={styles.contextCardImage} />
+        </div>
+      )}
+
+      {backFace && (
+        <div className={styles.contextCard}>
+          <p className={styles.contextCardLabelSubject}>Casts as</p>
+          <ContextCardImage entry={backFace} className={styles.contextCardImageSubject} />
+          <p className={styles.contextCardName}>{backFace.card.name}</p>
         </div>
       )}
 
       {cards.triggering && (
         <div className={styles.contextCard}>
           <p className={styles.contextCardLabel}>Triggered by</p>
-          <img
-            src={cards.triggering.imageUrl}
-            alt={cards.triggering.card.name}
-            className={styles.contextCardImageSecondary}
-          />
+          <ContextCardImage entry={cards.triggering} className={styles.contextCardImageSecondary} />
         </div>
       )}
 
       {cards.subject && (
         <div className={styles.contextCard}>
           <p className={styles.contextCardLabelSubject}>Deciding for</p>
-          <img
-            src={cards.subject.imageUrl}
-            alt={cards.subject.card.name}
-            className={styles.contextCardImageSubject}
-          />
+          <ContextCardImage entry={cards.subject} className={styles.contextCardImageSubject} />
           <p className={styles.contextCardName}>{cards.subject.card.name}</p>
         </div>
       )}

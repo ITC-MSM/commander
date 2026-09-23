@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The Wandering Minstrel ({G}{U} Legendary Creature — Human Bard, 1/3):
@@ -46,7 +47,7 @@ class TheWanderingMinstrelScenarioTest : FunSpec({
         val driver = createDriver()
         val me = driver.activePlayer!!
         val land = driver.putCardInHand(me, "Gongaga, Reactor Town")
-        driver.playLand(me, land).isSuccess shouldBe true
+        driver.playLand(me, land).outcome shouldBe Outcome.Done
         driver.state.getEntity(land)?.has<TappedComponent>() shouldBe true
     }
 
@@ -56,7 +57,7 @@ class TheWanderingMinstrelScenarioTest : FunSpec({
         driver.putPermanentOnBattlefield(me, "The Wandering Minstrel")
 
         val land = driver.putCardInHand(me, "Gongaga, Reactor Town")
-        driver.playLand(me, land).isSuccess shouldBe true
+        driver.playLand(me, land).outcome shouldBe Outcome.Done
         driver.state.getEntity(land)?.has<TappedComponent>() shouldBe false
     }
 

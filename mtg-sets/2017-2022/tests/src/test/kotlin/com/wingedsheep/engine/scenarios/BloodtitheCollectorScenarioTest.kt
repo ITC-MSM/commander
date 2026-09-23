@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bloodtithe Collector (MID #90, reprinted in FDN #751) — {4}{B} 3/4 flyer whose ETB reads
@@ -46,14 +47,14 @@ class BloodtitheCollectorScenarioTest : FunSpec({
         // Bolt the opponent so they lose life this turn (does not touch their hand).
         val bolt = d.putCardInHand(you, "Lightning Bolt")
         d.giveMana(you, Color.RED, 1)
-        d.castSpell(you, bolt, listOf(opp)).isSuccess shouldBe true
+        d.castSpell(you, bolt, listOf(opp)).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // Cast Bloodtithe Collector ({4}{B}); its ETB sees the life loss → opponent discards one.
         val handBefore = d.getHandSize(opp)
         val collector = d.putCardInHand(you, "Bloodtithe Collector")
         d.giveMana(you, Color.BLACK, 5)
-        d.castSpell(you, collector).isSuccess shouldBe true
+        d.castSpell(you, collector).outcome shouldBe Outcome.Done
         d.settle()
 
         d.getHandSize(opp) shouldBe handBefore - 1
@@ -68,7 +69,7 @@ class BloodtitheCollectorScenarioTest : FunSpec({
         val handBefore = d.getHandSize(opp)
         val collector = d.putCardInHand(you, "Bloodtithe Collector")
         d.giveMana(you, Color.BLACK, 5)
-        d.castSpell(you, collector).isSuccess shouldBe true
+        d.castSpell(you, collector).outcome shouldBe Outcome.Done
         d.settle()
 
         d.getHandSize(opp) shouldBe handBefore

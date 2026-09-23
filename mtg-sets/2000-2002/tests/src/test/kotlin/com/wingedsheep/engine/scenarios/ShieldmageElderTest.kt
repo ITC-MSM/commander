@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Shieldmage Elder:
@@ -89,7 +91,7 @@ class ShieldmageElderTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the prevention ability
         driver.bothPass()
@@ -135,7 +137,7 @@ class ShieldmageElderTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("Wizard ability prevents all damage target spell would deal") {
@@ -162,7 +164,7 @@ class ShieldmageElderTest : FunSpec({
         driver.passPriority(activePlayer)
 
         val castResult = driver.castSpell(opponent, bolt, listOf(activePlayer))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Opponent has priority after casting - pass to give active player priority
         driver.passPriority(opponent)
@@ -181,7 +183,7 @@ class ShieldmageElderTest : FunSpec({
                 )
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         // Resolve the prevention ability first
         driver.bothPass()

@@ -21,6 +21,8 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Tithing Blade // Consuming Sepulcher (LCI #128).
@@ -83,7 +85,7 @@ class TithingBladeScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         val blade = driver.putCardInHand(p1, "Tithing Blade")
         driver.giveMana(p1, Color.BLACK, 2)
-        driver.castSpell(p1, blade).isSuccess shouldBe true
+        driver.castSpell(p1, blade).outcome shouldBe Outcome.Done
 
         // Resolve the spell, then its ETB trigger — which pauses on the opponent's choice.
         driver.passUntilDecision()
@@ -224,7 +226,7 @@ class TithingBladeScenarioTest : FunSpec({
                 abilityId = craftAbilityId(),
                 costPayment = AdditionalCostPayment(exiledCards = listOf(badMaterial))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
 
         // "Craft with creature" is exactly one material — two creatures must be rejected.
         driver.submit(
@@ -234,7 +236,7 @@ class TithingBladeScenarioTest : FunSpec({
                 abilityId = craftAbilityId(),
                 costPayment = AdditionalCostPayment(exiledCards = listOf(bearsA, bearsB))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
 
         // Nothing moved: the blade is still the front face on the battlefield, nothing exiled.
         driver.findPermanent(p1, "Tithing Blade") shouldBe blade

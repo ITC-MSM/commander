@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * FIN "Town" dual taplands. Each is a Land — Town that enters tapped and has two separate
@@ -68,7 +69,7 @@ class FinTownLandsTest : FunSpec({
             driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
             val land = driver.putCardInHand(p1, name)
-            driver.playLand(p1, land).isSuccess shouldBe true
+            driver.playLand(p1, land).outcome shouldBe Outcome.Done
 
             driver.state.getEntity(land)?.has<TappedComponent>() shouldBe true
         }
@@ -82,7 +83,7 @@ class FinTownLandsTest : FunSpec({
             val land = driver.putPermanentOnBattlefield(p1, name)
             driver.untapPermanent(land)
             val ability = card.activatedAbilities[0].id
-            driver.submit(ActivateAbility(playerId = p1, sourceId = land, abilityId = ability)).isSuccess shouldBe true
+            driver.submit(ActivateAbility(playerId = p1, sourceId = land, abilityId = ability)).outcome shouldBe Outcome.Done
 
             val pool = driver.state.getEntity(p1)?.get<ManaPoolComponent>()!!
             poolColor(pool, color0) shouldBe 1
@@ -97,7 +98,7 @@ class FinTownLandsTest : FunSpec({
             val land = driver.putPermanentOnBattlefield(p1, name)
             driver.untapPermanent(land)
             val ability = card.activatedAbilities[1].id
-            driver.submit(ActivateAbility(playerId = p1, sourceId = land, abilityId = ability)).isSuccess shouldBe true
+            driver.submit(ActivateAbility(playerId = p1, sourceId = land, abilityId = ability)).outcome shouldBe Outcome.Done
 
             val pool = driver.state.getEntity(p1)?.get<ManaPoolComponent>()!!
             poolColor(pool, color1) shouldBe 1

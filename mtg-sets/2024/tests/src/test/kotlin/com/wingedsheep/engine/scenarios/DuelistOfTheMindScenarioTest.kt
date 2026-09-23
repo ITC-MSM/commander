@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Duelist of the Mind (OTJ #45).
@@ -48,7 +49,7 @@ class DuelistOfTheMindScenarioTest : FunSpec({
         // Draw two via Divination -> power becomes 2, toughness still 3.
         val divination = driver.putCardInHand(me, "Divination")
         driver.giveMana(me, Color.BLUE, 3)
-        driver.castSpell(me, divination).isSuccess shouldBe true
+        driver.castSpell(me, divination).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Divination -> draw 2
 
         driver.isPaused shouldBe false

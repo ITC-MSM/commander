@@ -17,6 +17,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Return the Favor — {R}{R} Instant, Spree
@@ -78,7 +80,7 @@ class ReturnTheFavorScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Spell(boltOnStack))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve Return the Favor → pause to choose new targets for the copy.
         var guard = 0
@@ -89,7 +91,7 @@ class ReturnTheFavorScenarioTest : FunSpec({
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
 
         // Aim the copy at the opponent (the original still targets me).
-        driver.submitTargetSelection(me, listOf(opponent)).isSuccess shouldBe true
+        driver.submitTargetSelection(me, listOf(opponent)).outcome shouldBe Outcome.Done
 
         // Resolve the copy, then the original. Opponent takes 3 from the copy, I take 3 from the original.
         guard = 0
@@ -128,7 +130,7 @@ class ReturnTheFavorScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Spell(boltOnStack))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve Return the Favor → pause to choose the bolt's new (single) target.
         driver.bothPass()
@@ -163,7 +165,7 @@ class ReturnTheFavorScenarioTest : FunSpec({
                 cardId = beast,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // Zap Beast resolves → its targeted ETB trigger prompts for a target
 
         // Choose the ETB trigger's target (the opponent); the trigger then sits on the stack.
@@ -173,7 +175,7 @@ class ReturnTheFavorScenarioTest : FunSpec({
             guard++
         }
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
-        driver.submitTargetSelection(me, listOf(opponent)).isSuccess shouldBe true
+        driver.submitTargetSelection(me, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val triggerOnStack = driver.getTopOfStack()!!
 
@@ -191,7 +193,7 @@ class ReturnTheFavorScenarioTest : FunSpec({
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Spell(triggerOnStack))),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve Return the Favor → pause to choose new targets for the copied ability.
         guard = 0
@@ -200,7 +202,7 @@ class ReturnTheFavorScenarioTest : FunSpec({
             guard++
         }
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
-        driver.submitTargetSelection(me, listOf(me)).isSuccess shouldBe true
+        driver.submitTargetSelection(me, listOf(me)).outcome shouldBe Outcome.Done
 
         // Resolve the copy (hits me for 2) then the original (hits opponent for 2).
         guard = 0
@@ -228,6 +230,6 @@ class ReturnTheFavorScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

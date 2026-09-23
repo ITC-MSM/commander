@@ -20,6 +20,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Wolverine, Fierce Fighter (MSH #240) — {2}{R}{G} 3/5 with three clauses:
@@ -97,7 +98,7 @@ class WolverineFierceFighterScenarioTest : FunSpec({
         giveMana(player, Color.RED, 1)
         submit(
             CastSpell(playerId = player, cardId = wolverine, paymentStrategy = PaymentStrategy.AutoPay),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         return wolverine
     }
 

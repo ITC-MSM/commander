@@ -25,6 +25,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Waterlogged Hulk // Watertight Gondola — {U} Artifact // Artifact — Vehicle 4/4 (LCI #83).
@@ -225,7 +226,7 @@ class WaterloggedHulkScenarioTest : FunSpec({
                     abilityId = craftAbilityId,
                     costPayment = AdditionalCostPayment(exiledCards = listOf(plains))
                 )
-            ).isSuccess shouldBe false
+            ).outcome shouldNotBe Outcome.Done
         }
 
         withClue("Craft with Island takes exactly one material — two Islands rejected") {
@@ -236,7 +237,7 @@ class WaterloggedHulkScenarioTest : FunSpec({
                     abilityId = craftAbilityId,
                     costPayment = AdditionalCostPayment(exiledCards = listOf(island1, island2))
                 )
-            ).isSuccess shouldBe false
+            ).outcome shouldNotBe Outcome.Done
         }
 
         withClue("sanity: a single Island is accepted") {
@@ -247,7 +248,7 @@ class WaterloggedHulkScenarioTest : FunSpec({
                     abilityId = craftAbilityId,
                     costPayment = AdditionalCostPayment(exiledCards = listOf(island1))
                 )
-            ).isSuccess shouldBe true
+            ).outcome shouldBe Outcome.Done
         }
     }
 })

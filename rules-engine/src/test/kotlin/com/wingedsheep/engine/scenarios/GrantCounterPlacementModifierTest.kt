@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for [Effects.GrantCounterPlacementModifier] / `GrantCounterPlacementModifierEffect`.
@@ -73,7 +74,7 @@ class GrantCounterPlacementModifierTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = granter, abilityId = grantAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the ability → installs the modifier
 
         withClue("Modifier is installed and controller-scoped to the active player") {

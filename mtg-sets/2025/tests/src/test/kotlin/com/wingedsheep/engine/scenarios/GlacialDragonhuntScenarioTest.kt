@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Glacial Dragonhunt — {U}{R} Sorcery.
@@ -52,7 +53,7 @@ class GlacialDragonhuntScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(player, spell, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // First decision: "you may discard a card" (up to one) — choose the Grizzly Bears card.
@@ -92,7 +93,7 @@ class GlacialDragonhuntScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(player, spell, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // "You may discard a card" — decline by selecting zero cards.

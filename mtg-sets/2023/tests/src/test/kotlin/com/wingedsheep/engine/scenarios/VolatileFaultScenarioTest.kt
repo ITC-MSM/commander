@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Volatile Fault (LCI #286).
@@ -75,7 +76,7 @@ class VolatileFaultScenarioTest : FunSpec({
                 abilityId = sacAbilityId,
                 targets = listOf(ChosenTarget.Permanent(stripMine)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve the ability, accepting the opponent's optional basic-land search.
         var safety = 0
@@ -115,7 +116,7 @@ class VolatileFaultScenarioTest : FunSpec({
                 abilityId = sacAbilityId,
                 targets = listOf(ChosenTarget.Permanent(stripMine)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve the ability, declining the opponent's optional basic-land search.
         var safety = 0

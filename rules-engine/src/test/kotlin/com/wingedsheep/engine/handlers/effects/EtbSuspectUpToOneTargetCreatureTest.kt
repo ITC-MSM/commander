@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Step 4 — BDD test: ETB trigger suspects a chosen target creature, granting menace and no-block.
@@ -74,7 +75,7 @@ class EtbSuspectUpToOneTargetCreatureTest : FunSpec({
         // Cast the ETB-Suspect source creature
         val witnessId = driver.putCardInHand(controller, "Suspicious Witness")
         driver.giveMana(controller, Color.WHITE, 2)
-        driver.castSpell(controller, witnessId).isSuccess shouldBe true
+        driver.castSpell(controller, witnessId).outcome shouldBe Outcome.Done
 
         // Both players pass → spell resolves, ETB trigger fires, game pauses for target selection
         driver.bothPass()

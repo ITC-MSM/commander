@@ -344,8 +344,11 @@ data class CantBlockUnlessCoBlocker(
  * attacking creature. Used for Ghostly Prison, Propaganda, Windborn Muse, and
  * Domain-scaled variants like Collective Restraint.
  *
- * Only applies when attacking the controller of this permanent (not their planeswalkers).
- * Multiple AttackTax effects from different permanents stack additively.
+ * Only attacks on this permanent's controller are taxed — "creatures can't attack you" — unless
+ * [coversPlaneswalkers] widens it to "you or planeswalkers you control" (Archangel of Tithes, Baird).
+ * Attacks on a battle the controller protects are never taxed: no printed tax names battles, and a
+ * battle is neither "you" nor a planeswalker. Multiple AttackTax effects from different permanents
+ * stack additively.
  *
  * The per-attacker amount is a [DynamicAmount] so it can scale with game state
  * (e.g., [com.wingedsheep.sdk.dsl.DynamicAmounts.domain] for "{X} where X is your
@@ -358,19 +361,21 @@ data class CantBlockUnlessCoBlocker(
  *
  * @property amountPerAttacker Generic mana to pay per attacking creature.
  * @property condition Optional gate on the source's state; tax is inactive when it fails.
+ * @property coversPlaneswalkers Also tax attacks on planeswalkers the controller controls.
  */
 @SerialName("AttackTax")
 @Serializable
 data class AttackTax(
     val amountPerAttacker: DynamicAmount,
     val condition: Condition? = null,
+    val coversPlaneswalkers: Boolean = false,
 ) : StaticAbility {
     override val description: String = buildString {
         if (condition != null) append("As long as ${condition.description}, ")
         append("creatures can't attack you")
-        if (condition != null) append(" or planeswalkers you control")
+        if (coversPlaneswalkers) append(" or planeswalkers you control")
         append(" unless their controller pays {${amountPerAttacker.description}} for each ")
-        append(if (condition != null) "of those creatures" else "creature they control that's attacking you")
+        append(if (coversPlaneswalkers) "of those creatures" else "creature they control that's attacking you")
     }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newCondition = condition?.applyTextReplacement(replacer)

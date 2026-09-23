@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Rural Recruit (VOW #216) — {3}{G} 1/1 Creature — Human Peasant, Training + an ETB Boar maker.
@@ -56,7 +57,7 @@ class RuralRecruitScenarioTest : FunSpec({
         val recruitCard = driver.putCardInHand(me, "Rural Recruit")               // {3}{G}
         driver.giveMana(me, Color.GREEN, 1)
         driver.giveColorlessMana(me, 3)
-        driver.castSpell(me, recruitCard).isSuccess shouldBe true
+        driver.castSpell(me, recruitCard).outcome shouldBe Outcome.Done
         driver.drainStack()                                                       // resolve Rural Recruit + its ETB
 
         val recruit = driver.getPermanents(me).first { driver.getCardName(it) == "Rural Recruit" }

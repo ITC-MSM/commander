@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.engine.core.PaymentStrategy
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * The Eagles Are Coming! {1}{W} — Instant, Kicker {2}{W}{W}.
@@ -69,7 +71,7 @@ class TheEaglesAreComingScenarioTest : FunSpec({
                 declaredCostSlot = if (kicked) ChoiceSlot.KICKED else null,
                 paymentStrategy = PaymentStrategy.AutoPay
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         settleStack(driver)
     }
 
@@ -157,7 +159,7 @@ class TheEaglesAreComingScenarioTest : FunSpec({
                 declaredCostSlot = null,
                 paymentStrategy = PaymentStrategy.AutoPay
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 
     test("a token creature returned to hand still counts toward the Bird Soldiers") {

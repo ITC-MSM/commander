@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /** Scenario tests for Siege Zombie. */
 class SiegeZombieScenarioTest : FunSpec({
@@ -48,7 +50,7 @@ class SiegeZombieScenarioTest : FunSpec({
                 abilityId = abilityId,
                 costPayment = AdditionalCostPayment(tappedPermanents = listOf(zombie, bear, giant))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         listOf(zombie, bear, giant).forEach { d.isTapped(it) shouldBe true }
         d.bothPass()
@@ -73,6 +75,6 @@ class SiegeZombieScenarioTest : FunSpec({
                 abilityId = abilityId,
                 costPayment = AdditionalCostPayment(tappedPermanents = listOf(zombie, bear))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

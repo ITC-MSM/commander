@@ -26,7 +26,7 @@ val BairdStewardOfArgive = card("Baird, Steward of Argive") {
     keywords(Keyword.VIGILANCE)
 
     staticAbility {
-        ability = AttackTax(amountPerAttacker = DynamicAmount.Fixed(1))
+        ability = AttackTax(amountPerAttacker = DynamicAmount.Fixed(1), coversPlaneswalkers = true)
     }
 
     metadata {

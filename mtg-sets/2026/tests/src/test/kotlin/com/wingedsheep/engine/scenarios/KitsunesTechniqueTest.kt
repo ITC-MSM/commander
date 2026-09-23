@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Kitsune's Technique (TMT #42) — "Target opponent mills half their library, rounded up."
@@ -31,7 +32,7 @@ class KitsunesTechniqueTest : FunSpec({
         val expectedMill = (libBefore + 1) / 2 // ceil(libBefore / 2)
 
         driver.giveMana(player, Color.BLUE, 6) // {4}{U}{U}
-        driver.castSpell(player, kitsune, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(player, kitsune, listOf(opponent)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.getGraveyard(opponent).size shouldBe gyBefore + expectedMill

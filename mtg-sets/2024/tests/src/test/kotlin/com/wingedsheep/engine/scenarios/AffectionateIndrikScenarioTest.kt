@@ -10,6 +10,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Affectionate Indrik (GRN #121, reprinted in FDN) — {5}{G} Creature — Beast 4/4.
@@ -39,7 +40,7 @@ class AffectionateIndrikScenarioTest : FunSpec({
 
         val indrik = driver.putCardInHand(driver.player1, "Affectionate Indrik")
         driver.giveMana(driver.player1, Color.GREEN, 6)
-        driver.castSpell(driver.player1, indrik).isSuccess shouldBe true
+        driver.castSpell(driver.player1, indrik).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the Indrik; its enters trigger asks its "you may", then a target
 
         driver.submitYesNo(driver.player1, true)
@@ -56,7 +57,7 @@ class AffectionateIndrikScenarioTest : FunSpec({
 
         val indrik = driver.putCardInHand(driver.player1, "Affectionate Indrik")
         driver.giveMana(driver.player1, Color.GREEN, 6)
-        driver.castSpell(driver.player1, indrik).isSuccess shouldBe true
+        driver.castSpell(driver.player1, indrik).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.submitYesNo(driver.player1, true)

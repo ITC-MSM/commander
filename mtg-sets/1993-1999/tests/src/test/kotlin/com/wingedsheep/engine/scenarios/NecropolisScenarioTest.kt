@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Necropolis — "Exile a creature card from your graveyard: Put X +0/+1 counters
@@ -52,7 +53,7 @@ class NecropolisScenarioTest : FunSpec({
                 abilityId = abilityId,
                 costPayment = AdditionalCostPayment(exiledCards = listOf(fuel)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("0/1 plus three +0/+1 counters") {
@@ -85,7 +86,7 @@ class NecropolisScenarioTest : FunSpec({
                 abilityId = abilityId,
                 costPayment = AdditionalCostPayment(exiledCards = listOf(fuel)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         toughnessOf(driver, necropolis) shouldBe 6

@@ -71,6 +71,18 @@ class UnattachedAurasCheck(
             val container = state.getEntity(entityId) ?: continue
             val cardComponent = container.get<CardComponent>() ?: continue
 
+            // CR 310.10 / 704.5p: a battle can't be attached to anything, even if it is also an Aura
+            // or Equipment. It becomes unattached and stays on the battlefield, and the Aura rules
+            // below never apply to it (an unattached Aura-battle is not put into the graveyard).
+            if (projected.isBattle(entityId)) {
+                if (container.has<AttachedToComponent>()) {
+                    val (detached, unattachEvents) = unattachEmittingEvent(newState, entityId)
+                    newState = detached
+                    events.addAll(unattachEvents)
+                }
+                continue
+            }
+
             val isAura = cardComponent.typeLine.isAura
             val isEquipment = cardComponent.typeLine.isEquipment
 

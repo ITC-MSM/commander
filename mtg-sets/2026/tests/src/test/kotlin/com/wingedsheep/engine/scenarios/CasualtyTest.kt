@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Casualty N (CR 702.153): "As an additional cost to cast this spell, you may sacrifice a creature
@@ -51,7 +52,7 @@ class CasualtyTest : FunSpec({
                 casualtyCreature = fodder
             )
         )
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // The casualty creature was sacrificed to the graveyard.
         (fodder in driver.state.getZone(com.wingedsheep.engine.state.ZoneKey(caster, Zone.GRAVEYARD))) shouldBe true
@@ -65,7 +66,7 @@ class CasualtyTest : FunSpec({
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
 
         // Keep the same opponent target for the copy.
-        driver.submitTargetSelection(caster, listOf(opponent)).isSuccess shouldBe true
+        driver.submitTargetSelection(caster, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val copyId = driver.state.stack.single { id ->
             val c = driver.state.getEntity(id)
@@ -89,7 +90,7 @@ class CasualtyTest : FunSpec({
         driver.putLandOnBattlefield(caster, "Mountain")
         val shock = driver.putCardInHand(caster, "Shock")
 
-        driver.castSpell(caster, shock, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, shock, listOf(opponent)).outcome shouldBe Outcome.Done
 
         // Creature stays on the battlefield; no copy on the stack.
         (fodder in driver.state.getBattlefield()) shouldBe true
@@ -120,7 +121,7 @@ class CasualtyTest : FunSpec({
                 casualtyCreature = zeroPower
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("Enumerator: Silverquill offers Casualty on an instant when an eligible creature exists") {

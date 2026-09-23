@@ -196,7 +196,13 @@ class ManaAbilityEnumerator : ActionEnumerator {
                         is CostAtom.RemoveCounters -> {
                             if (!canPayRemoveCounters(state, playerId, container.get<CountersComponent>(), atom, context)) affordable = false
                         }
-                        // Other atoms (mana, life, discard, …) — engine validates at payment.
+                        // A bare mana cost (Three Tree Mascot's "{1}: Add one mana of any color") —
+                        // the same solver question ActivateAbilityHandler.validate asks, or the
+                        // ability is offered with nothing to pay for it and then refused.
+                        is CostAtom.Mana -> {
+                            if (!context.manaSolver.canPay(state, playerId, atom.cost, precomputedSources = context.availableManaSources, spellContext = manaAbilityContext)) affordable = false
+                        }
+                        // Other atoms (life, discard, …) — engine validates at payment.
                         else -> {}
                     }
                     is AbilityCost.SacrificeChosenCreatureType -> {
@@ -313,14 +319,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
                 }
 
                 // Check activation restrictions
-                var restrictionsMet = true
-                for (restriction in ability.restrictions) {
-                    if (!context.castPermissionUtils.checkActivationRestriction(state, playerId, restriction, entityId, ability)) {
-                        restrictionsMet = false
-                        break
-                    }
-                }
-                if (!restrictionsMet) continue
+                if (!context.legality.activationRestrictionsMet(state, playerId, entityId, ability)) continue
 
                 val costInfo = if (tapTargets != null && tapCost != null) {
                     AdditionalCostData(

@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Maze of Shadows (TMP #319)
@@ -43,7 +44,7 @@ class MazeOfShadowsScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = maze, abilityId = manaAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
         pool?.colorless shouldBe 1
     }
@@ -59,7 +60,7 @@ class MazeOfShadowsScenarioTest : FunSpec({
         val slayer = driver.putPermanentOnBattlefield(activePlayer, "Dauthi Slayer")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(slayer), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(slayer), opponent).outcome shouldBe Outcome.Done
 
         // Attacking taps the creature (no vigilance).
         driver.isTapped(slayer) shouldBe true
@@ -72,7 +73,7 @@ class MazeOfShadowsScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(slayer)),
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the ability
 
         // The shadow attacker is now untapped.
@@ -90,7 +91,7 @@ class MazeOfShadowsScenarioTest : FunSpec({
         val courser = driver.putPermanentOnBattlefield(activePlayer, "Centaur Courser")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(courser), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(courser), opponent).outcome shouldBe Outcome.Done
 
         // Centaur Courser has no shadow, so it is not a legal target.
         driver.submitExpectFailure(

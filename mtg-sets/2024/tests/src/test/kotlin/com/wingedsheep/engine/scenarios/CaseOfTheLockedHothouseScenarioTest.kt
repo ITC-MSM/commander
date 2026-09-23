@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Case of the Locked Hothouse — {3}{G} Enchantment — Case.
@@ -48,8 +49,8 @@ class CaseOfTheLockedHothouseScenarioTest : FunSpec({
 
         val first = driver.putCardInHand(driver.player1, "Forest")
         val second = driver.putCardInHand(driver.player1, "Forest")
-        driver.playLand(driver.player1, first).isSuccess shouldBe true
-        driver.playLand(driver.player1, second).isSuccess shouldBe true
+        driver.playLand(driver.player1, first).outcome shouldBe Outcome.Done
+        driver.playLand(driver.player1, second).outcome shouldBe Outcome.Done
 
         driver.getLands(driver.player1).size shouldBe 2
     }

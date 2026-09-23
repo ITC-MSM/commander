@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Plan the Heist — {2}{U}{U} Sorcery
@@ -64,7 +65,7 @@ class PlanTheHeistScenarioTest : FunSpec({
 
         driver.giveMana(me, Color.BLUE, 2)
         driver.giveColorlessMana(me, 2)
-        driver.castSpell(me, spell).isSuccess shouldBe true
+        driver.castSpell(me, spell).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve -> hand empty -> surveil 3 pauses
 
         driver.isPaused shouldBe true
@@ -99,7 +100,7 @@ class PlanTheHeistScenarioTest : FunSpec({
 
         driver.giveMana(me, Color.BLUE, 2)
         driver.giveColorlessMana(me, 2)
-        driver.castSpell(me, spell).isSuccess shouldBe true
+        driver.castSpell(me, spell).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve -> hand non-empty -> no surveil, just draw
 
         // No surveil decision: spell resolved fully.

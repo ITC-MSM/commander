@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * A plotted card (CR 718, Outlaws of Thunder Junction) sits face-up in exile carrying a
@@ -48,7 +49,7 @@ class PlottedCardVisibilityTest : FunSpec({
         val aloe = d.putCardInHand(player, "Aloe Alchemist")
         d.giveMana(player, Color.GREEN, 2) // plot cost {1}{G}
 
-        d.submit(PlotCard(player, aloe)).isPaused shouldBe true
+        (d.submit(PlotCard(player, aloe)).outcome is Outcome.Paused) shouldBe true
         d.submitTargetSelection(player, listOf(target))
         d.bothPass()
 

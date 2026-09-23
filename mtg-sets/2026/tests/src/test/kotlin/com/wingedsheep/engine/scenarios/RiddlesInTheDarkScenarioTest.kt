@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /** Scenario tests for Riddles in the Dark's concealed-pile spell pipeline. */
 class RiddlesInTheDarkScenarioTest : FunSpec({
@@ -33,7 +34,7 @@ class RiddlesInTheDarkScenarioTest : FunSpec({
         val spell = putCardInHand(active, "Riddles in the Dark")
         giveMana(active, Color.BLUE, 1)
         giveColorlessMana(active, 2)
-        castSpell(active, spell).isSuccess shouldBe true
+        castSpell(active, spell).outcome shouldBe Outcome.Done
         bothPass()
     }
 

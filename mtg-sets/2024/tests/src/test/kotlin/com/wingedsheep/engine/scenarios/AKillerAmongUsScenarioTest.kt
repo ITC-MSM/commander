@@ -21,6 +21,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * A Killer Among Us — {4}{G} Enchantment.
@@ -52,7 +53,7 @@ class AKillerAmongUsScenarioTest : FunSpec({
     fun GameTestDriver.playKiller(): EntityId {
         val card = putCardInHand(player1, "A Killer Among Us")
         giveMana(player1, Color.GREEN, 5)
-        castSpell(player1, card).isSuccess shouldBe true
+        castSpell(player1, card).outcome shouldBe Outcome.Done
         bothPass()
         bothPass()
         return card
@@ -76,7 +77,7 @@ class AKillerAmongUsScenarioTest : FunSpec({
         passPriorityUntil(Step.UPKEEP)
         passPriorityUntil(Step.PRECOMBAT_MAIN)
         passPriorityUntil(Step.DECLARE_ATTACKERS)
-        declareAttackers(player1, attackers, player2).isSuccess shouldBe true
+        declareAttackers(player1, attackers, player2).outcome shouldBe Outcome.Done
     }
 
     fun GameTestDriver.plusOneCounters(id: EntityId): Int =

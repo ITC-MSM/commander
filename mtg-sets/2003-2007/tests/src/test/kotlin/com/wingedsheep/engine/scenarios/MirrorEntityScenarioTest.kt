@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Mirror Entity (LRW #31) — "{X}: Until end of turn, creatures you control have base power and
@@ -48,7 +49,7 @@ class MirrorEntityScenarioTest : FunSpec({
         val entity = getCreatures(player1).first { getCardName(it) == "Mirror Entity" }
         val result = submit(ActivateAbility(player1, entity, entityAbility, xValue = x))
         bothPass()
-        return result.isSuccess
+        return result.outcome is Outcome.Done
     }
 
     fun GameTestDriver.power(id: EntityId): Int? = state.projectedState.getPower(id)

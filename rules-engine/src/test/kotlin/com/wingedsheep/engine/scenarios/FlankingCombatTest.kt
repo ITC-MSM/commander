@@ -18,6 +18,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the Flanking keyword (CR 702.25).
@@ -103,10 +104,10 @@ class FlankingCombatTest : FunSpec({
         driver.removeSummoningSickness(sentinel)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(sentinel), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(sentinel), defender).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(defender, mapOf(footsoldier to listOf(sentinel))).isSuccess shouldBe true
+        driver.declareBlockers(defender, mapOf(footsoldier to listOf(sentinel))).outcome shouldBe Outcome.Done
 
         resolveThroughCombat(driver)
 
@@ -134,10 +135,10 @@ class FlankingCombatTest : FunSpec({
         driver.removeSummoningSickness(sentinel)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(sentinel), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(sentinel), defender).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(defender, mapOf(skirmisher to listOf(sentinel))).isSuccess shouldBe true
+        driver.declareBlockers(defender, mapOf(skirmisher to listOf(sentinel))).outcome shouldBe Outcome.Done
 
         resolveThroughCombat(driver)
 
@@ -165,13 +166,13 @@ class FlankingCombatTest : FunSpec({
         driver.removeSummoningSickness(sentinel)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(sentinel), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(sentinel), defender).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         driver.declareBlockers(
             defender,
             mapOf(footsoldier to listOf(sentinel), militia to listOf(sentinel)),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         resolveThroughCombat(driver)
 
@@ -200,7 +201,7 @@ class FlankingCombatTest : FunSpec({
         driver.removeSummoningSickness(charger)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(charger), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(charger), defender).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         driver.declareNoBlockers(defender)

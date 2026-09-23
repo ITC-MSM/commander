@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.Duration
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for regeneration interaction with combat.
@@ -82,10 +83,10 @@ class RegenerationCombatTest : FunSpec({
         driver.addRegenerationShield(blocker, opponent)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(attacker), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 
@@ -130,10 +131,10 @@ class RegenerationCombatTest : FunSpec({
         driver.addRegenerationShield(attacker, activePlayer)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(attacker), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 
@@ -178,20 +179,20 @@ class RegenerationCombatTest : FunSpec({
 
         // Manually drive through combat step by step
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         // Manually pass priority to advance to declare blockers (don't use bothPass which auto-declares)
         driver.passPriority(activePlayer)
         driver.passPriority(opponent)
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldBe Outcome.Done
 
         // After blockers declared, non-active player (blocker) has priority. Pass to active player.
         driver.passPriority(opponent)
 
         // Now active player has priority. Cast Lightning Bolt on blocker.
         driver.giveMana(activePlayer, Color.RED, 1)
-        driver.castSpell(activePlayer, bolt, listOf(blocker)).isSuccess shouldBe true
+        driver.castSpell(activePlayer, bolt, listOf(blocker)).outcome shouldBe Outcome.Done
 
         // Opponent passes, then resolve bolt
         driver.bothPass()
@@ -240,20 +241,20 @@ class RegenerationCombatTest : FunSpec({
         driver.addRegenerationShield(blocker, opponent)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         // Manually pass priority to advance to declare blockers
         driver.passPriority(activePlayer)
         driver.passPriority(opponent)
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldBe Outcome.Done
 
         // After blockers declared, non-active player has priority. Pass to active player.
         driver.passPriority(opponent)
 
         // Now active player has priority. Cast Lightning Bolt on blocker.
         driver.giveMana(activePlayer, Color.RED, 1)
-        driver.castSpell(activePlayer, bolt, listOf(blocker)).isSuccess shouldBe true
+        driver.castSpell(activePlayer, bolt, listOf(blocker)).outcome shouldBe Outcome.Done
 
         // Resolve bolt
         driver.bothPass()
@@ -298,19 +299,19 @@ class RegenerationCombatTest : FunSpec({
         driver.addRegenerationShield(blocker, opponent)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriority(activePlayer)
         driver.passPriority(opponent)
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldBe Outcome.Done
 
         // After blockers declared, non-active player has priority. Pass to active player.
         driver.passPriority(opponent)
 
         // Now active player has priority. Cast Lightning Bolt on blocker to trigger regen.
         driver.giveMana(activePlayer, Color.RED, 1)
-        driver.castSpell(activePlayer, bolt, listOf(blocker)).isSuccess shouldBe true
+        driver.castSpell(activePlayer, bolt, listOf(blocker)).outcome shouldBe Outcome.Done
 
         // Resolve bolt
         driver.bothPass()
@@ -358,11 +359,11 @@ class RegenerationCombatTest : FunSpec({
         driver.addRegenerationShield(blocker, opponent)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(attackerA, attackerB), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(attackerA, attackerB), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         // Only block the first strike knight, leave Grizzly Bears unblocked
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attackerB))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attackerB))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 

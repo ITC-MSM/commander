@@ -218,7 +218,7 @@ class ChainSpellContinuationResumer(
 
         val putResult = services.stackResolver.putTriggeredAbility(effectiveState, ability, targets, targetRequirements)
 
-        if (!putResult.isSuccess) {
+        if (putResult.outcome !is Outcome.Done) {
             return putResult
         }
 

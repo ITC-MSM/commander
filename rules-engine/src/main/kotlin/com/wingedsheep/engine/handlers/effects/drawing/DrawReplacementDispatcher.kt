@@ -13,6 +13,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.ModifyDrawAmount
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Runs the draw-replacement checks that fire before each individual card
@@ -272,7 +273,7 @@ class DrawReplacementDispatcher(
         // (containing all effects applied in this chain), so nested effect execution
         // won't re-trigger them. Clear the chain after execution.
         val pipelineResult = executor(state, replacementEffect, context)
-        if (pipelineResult.isPaused) {
+        if (pipelineResult.outcome is Outcome.Paused) {
             // Clear chain on pause so subsequent draw iterations are unaffected.
             val clearedState = pipelineResult.state.copy(activeReplacementChain = null)
             return DispatchResult.Paused(

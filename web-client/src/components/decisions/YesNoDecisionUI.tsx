@@ -37,7 +37,8 @@ export function YesNoDecisionUI({
 
   return (
     <>
-      <DecisionContextCards cards={cards} />
+      {/* "Cast it transformed" (a Siege's defeat trigger) offers the face the source card hides. */}
+      <DecisionContextCards cards={cards} showSourceBackFace={/\bcast it transformed\b/i.test(decision.prompt)} />
 
       <h2 className={styles.title}>
         <AbilityText text={decision.prompt} size={20} />

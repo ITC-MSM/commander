@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Izzet Chronarch: When this creature enters, return target instant or sorcery card from your
@@ -37,7 +38,7 @@ class IzzetChronarchScenarioTest : FunSpec({
         driver.giveMana(player, Color.BLUE, 3)
         driver.giveMana(player, Color.RED, 2) // {3}{U}{R}
 
-        driver.castSpell(player, chronarch).isSuccess shouldBe true
+        driver.castSpell(player, chronarch).outcome shouldBe Outcome.Done
         // Resolve the creature spell so it enters and the ETB trigger goes on the stack.
         driver.bothPass()
 

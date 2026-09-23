@@ -20,6 +20,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Unable to Scream
@@ -114,7 +116,7 @@ class UnableToScreamScenarioTest : FunSpec({
         // The flag is projected, and the turn-face-up special action is rejected.
         driver.state.projectedState.cantBeTurnedFaceUp(cutthroat) shouldBe true
         val result = driver.submit(TurnFaceUp(playerId = player, sourceId = cutthroat))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.state.getEntity(cutthroat)?.get<FaceDownComponent>() shouldBe FaceDownComponent
     }
 })

@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Jareth, Leonine Titan.
@@ -111,7 +112,7 @@ class JarethLeonineTitanTest : FunSpec({
                 abilityId = protectionAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Ability goes on stack, both pass to resolve
         driver.bothPass()

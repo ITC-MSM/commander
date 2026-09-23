@@ -129,9 +129,9 @@ data class StaticDrawReplacementContinuation(
 /**
  * Resume the draw step of a cycling action after cycling triggers have resolved.
  *
- * When cycling triggers (e.g., Choking Tethers' "you may tap target creature") pause
- * for player input, the CycleCardHandler returns early before reaching the draw step.
- * This continuation ensures the draw happens after triggers resolve.
+ * Nothing pushes this frame any more: cycling triggers wait in the settle boundary's queue, so
+ * the cycling draw happens inline. It stays registered so a saved game that paused with the frame
+ * on its stack still resumes.
  *
  * @property playerId The player who cycled and needs to draw
  */
@@ -160,8 +160,8 @@ data class CycleCardChooseXContinuation(
 /**
  * Resume the search step of a typecycling action after cycling triggers have resolved.
  *
- * Same issue as CycleDrawContinuation but for typecycling, which searches the library
- * instead of drawing.
+ * Like [CycleDrawContinuation], nothing pushes this frame any more; it stays registered so a
+ * saved game that paused with it on its stack still resumes.
  *
  * @property playerId The player who typecycled
  * @property cardId The card that was typecycled (source for search effect)

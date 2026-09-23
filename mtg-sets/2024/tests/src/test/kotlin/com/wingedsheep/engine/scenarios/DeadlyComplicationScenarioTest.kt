@@ -20,6 +20,8 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Deadly Complication — "Choose one or both — • Destroy target creature. • Put a +1/+1 counter on
@@ -142,7 +144,7 @@ class DeadlyComplicationScenarioTest : FunSpec({
             )
         )
         withClue("the mode is restricted to suspected creatures you control") {
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
         }
     }
 

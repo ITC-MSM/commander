@@ -17,6 +17,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Rune-Brand Juggler (MKM #229).
@@ -100,7 +102,7 @@ class RuneBrandJugglerScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(fodder))
             )
         )
-        withClue("activating with a suspected creature as payment") { result.isSuccess shouldBe true }
+        withClue("activating with a suspected creature as payment") { result.outcome shouldBe Outcome.Done }
 
         // The cost is paid on activation, so the fodder is already gone before resolution.
         d.findPermanent(p1, "Grizzly Bears") shouldBe null
@@ -141,7 +143,7 @@ class RuneBrandJugglerScenarioTest : FunSpec({
             )
         )
         withClue("a creature that isn't suspected must not satisfy the cost") {
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
         }
 
         // Nothing was sacrificed and the would-be victim is untouched.

@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Prowcatcher Specialist (DFT #142) — {1}{R} 2/1 Creature — Goblin Warrior.
@@ -58,7 +59,7 @@ class ProwcatcherSpecialistScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = goblin, abilityId = abilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.isPaused shouldBe false
 
@@ -74,7 +75,7 @@ class ProwcatcherSpecialistScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = goblin, abilityId = abilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Even with mana to spare, the exhaust ability is no longer offered.

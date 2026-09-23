@@ -15,6 +15,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Hana Kami (CHK #211) — {G} Creature — Spirit 1/1.
@@ -58,7 +60,7 @@ class HanaKamiScenarioTest : FunSpec({
                 returnAbility,
                 targets = listOf(ChosenTarget.Card(might, d.player1, Zone.GRAVEYARD)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("the Arcane card moves to hand") {
@@ -88,7 +90,7 @@ class HanaKamiScenarioTest : FunSpec({
         )
 
         withClue("a filter that ignored the Arcane subtype would accept this and return the Bears") {
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
             d.getGraveyardCardNames(d.player1) shouldContain "Grizzly Bears"
         }
     }

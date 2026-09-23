@@ -12,6 +12,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldContain
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the Continuation System.
@@ -62,7 +63,7 @@ class ContinuationSystemTest : FunSpec({
 
         // Cast Mind Rot targeting opponent
         val castResult = driver.castSpell(activePlayer, mindRot, targets = listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.bothPass()
@@ -111,7 +112,7 @@ class ContinuationSystemTest : FunSpec({
 
         // Submit the card selection (discard bears and bolt)
         val result = driver.submitCardSelection(opponent, listOf(bears, bolt))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Engine should no longer be paused
         driver.isPaused shouldBe false
@@ -211,7 +212,7 @@ class ContinuationSystemTest : FunSpec({
         val cardToDiscard = handBeforeDiscard.first()
 
         val result = driver.submitCardSelection(activePlayer, listOf(cardToDiscard))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.isPaused shouldBe false
 

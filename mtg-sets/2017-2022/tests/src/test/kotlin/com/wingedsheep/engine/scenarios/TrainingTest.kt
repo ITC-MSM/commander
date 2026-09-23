@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Training (CR 702.149, Innistrad: Midnight Hunt / VOW) — the attack-triggered self-buff proven
@@ -151,7 +152,7 @@ class TrainingTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         val giantGrowth = driver.putCardInHand(me, "Giant Growth")              // {G}: +3/+3 EOT
         driver.giveMana(me, Color.GREEN, 1)
-        driver.castSpell(me, giantGrowth, targets = listOf(goblin)).isSuccess shouldBe true
+        driver.castSpell(me, giantGrowth, targets = listOf(goblin)).outcome shouldBe Outcome.Done
         driver.drainStack(me)                                                   // resolve Giant Growth → Goblin Guide is 5/4
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
@@ -226,7 +227,7 @@ class TrainingTest : FunSpec({
         val centaurCard = driver.putCardInHand(me, "Centaur Courser")           // {2}{G}
         driver.giveMana(me, Color.GREEN, 1)
         driver.giveColorlessMana(me, 2)
-        driver.castSpell(me, centaurCard).isSuccess shouldBe true
+        driver.castSpell(me, centaurCard).outcome shouldBe Outcome.Done
         driver.drainStack(me)                                                   // resolve Torens' trigger + the Centaur spell
 
         val tokenId = driver.tokenNamed(me, "Human Soldier Token")

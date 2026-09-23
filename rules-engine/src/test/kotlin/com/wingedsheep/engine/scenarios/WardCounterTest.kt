@@ -14,6 +14,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for WardCounterEffectExecutor.
@@ -65,7 +66,7 @@ class WardCounterTest : FunSpec({
         val cast = driver.castSpellWithTargets(
             activePlayer, bolt, listOf(ChosenTarget.Permanent(bear))
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         // Ward trigger goes on the stack; resolve it — caller cannot pay ⇒ Bolt is countered.
         driver.bothPass()

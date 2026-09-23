@@ -13,7 +13,7 @@ import com.wingedsheep.sdk.model.Rarity
  * turn it is discards down to their maximum hand size. Damage heals and "this turn" and
  * "until end of turn" effects end.)
  *
- * Takes no target — [Effects.EndTheTurn] always ends the active player's turn (CR 720).
+ * Takes no target — [Effects.EndTheTurn] always ends the active player's turn (CR 724.1).
  * When it resolves the whole stack is exiled (including this spell and any triggers the
  * resolution queued, even uncounterable ones), creatures leave combat, and the game skips
  * straight to the cleanup step before the next turn begins.

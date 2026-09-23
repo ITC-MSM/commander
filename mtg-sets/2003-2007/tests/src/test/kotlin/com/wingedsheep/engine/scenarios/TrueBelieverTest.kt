@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.GrantShroudToController
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for True Believer.
@@ -61,7 +63,7 @@ class TrueBelieverTest : FunSpec({
         val bolt = driver.putCardInHand(activePlayer, "Lightning Bolt")
         driver.giveMana(activePlayer, Color.RED, 1)
         val castResult = driver.castSpell(activePlayer, bolt, listOf(activePlayer))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
     }
 
     test("opponent cannot target player with shroud") {
@@ -81,7 +83,7 @@ class TrueBelieverTest : FunSpec({
         val bolt = driver.putCardInHand(opponent, "Lightning Bolt")
         driver.giveMana(opponent, Color.RED, 1)
         val castResult = driver.castSpell(opponent, bolt, listOf(activePlayer))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
     }
 
     test("True Believer creature itself can still be targeted") {
@@ -101,7 +103,7 @@ class TrueBelieverTest : FunSpec({
         val bolt = driver.putCardInHand(opponent, "Lightning Bolt")
         driver.giveMana(opponent, Color.RED, 1)
         val castResult = driver.castSpell(opponent, bolt, listOf(trueBelieverId))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
     }
 
     test("controller becomes targetable again when True Believer leaves the battlefield") {
@@ -118,19 +120,19 @@ class TrueBelieverTest : FunSpec({
         val bolt1 = driver.putCardInHand(activePlayer, "Lightning Bolt")
         driver.giveMana(activePlayer, Color.RED, 1)
         val failResult = driver.castSpell(activePlayer, bolt1, listOf(activePlayer))
-        failResult.isSuccess shouldBe false
+        failResult.outcome shouldNotBe Outcome.Done
 
         // Kill the True Believer with a Lightning Bolt targeting the creature
         val bolt2 = driver.putCardInHand(activePlayer, "Lightning Bolt")
         driver.giveMana(activePlayer, Color.RED, 1)
         val killResult = driver.castSpell(activePlayer, bolt2, listOf(trueBelieverId))
-        killResult.isSuccess shouldBe true
+        killResult.outcome shouldBe Outcome.Done
         driver.bothPass() // Resolve — True Believer dies
 
         // Now the active player should be targetable again
         val bolt3 = driver.putCardInHand(activePlayer, "Lightning Bolt")
         driver.giveMana(activePlayer, Color.RED, 1)
         val successResult = driver.castSpell(activePlayer, bolt3, listOf(opponent))
-        successResult.isSuccess shouldBe true
+        successResult.outcome shouldBe Outcome.Done
     }
 })

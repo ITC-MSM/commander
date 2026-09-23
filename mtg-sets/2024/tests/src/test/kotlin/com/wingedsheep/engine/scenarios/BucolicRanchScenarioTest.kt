@@ -12,6 +12,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bucolic Ranch — Land — Desert
@@ -54,7 +55,7 @@ class BucolicRanchScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = me, sourceId = ranch, abilityId = lookAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // A select decision for the Mount → choose to take it.
@@ -82,7 +83,7 @@ class BucolicRanchScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = me, sourceId = ranch, abilityId = lookAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Decline every optional selection.

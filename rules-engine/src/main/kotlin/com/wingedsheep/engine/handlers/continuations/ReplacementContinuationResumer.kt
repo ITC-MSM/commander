@@ -152,10 +152,10 @@ class ReplacementContinuationResumer(
             // won't re-trigger them. Clear the chain after execution so the
             // ReplacementResolveContinuation and any remaining draws resume fresh.
             val effectResult = services.effectExecutorRegistry.execute(stateWithResumeFrame, outcome.newEffect, context)
-            if (effectResult.isPaused) {
+            if (effectResult.outcome is Outcome.Paused) {
                 // Clear chain on pause so subsequent execution is unaffected.
                 val clearedState = effectResult.state.copy(activeReplacementChain = null)
-                return ExecutionResult(clearedState, effectResult.events, effectResult.error, effectResult.pendingDecision, effectResult.triggersAlreadyProcessed)
+                return ExecutionResult(clearedState, effectResult.events, effectResult.outcome)
             }
             val clearedState = effectResult.state.copy(activeReplacementChain = null)
             return checkForMore(clearedState, effectResult.events)

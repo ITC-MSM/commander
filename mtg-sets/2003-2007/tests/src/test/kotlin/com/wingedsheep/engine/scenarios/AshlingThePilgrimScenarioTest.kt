@@ -13,6 +13,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ashling the Pilgrim (LRW #149) — "{1}{R}: Put a +1/+1 counter on Ashling. If this is the third
@@ -52,7 +53,7 @@ class AshlingThePilgrimScenarioTest : FunSpec({
 
     fun flare(d: GameTestDriver, me: EntityId, ashling: EntityId) {
         handPriorityTo(d, me)
-        d.submit(ActivateAbility(me, ashling, flareAbility)).isSuccess shouldBe true
+        d.submit(ActivateAbility(me, ashling, flareAbility)).outcome shouldBe Outcome.Done
         d.bothPass()
         handPriorityTo(d, me)
     }

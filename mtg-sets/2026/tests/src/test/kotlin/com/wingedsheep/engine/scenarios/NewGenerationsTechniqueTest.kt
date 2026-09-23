@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * New Generation's Technique (TMT #126) — Sorcery, Sneak {2}{G}. "Search your
@@ -29,7 +30,7 @@ class NewGenerationsTechniqueTest : FunSpec({
         val forestsBefore = driver.getPermanents(player).count {
             driver.state.getEntity(it)?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.name == "Forest"
         }
-        driver.castSpell(player, spell).isSuccess shouldBe true
+        driver.castSpell(player, spell).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty() && driver.pendingDecision == null) driver.bothPass()
 
         val decision = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()

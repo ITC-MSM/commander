@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Pariah's Shield — {5} Artifact — Equipment (Ravnica: City of Guilds #267)
@@ -49,7 +50,7 @@ class PariahsShieldScenarioTest : FunSpec({
                 abilityId = equipAbilityId,
                 targets = listOf(ChosenTarget.Permanent(creature))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         bothPass()
         state.getEntity(shield)?.get<AttachedToComponent>()?.targetId shouldBe creature
         return shield to creature

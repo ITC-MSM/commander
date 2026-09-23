@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Rings of Brighthearth (LRW #259) — "Whenever you activate an ability, if it isn't a mana ability,
@@ -60,7 +61,7 @@ class RingsOfBrighthearthScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, tim, pingAbility, targets = listOf(ChosenTarget.Player(d.player2)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         withClue("the Rings trigger goes on the stack above the ping it copies") {
             d.pendingDecision shouldBe null
@@ -90,7 +91,7 @@ class RingsOfBrighthearthScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, tim, pingAbility, targets = listOf(ChosenTarget.Player(d.player2)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         d.submitYesNo(d.player1, false)
         d.bothPass()
@@ -107,7 +108,7 @@ class RingsOfBrighthearthScenarioTest : FunSpec({
         d.removeSummoningSickness(elves)
         d.giveColorlessMana(d.player1, 2)
 
-        d.submit(ActivateAbility(d.player1, elves, elvesMana)).isSuccess shouldBe true
+        d.submit(ActivateAbility(d.player1, elves, elvesMana)).outcome shouldBe Outcome.Done
 
         withClue("a mana ability doesn't use the stack, so there is nothing to copy and nothing to ask") {
             d.pendingDecision shouldBe null

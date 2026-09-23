@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.SpellCostTarget
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Goblin Warchief.
@@ -230,6 +231,6 @@ class GoblinWarchiefTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 1)
 
         val result = driver.castSpell(activePlayer, goblinInHand)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

@@ -78,11 +78,11 @@ import com.wingedsheep.sdk.scripting.references.Player
  *
  * The choice pauses for a player decision. [EntersWithChoiceOnBattlefieldContinuation]'s resumer
  * records the chosen value into the entity's `CastChoicesComponent`, chains to any remaining
- * choice, and then fires the entry's ETB triggers off a synthesized [ZoneChangeEvent] (using the
- * continuation's `fromZone`). **ETB triggers are therefore fired by the resumer, never by the
- * caller** — a caller whose paused result is run through trigger detection (e.g. an effect
- * resolving via `StackResolver`) must NOT also include the entry battlefield [ZoneChangeEvent] in
- * [carryEvents], or the triggers fire twice.
+ * choice, and then emits the entry's [ZoneChangeEvent] (using the continuation's `fromZone`).
+ * **The entry event is therefore emitted by the resumer, never by the caller.** The settle
+ * boundary detects triggers over every event a paused result carries, so a caller must NOT
+ * include the entry battlefield [ZoneChangeEvent] in [carryEvents], or the ETB triggers fire
+ * twice.
  */
 object PermanentEntryReplacements {
 
@@ -328,8 +328,7 @@ object PermanentEntryReplacements {
      * @param fromZone the zone the permanent came from, used to synthesize the entry
      *   [ZoneChangeEvent] in the resumer; `null` for a freshly-minted token (no prior zone).
      * @param carryEvents events already produced by the caller to forward with the pause (e.g.
-     *   counters added). Must NOT include the entry battlefield [ZoneChangeEvent] when the caller's
-     *   result is trigger-detected (see class docs).
+     *   counters added). Must NOT include the entry battlefield [ZoneChangeEvent] (see class docs).
      * @return a paused [ExecutionResult], or `null` if the choice cannot be presented (e.g.
      *   `CREATURE_ON_BATTLEFIELD` with no other creatures, an empty `MODE`/`OPPONENT` set) — the
      *   caller then completes entry normally.

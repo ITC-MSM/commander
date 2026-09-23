@@ -16,6 +16,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Spectral Snatcher — {4}{B}{B} Creature — Spirit 6/5
@@ -64,7 +65,7 @@ class SpectralSnatcherScenarioTest : FunSpec({
         driver.giveColorlessMana(me, 2)
 
         val result = driver.submit(TypecycleCard(playerId = me, cardId = snatcher))
-        (result.isSuccess || result.isPaused).shouldBeTrue()
+        (result.outcome is Outcome.Done || result.outcome is Outcome.Paused).shouldBeTrue()
 
         driver.getGraveyardCardNames(me) shouldContain "Spectral Snatcher"
 

@@ -4,6 +4,7 @@ import { selectGameState, selectViewingPlayerId, useViewedOpponent } from '@/sto
 import { hasPendingInputSelection, isFollowingAction } from '@/store/slices/ui/boardViewSlice'
 import { MOBILE_BREAKPOINT } from '@/hooks/useResponsive'
 import type { ClientPlayer, EntityId } from '@/types'
+import { defendingPlayerOf } from '@/utils/combatTargets'
 
 /**
  * Multiplayer camera controls: follow-the-action and keyboard board switching.
@@ -41,7 +42,7 @@ export function useMultiplayerView(enabled: boolean, opponents: readonly ClientP
     const attacksMe = combat.attackers.some((a) =>
       a.attackingTarget.type === 'Player'
         ? a.attackingTarget.playerId === viewingPlayerId
-        : gameState.cards[a.attackingTarget.permanentId]?.controllerId === viewingPlayerId
+        : defendingPlayerOf(a.attackingTarget.permanentId, gameState.cards) === viewingPlayerId
     )
     if (attacksMe) followViewTo(combat.attackingPlayerId)
   }, [enabled, combat, viewingPlayerId, gameState, followViewTo])
@@ -131,7 +132,7 @@ export function useCombatDefenderFocus(enabled: boolean): readonly EntityId[] {
       const d =
         a.attackingTarget.type === 'Player'
           ? a.attackingTarget.playerId
-          : gameState.cards[a.attackingTarget.permanentId]?.controllerId
+          : defendingPlayerOf(a.attackingTarget.permanentId, gameState.cards)
       if (d) defenders.add(d)
     }
     // You're among the defenders → the attacker slides into view (useMultiplayerView)

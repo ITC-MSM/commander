@@ -26,6 +26,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Huatli, Poet of Unity // Roar of the Fifth People (LCI #189).
@@ -108,7 +109,7 @@ class HuatliPoetOfUnityScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 3)
         val abilityId = HuatliPoetOfUnity.activatedAbilities.first().id
         driver.submit(ActivateAbility(playerId = player, sourceId = huatli, abilityId = abilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
         clearBenignDecisions(driver)
@@ -175,7 +176,7 @@ class HuatliPoetOfUnityScenarioTest : FunSpec({
 
         // Before chapter II the vanilla bear doesn't have the ability — activation is rejected.
         driver.submit(ActivateAbility(playerId = active, sourceId = bear, abilityId = manaAbilityId))
-            .isSuccess shouldBe false
+            .outcome shouldNotBe Outcome.Done
 
         // Accrue lore to 2 — chapter II resolves during the advance, granting Roar the lasting static
         // "creatures you control have '{T}: Add {R}, {G}, or {W}'".

@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Crown of Vigor.
@@ -137,7 +138,7 @@ class CrownOfVigorTest : FunSpec({
                 abilityId = crownAbilityId
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         // Let the ability resolve
         driver.bothPass()

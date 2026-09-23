@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Shriek, Treblemaker (SPM #144) — {2}{B/R} Legendary Creature — Mutant Villain 2/3.
@@ -104,7 +105,7 @@ class ShriekTreblemakerScenarioTest : FunSpec({
         val giant = d.putCreatureOnBattlefield(opponent, "Hill Giant")
         val bolt = d.putCardInHand(you, "Lightning Bolt")
         d.giveMana(you, Color.RED, 1)
-        d.castSpell(you, bolt, listOf(giant)).isSuccess shouldBe true
+        d.castSpell(you, bolt, listOf(giant)).outcome shouldBe Outcome.Done
         while (!d.isPaused && d.state.stack.isNotEmpty()) d.bothPass()
 
         d.getLifeTotal(opponent) shouldBe oppLifeBefore - 1
@@ -122,7 +123,7 @@ class ShriekTreblemakerScenarioTest : FunSpec({
         val ownGiant = d.putCreatureOnBattlefield(you, "Hill Giant")
         val bolt = d.putCardInHand(you, "Lightning Bolt")
         d.giveMana(you, Color.RED, 1)
-        d.castSpell(you, bolt, listOf(ownGiant)).isSuccess shouldBe true
+        d.castSpell(you, bolt, listOf(ownGiant)).outcome shouldBe Outcome.Done
         while (!d.isPaused && d.state.stack.isNotEmpty()) d.bothPass()
 
         d.getLifeTotal(you) shouldBe youLifeBefore

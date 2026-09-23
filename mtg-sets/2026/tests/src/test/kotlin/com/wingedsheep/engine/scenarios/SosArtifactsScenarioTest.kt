@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Secrets of Strixhaven — Tablet of Discovery and Diary of Dreams.
@@ -46,7 +47,7 @@ class SosArtifactsScenarioTest : FunSpec({
         val tablet = driver.putCardInHand(p1, "Tablet of Discovery")
         driver.giveMana(p1, com.wingedsheep.sdk.core.Color.RED, 1)
         driver.giveColorlessMana(p1, 2)
-        driver.castSpell(p1, tablet).isSuccess shouldBe true
+        driver.castSpell(p1, tablet).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the spell (Tablet enters)
         if (driver.stackSize > 0) driver.bothPass() // resolve the ETB trigger
 
@@ -63,7 +64,7 @@ class SosArtifactsScenarioTest : FunSpec({
         val tablet = driver.putPermanentOnBattlefield(p1, "Tablet of Discovery")
         driver.bothPass()
 
-        driver.submit(ActivateAbility(p1, tablet, TabletOfDiscovery.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, tablet, TabletOfDiscovery.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.red shouldBe 1
     }
 
@@ -73,7 +74,7 @@ class SosArtifactsScenarioTest : FunSpec({
         val tablet = driver.putPermanentOnBattlefield(p1, "Tablet of Discovery")
         driver.bothPass()
 
-        driver.submit(ActivateAbility(p1, tablet, TabletOfDiscovery.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, tablet, TabletOfDiscovery.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         val pool = driver.state.getEntity(p1)?.get<ManaPoolComponent>()
         // The two red mana land in the restricted pool, not the unrestricted red counter.
         pool?.red shouldBe 0
@@ -90,7 +91,7 @@ class SosArtifactsScenarioTest : FunSpec({
         // Cast Lightning Bolt (an instant) targeting the opponent.
         val bolt = driver.putCardInHand(p1, "Lightning Bolt")
         driver.giveMana(p1, com.wingedsheep.sdk.core.Color.RED, 1)
-        driver.castSpell(p1, bolt, targets = listOf(driver.player2)).isSuccess shouldBe true
+        driver.castSpell(p1, bolt, targets = listOf(driver.player2)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getEntity(diary)?.get<CountersComponent>()?.counters?.get(CounterType.PAGE) shouldBe 1
@@ -105,7 +106,7 @@ class SosArtifactsScenarioTest : FunSpec({
         repeat(2) {
             val bolt = driver.putCardInHand(p1, "Lightning Bolt")
             driver.giveMana(p1, com.wingedsheep.sdk.core.Color.RED, 1)
-            driver.castSpell(p1, bolt, targets = listOf(driver.player2)).isSuccess shouldBe true
+            driver.castSpell(p1, bolt, targets = listOf(driver.player2)).outcome shouldBe Outcome.Done
             driver.bothPass()
         }
         driver.state.getEntity(diary)?.get<CountersComponent>()?.counters?.get(CounterType.PAGE) shouldBe 2
@@ -113,7 +114,7 @@ class SosArtifactsScenarioTest : FunSpec({
         // {5} reduced by 2 page counters = {3}. Three mana is exactly enough.
         val handBefore = driver.getHandSize(p1)
         driver.giveColorlessMana(p1, 3)
-        driver.submit(ActivateAbility(p1, diary, DiaryOfDreams.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, diary, DiaryOfDreams.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getHandSize(p1) shouldBeGreaterThanOrEqual handBefore + 1
@@ -127,7 +128,7 @@ class SosArtifactsScenarioTest : FunSpec({
         // One page counter -> {5} - 1 = {4}. Three mana is not enough.
         val bolt = driver.putCardInHand(p1, "Lightning Bolt")
         driver.giveMana(p1, com.wingedsheep.sdk.core.Color.RED, 1)
-        driver.castSpell(p1, bolt, targets = listOf(driver.player2)).isSuccess shouldBe true
+        driver.castSpell(p1, bolt, targets = listOf(driver.player2)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.giveColorlessMana(p1, 3)

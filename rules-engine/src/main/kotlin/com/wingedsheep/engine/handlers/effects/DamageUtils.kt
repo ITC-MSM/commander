@@ -569,6 +569,15 @@ object DamageUtils {
             )
         )
 
+        // "An opponent was dealt noncombat damage this turn" (Whiplash Wordsmith, Command the Stage).
+        if (targetIsPlayer && !isCombatDamage && effectiveAmount > 0 &&
+            targetId !in newState.playersDealtNoncombatDamageThisTurn
+        ) {
+            newState = newState.copy(
+                playersDealtNoncombatDamageThisTurn = newState.playersDealtNoncombatDamageThisTurn + targetId
+            )
+        }
+
         // Track noncombat damage dealt by red sources, keyed to the source's controller
         // (Temple of Power's transform gate — TurnTracker.RED_NONCOMBAT_DAMAGE_DEALT). A red
         // spell/ability carries no ControllerComponent, so fall back to its caster.

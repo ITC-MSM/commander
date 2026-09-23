@@ -9,6 +9,7 @@ import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.DestroyAllEquipmentOnTargetEffect
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for DestroyAllEquipmentOnTargetEffect.
@@ -55,7 +56,7 @@ class DestroyAllEquipmentOnTargetExecutor : EffectExecutor<DestroyAllEquipmentOn
         for (equipmentId in equipmentIds) {
             if (!currentState.getBattlefield().contains(equipmentId)) continue
             val result = destroyPermanent(currentState, equipmentId)
-            if (result.isSuccess) {
+            if (result.outcome is Outcome.Done) {
                 currentState = result.state
                 allEvents.addAll(result.events)
             }

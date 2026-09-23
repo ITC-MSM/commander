@@ -33,6 +33,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * `Chooser.Opponent` means one opponent decides, and the controller of the spell or ability
@@ -108,7 +109,7 @@ class OpponentDeciderChoiceTest : FunSpec({
 
         // First pause: the CONTROLLER is asked which opponent decides, one option per opponent.
         val first = EffectExecutorRegistry(cardRegistry = registry).execute(state, effect, context)
-        first.isPaused shouldBe true
+        (first.outcome is Outcome.Paused) shouldBe true
         val deciderPick = first.state.pendingDecision
         deciderPick.shouldNotBeNull()
         deciderPick.shouldBeInstanceOf<ChooseOptionDecision>()
@@ -153,7 +154,7 @@ class OpponentDeciderChoiceTest : FunSpec({
         )
 
         val result = EffectExecutorRegistry(cardRegistry = registry).execute(state, effect, context)
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
         val decision = result.state.pendingDecision
         decision.shouldNotBeNull()
         decision.shouldBeInstanceOf<ChooseOptionDecision>()
@@ -184,7 +185,7 @@ class OpponentDeciderChoiceTest : FunSpec({
         )
 
         val first = EffectExecutorRegistry(cardRegistry = registry).execute(state, effect, context)
-        first.isPaused shouldBe true
+        (first.outcome is Outcome.Paused) shouldBe true
         val deciderPick = first.state.pendingDecision
         deciderPick.shouldNotBeNull()
         deciderPick.shouldBeInstanceOf<ChooseOptionDecision>()

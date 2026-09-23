@@ -1058,6 +1058,11 @@ sealed interface ClientCombatTarget {
     @Serializable
     @kotlinx.serialization.SerialName("Planeswalker")
     data class Planeswalker(val permanentId: EntityId) : ClientCombatTarget
+
+    /** A battle being attacked (CR 310.5); its defending player is its protector, not its controller. */
+    @Serializable
+    @kotlinx.serialization.SerialName("Battle")
+    data class Battle(val permanentId: EntityId) : ClientCombatTarget
 }
 
 /**

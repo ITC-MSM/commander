@@ -138,7 +138,7 @@ class CopyTargetSpellOrAbilityExecutor(
                 // targeted ones).
                 if (targetRequirements.isEmpty()) {
                     val push = cloneAndPush(currentState, stackResolver, abilityEntityId, controllerId)
-                    if (!push.isSuccess) return push
+                    if (push.outcome !is Outcome.Done) return push
                     currentState = push.newState
                     allEvents.addAll(push.events)
                     copiesLeft--
@@ -161,7 +161,7 @@ class CopyTargetSpellOrAbilityExecutor(
                         currentState, stackResolver, abilityEntityId, controllerId,
                         inherited, targetRequirements
                     )
-                    if (!push.isSuccess) return push
+                    if (push.outcome !is Outcome.Done) return push
                     currentState = push.newState
                     allEvents.addAll(push.events)
                     copiesLeft--

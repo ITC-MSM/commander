@@ -16,6 +16,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Reroute — {1}{R} Instant (Ravnica: City of Guilds #139)
@@ -49,7 +50,7 @@ class RerouteScenarioTest : FunSpec({
         giveColorlessMana(opponent, 4)
         passPriority(player1)
         submit(ActivateAbility(opponent, mage, counterAbility, targets = listOf(ChosenTarget.Permanent(target))))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         val ability = getTopOfStack()!!
         passPriority(opponent)
         return ability

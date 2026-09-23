@@ -14,6 +14,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
+import com.wingedsheep.engine.core.Outcome
 
 class SpawnbrokerScenarioTest : FunSpec({
     val cards = TestCards.all + Spawnbroker
@@ -49,7 +50,7 @@ class SpawnbrokerScenarioTest : FunSpec({
         d.legalTargets() shouldNotContain broker
         d.submitTargetSelection(d.player1, listOf(yours)).error shouldBe null
         d.legalTargets() shouldBe listOf(theirs)
-        d.submitTargetSelection(d.player1, listOf(larger)).isSuccess shouldBe false
+        d.submitTargetSelection(d.player1, listOf(larger)).outcome shouldNotBe Outcome.Done
         d.submitTargetSelection(d.player1, listOf(theirs)).error shouldBe null
         d.resolveExchange()
         d.controller(yours) shouldBe d.player2

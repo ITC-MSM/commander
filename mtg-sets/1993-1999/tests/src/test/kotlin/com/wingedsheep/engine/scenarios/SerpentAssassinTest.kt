@@ -13,6 +13,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Serpent Assassin's ETB triggered ability.
@@ -56,7 +57,7 @@ class SerpentAssassinTest : FunSpec({
 
         // Cast Serpent Assassin
         val castResult = driver.castSpell(activePlayer, serpentAssassin)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the creature spell resolve (both players pass priority)
         driver.bothPass()
@@ -80,7 +81,7 @@ class SerpentAssassinTest : FunSpec({
 
         // Submit the target selection (choose Grizzly Bears)
         val targetResult = driver.submitTargetSelection(activePlayer, listOf(grizzlyBears))
-        targetResult.isSuccess shouldBe true
+        targetResult.outcome shouldBe Outcome.Done
 
         // The ability should now be on the stack - resolve it
         if (driver.stackSize > 0) {
@@ -233,7 +234,7 @@ class SerpentAssassinTest : FunSpec({
         driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
 
         val declineResult = driver.submitYesNo(activePlayer, false)
-        declineResult.isSuccess shouldBe true
+        declineResult.outcome shouldBe Outcome.Done
 
         // The game should continue without the ability on the stack
         // (ability was declined, not put on the stack)

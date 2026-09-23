@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.ChoiceSlot
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Orim's Chant (PLS #11) — target player can't cast spells this turn; when kicked, no creatures
@@ -47,7 +48,7 @@ class OrimsChantScenarioTest : FunSpec({
             )
         )
         withClue("Orim's Chant should be castable: ${result.error}") {
-            result.isSuccess shouldBe true
+            result.outcome shouldBe Outcome.Done
         }
         d.bothPass()
     }

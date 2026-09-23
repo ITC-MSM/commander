@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Ultima, Origin of Oblivion ({5}, 4/4 Legendary God with Flying).
@@ -143,7 +144,7 @@ class UltimaOriginOfOblivionScenarioTest : FunSpec({
         d.putCreatureOnBattlefield(you, "Ultima, Origin of Oblivion")
         val waste = d.putPermanentOnBattlefield(you, "Wastes")
 
-        d.submit(d.landManaAbility(you, waste)).isSuccess shouldBe true
+        d.submit(d.landManaAbility(you, waste)).outcome shouldBe Outcome.Done
 
         // 1 from the land + 1 from Ultima's bonus.
         d.state.getEntity(you)?.get<ManaPoolComponent>()?.colorless shouldBe 2
@@ -158,7 +159,7 @@ class UltimaOriginOfOblivionScenarioTest : FunSpec({
         d.putCreatureOnBattlefield(you, "Ultima, Origin of Oblivion")
         val forest = d.putPermanentOnBattlefield(you, "Forest")
 
-        d.submit(d.landManaAbility(you, forest)).isSuccess shouldBe true
+        d.submit(d.landManaAbility(you, forest)).outcome shouldBe Outcome.Done
 
         val pool = d.state.getEntity(you)?.get<ManaPoolComponent>()
         pool?.green shouldBe 1     // just the Forest — colored taps don't trigger Ultima
@@ -183,7 +184,7 @@ class UltimaOriginOfOblivionScenarioTest : FunSpec({
         val grantedTap = enumerator.enumerate(d.state, you, EnumerationMode.FULL)
             .mapNotNull { it.action as? ActivateAbility }
             .first { it.sourceId == forest }
-        d.submit(grantedTap).isSuccess shouldBe true
+        d.submit(grantedTap).outcome shouldBe Outcome.Done
 
         // 1 {C} from the granted ability + 1 {C} from Ultima's "tap a land for {C}" bonus.
         d.state.getEntity(you)?.get<ManaPoolComponent>()?.colorless shouldBe 2

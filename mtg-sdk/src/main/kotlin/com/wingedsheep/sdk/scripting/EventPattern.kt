@@ -2325,6 +2325,10 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * [excludeManaAbilities], which subtracts mana abilities from the *exhaust* semantic; this one
      * adds them to the default semantic. A trigger that sets it must not itself be able to produce
      * mana, or CR 605.1b would make it a mana ability.
+     *
+     * [requireLoyalty] narrows to loyalty abilities (CR 606) — "whenever you activate a loyalty
+     * ability" (Way of the Paradox), "whenever an opponent activates a loyalty ability" (Gideon the
+     * Oathless). Loyalty abilities are never mana abilities, so the default gate is unaffected.
      */
     @SerialName("AbilityActivatedEvent")
     @Serializable
@@ -2336,8 +2340,14 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val requireExhaust: Boolean = false,
         val excludeManaAbilities: Boolean = false,
         val includeManaAbilities: Boolean = false,
+        val requireLoyalty: Boolean = false,
     ) : EventPattern {
         override val description: String = buildString {
+            if (requireLoyalty) {
+                append(player.description)
+                append(" activates a loyalty ability")
+                return@buildString
+            }
             // The clause that narrows *which* abilities count, appended after "...ability".
             // Empty for the unqualified [includeManaAbilities] wording, where the source filter
             // alone does the narrowing ("you activate a creature's ability" — Elrond).

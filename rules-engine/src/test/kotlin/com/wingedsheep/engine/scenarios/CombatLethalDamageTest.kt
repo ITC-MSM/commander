@@ -19,6 +19,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario 2: Combat and Lethal Damage
@@ -241,7 +242,7 @@ class CombatLethalDamageTest : FunSpec({
             DeclareAttackers(driver.activePlayer!!, emptyMap())
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("defending player declares blockers") {

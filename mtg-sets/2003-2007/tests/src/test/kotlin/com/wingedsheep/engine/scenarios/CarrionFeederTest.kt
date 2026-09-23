@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Carrion Feeder.
@@ -59,7 +60,7 @@ class CarrionFeederTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(bear))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Let the ability resolve
         driver.bothPass()
@@ -134,7 +135,7 @@ class CarrionFeederTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(feeder))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -164,6 +165,6 @@ class CarrionFeederTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(bear))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

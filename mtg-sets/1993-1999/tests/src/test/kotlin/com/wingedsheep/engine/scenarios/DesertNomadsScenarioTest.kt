@@ -8,6 +8,8 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Desert Nomads' two abilities:
@@ -47,7 +49,7 @@ class DesertNomadsScenarioTest : ScenarioTestBase() {
                     )
                 )
                 withClue("Blocking should fail due to Desertwalk: error was ${block.error}") {
-                    block.isSuccess shouldBe false
+                    block.outcome shouldNotBe Outcome.Done
                     (block.error ?: "").lowercase().contains("desertwalk") shouldBe true
                 }
             }

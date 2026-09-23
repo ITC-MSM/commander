@@ -11,6 +11,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.collections.shouldHaveSize
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the Flux spell.
@@ -52,7 +53,7 @@ class FluxTest : FunSpec({
 
         // Cast Flux
         val castResult = driver.castSpell(activePlayer, flux)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.bothPass()

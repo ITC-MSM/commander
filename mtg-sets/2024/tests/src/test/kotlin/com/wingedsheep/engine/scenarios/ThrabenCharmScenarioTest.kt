@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Thraben Charm (MH3) — a `modal(chooseCount = 1)` charm whose third mode is the first use of
@@ -77,7 +78,7 @@ class ThrabenCharmScenarioTest : FunSpec({
 
         payFor(d, active)
         val charm = d.putCardInHand(active, "Thraben Charm")
-        castCharm(d, active, charm, 0, listOf(ChosenTarget.Permanent(courser))).isSuccess shouldBe true
+        castCharm(d, active, charm, 0, listOf(ChosenTarget.Permanent(courser))).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // 2 creatures × 2 = 4 damage, lethal to a 3/3.
@@ -97,7 +98,7 @@ class ThrabenCharmScenarioTest : FunSpec({
 
         payFor(d, active)
         val charm = d.putCardInHand(active, "Thraben Charm")
-        castCharm(d, active, charm, 0, listOf(ChosenTarget.Permanent(courser))).isSuccess shouldBe true
+        castCharm(d, active, charm, 0, listOf(ChosenTarget.Permanent(courser))).outcome shouldBe Outcome.Done
         d.bothPass()
 
         damageOn(d, courser) shouldBe 2
@@ -115,7 +116,7 @@ class ThrabenCharmScenarioTest : FunSpec({
 
         payFor(d, active)
         val charm = d.putCardInHand(active, "Thraben Charm")
-        castCharm(d, active, charm, 1, listOf(ChosenTarget.Permanent(glade))).isSuccess shouldBe true
+        castCharm(d, active, charm, 1, listOf(ChosenTarget.Permanent(glade))).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.findPermanent(opp, "Centaur Glade") shouldBe null
@@ -138,7 +139,7 @@ class ThrabenCharmScenarioTest : FunSpec({
         castCharm(
             d, active, charm, 2,
             listOf(ChosenTarget.Player(active), ChosenTarget.Player(opp))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.getExileCardNames(active) shouldContain "Grizzly Bears"
@@ -164,7 +165,7 @@ class ThrabenCharmScenarioTest : FunSpec({
 
         payFor(d, active)
         val charm = d.putCardInHand(active, "Thraben Charm")
-        castCharm(d, active, charm, 2).isSuccess shouldBe true
+        castCharm(d, active, charm, 2).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // "Any number" includes none: the spell resolves, nothing is exiled, and — the point of the

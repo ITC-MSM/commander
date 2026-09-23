@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Karai's Technique (TMT #152) — Sorcery, Sneak {W}{B}. "Choose one or both —
@@ -38,7 +39,7 @@ class KaraisTechniqueTest : FunSpec({
                 chosenModes = listOf(0),
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(bear)))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.state.projectedState.getPower(bear) shouldBe 5

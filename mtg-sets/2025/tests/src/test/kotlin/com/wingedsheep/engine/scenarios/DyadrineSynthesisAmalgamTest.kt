@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dyadrine, Synthesis Amalgam ({X}{G}{W}, Legendary Artifact Creature — Construct, 0/1):
@@ -52,7 +53,7 @@ class DyadrineSynthesisAmalgamTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Dyadrine resolved onto the battlefield with 5 +1/+1 counters.
@@ -81,7 +82,7 @@ class DyadrineSynthesisAmalgamTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val counters = driver.state.getEntity(spell)?.get<CountersComponent>()

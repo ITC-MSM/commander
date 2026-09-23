@@ -18,6 +18,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the Omen mechanic (Tarkir: Dragonstorm).
@@ -86,7 +87,7 @@ class OmenMechanicTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         // Resolve the spell.
         driver.bothPass()
@@ -125,7 +126,7 @@ class OmenMechanicTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.isPaused shouldBe false

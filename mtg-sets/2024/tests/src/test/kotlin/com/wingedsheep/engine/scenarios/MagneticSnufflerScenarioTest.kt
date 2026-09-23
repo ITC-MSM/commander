@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Magnetic Snuffler — the reanimate-and-attach ETB and the sacrifice-an-artifact counter.
@@ -45,7 +46,7 @@ class MagneticSnufflerScenarioTest : FunSpec({
         val weapon = driver.putCardInGraveyard(you, "Concealed Weapon")
         val snufflerCard = driver.putCardInHand(you, "Magnetic Snuffler")
         driver.giveColorlessMana(you, 5)
-        driver.castSpell(you, snufflerCard).isSuccess shouldBe true
+        driver.castSpell(you, snufflerCard).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature; its enters trigger goes on the stack
 
         if (driver.state.pendingDecision != null) {

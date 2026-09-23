@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Mausoleum Wanderer (EMN) — {U} Creature — Spirit 1/1
@@ -53,7 +54,7 @@ class MausoleumWandererScenarioTest : FunSpec({
         val shepherd = driver.putCardInHand(me, "Spectral Shepherd")
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveColorlessMana(me, 2)
-        driver.castSpell(me, shepherd).isSuccess shouldBe true
+        driver.castSpell(me, shepherd).outcome shouldBe Outcome.Done
         driver.bothPass() // Shepherd enters
         driver.bothPass() // the +1/+1 trigger resolves
 
@@ -112,7 +113,7 @@ class MausoleumWandererScenarioTest : FunSpec({
         val shepherd = driver.putCardInHand(me, "Spectral Shepherd")
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveColorlessMana(me, 2)
-        driver.castSpell(me, shepherd).isSuccess shouldBe true
+        driver.castSpell(me, shepherd).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
         driver.state.projectedState.getPower(wanderer) shouldBe 2

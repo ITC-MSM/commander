@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Spider-Slayer, Hatred Honed (SPM) — "Whenever Spider-Slayer deals damage to a Spider, destroy
@@ -99,7 +100,7 @@ class SpiderSlayerHatredHonedScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = you, sourceId = slayer, abilityId = slayerActivatedAbilityId),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
 

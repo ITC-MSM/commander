@@ -17,6 +17,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Horde of Notions (LRW #249) — "{W}{U}{B}{R}{G}: You may play target Elemental card from your
@@ -63,7 +64,7 @@ class HordeOfNotionsScenarioTest : FunSpec({
                 d.player1, horde, hordeAbility,
                 targets = listOf(ChosenTarget.Card(smokebraider, d.player1, Zone.GRAVEYARD))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("the permission and the free-cast stamp both land on the graveyard card") {
@@ -82,7 +83,7 @@ class HordeOfNotionsScenarioTest : FunSpec({
             castAction.affordable shouldBe true
         }
 
-        d.submit(castAction!!.action).isSuccess shouldBe true
+        d.submit(castAction!!.action).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.findPermanent(d.player1, "Smokebraider") shouldNotBe null
@@ -100,7 +101,7 @@ class HordeOfNotionsScenarioTest : FunSpec({
                 d.player1, horde, hordeAbility,
                 targets = listOf(ChosenTarget.Card(hoofprints, d.player1, Zone.GRAVEYARD))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.state.getEntity(hoofprints)?.get<PlayWithoutPayingCostComponent>() shouldNotBe null
@@ -110,7 +111,7 @@ class HordeOfNotionsScenarioTest : FunSpec({
         }
         castAction shouldNotBe null
         castAction!!.affordable shouldBe true
-        d.submit(castAction.action).isSuccess shouldBe true
+        d.submit(castAction.action).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.findPermanent(d.player1, "Hoofprints of the Stag") shouldNotBe null

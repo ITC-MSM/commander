@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Trophy Hunter (RAV #187) — "{1}{G}: This creature deals 1 damage to target creature with flying.
@@ -53,7 +54,7 @@ class TrophyHunterScenarioTest : FunSpec({
         d.giveMana(me, Color.GREEN, 2)
         d.submit(
             ActivateAbility(me, hunter, pingAbility, targets = listOf(ChosenTarget.Permanent(bird)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.passPriority(me)
         // The ping resolves, the bird dies to SBAs, and the death trigger then needs its own
         // resolution round.

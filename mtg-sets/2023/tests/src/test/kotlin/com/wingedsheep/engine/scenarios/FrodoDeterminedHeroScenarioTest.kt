@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Frodo, Determined Hero — attaches an MV-2-or-3 Equipment you control on enter/attack, and
@@ -52,7 +53,7 @@ class FrodoDeterminedHeroScenarioTest : FunSpec({
         // Lightning Bolt (3 damage) at Frodo on your turn — all damage prevented, so Frodo lives.
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, targets = listOf(frodo)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, targets = listOf(frodo)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getBattlefield(you).contains(frodo) shouldBe true

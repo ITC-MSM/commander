@@ -17,6 +17,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Treasure tokens ("{T}, Sacrifice this artifact: Add one mana of any color") can be
@@ -103,7 +104,7 @@ class WardPaidWithTreasureTest : FunSpec({
                 autoPay = false
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         repeat(4) { if (driver.state.priorityPlayerId != null) driver.bothPass() }
 

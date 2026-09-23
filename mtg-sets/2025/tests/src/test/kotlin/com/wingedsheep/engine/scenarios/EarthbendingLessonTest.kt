@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Earthbending Lesson (TLA), and by extension the Earthbend keyword action.
@@ -66,7 +67,7 @@ class EarthbendingLessonTest : FunSpec({
         val lesson = driver.putCardInHand(you, "Earthbending Lesson")
         driver.giveMana(you, Color.GREEN, 4)
 
-        driver.castSpell(you, lesson, listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(you, lesson, listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve the spell
 
         val projected = projector.project(driver.state)
@@ -87,13 +88,13 @@ class EarthbendingLessonTest : FunSpec({
         val forest = driver.putLandOnBattlefield(you, "Forest")
         val lesson = driver.putCardInHand(you, "Earthbending Lesson")
         driver.giveMana(you, Color.GREEN, 4)
-        driver.castSpell(you, lesson, listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(you, lesson, listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Earthbended land is a 4/4 creature — Doom Blade can target it (it's nonblack).
         val doomBlade = driver.putCardInHand(you, "Doom Blade")
         driver.giveMana(you, Color.BLACK, 2)
-        driver.castSpell(you, doomBlade, listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(you, doomBlade, listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Doom Blade — Forest dies, granted "when this dies" trigger goes on stack
         driver.bothPass()  // resolve the granted return trigger
 
@@ -120,12 +121,12 @@ class EarthbendingLessonTest : FunSpec({
         val forest = driver.putLandOnBattlefield(you, "Forest")
         val lesson = driver.putCardInHand(you, "Earthbending Lesson")
         driver.giveMana(you, Color.GREEN, 4)
-        driver.castSpell(you, lesson, listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(you, lesson, listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val exile = driver.putCardInHand(you, "Exile Target Creature")
         driver.giveMana(you, Color.WHITE, 2)
-        driver.castSpell(you, exile, listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(you, exile, listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve exile — Forest moves to exile, granted "when this is exiled" trigger goes on stack
         driver.bothPass()  // resolve the granted return trigger
 
@@ -148,12 +149,12 @@ class EarthbendingLessonTest : FunSpec({
 
         val lesson1 = driver.putCardInHand(you, "Earthbending Lesson")
         driver.giveMana(you, Color.GREEN, 4)
-        driver.castSpell(you, lesson1, listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(you, lesson1, listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val lesson2 = driver.putCardInHand(you, "Earthbending Lesson")
         driver.giveMana(you, Color.GREEN, 4)
-        driver.castSpell(you, lesson2, listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(you, lesson2, listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Premise of the bug: two grant entries now ride the same land.
@@ -180,7 +181,7 @@ class EarthbendingLessonTest : FunSpec({
         val forest = driver.putLandOnBattlefield(you, "Forest")
         val lesson = driver.putCardInHand(you, "Earthbending Lesson")
         driver.giveMana(you, Color.GREEN, 4)
-        driver.castSpell(you, lesson, listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(you, lesson, listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // While earthbended, the grant exists.
@@ -189,7 +190,7 @@ class EarthbendingLessonTest : FunSpec({
         // Kill the earthbended land — return trigger fires, land comes back tapped.
         val doomBlade = driver.putCardInHand(you, "Doom Blade")
         driver.giveMana(you, Color.BLACK, 2)
-        driver.castSpell(you, doomBlade, listOf(forest)).isSuccess shouldBe true
+        driver.castSpell(you, doomBlade, listOf(forest)).outcome shouldBe Outcome.Done
         driver.bothPass()  // Doom Blade resolves
         driver.bothPass()  // return trigger resolves
 

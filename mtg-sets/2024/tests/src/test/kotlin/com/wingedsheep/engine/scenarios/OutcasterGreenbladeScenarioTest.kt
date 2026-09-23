@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Outcaster Greenblade (OTJ #172) — {2}{G} 1/2 Creature — Human Mercenary.
@@ -41,7 +42,7 @@ class OutcasterGreenbladeScenarioTest : FunSpec({
 
         val greenblade = driver.putCardInHand(player, "Outcaster Greenblade")
         driver.giveMana(player, Color.GREEN, 3)
-        driver.castSpell(player, greenblade).isSuccess shouldBe true
+        driver.castSpell(player, greenblade).outcome shouldBe Outcome.Done
         // Resolve the creature spell, then its ETB trigger (which pauses for the search).
         var guard = 0
         while (driver.stackSize > 0 && !driver.isPaused && guard++ < 10) driver.bothPass()

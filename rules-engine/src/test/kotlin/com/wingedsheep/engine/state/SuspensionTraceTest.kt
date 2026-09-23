@@ -16,10 +16,13 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 class SuspensionTraceTest : ScenarioTestBase() {
+    // Defaults are omitted on both sides of every comparison (and in the fixtures), so a new field
+    // with a default is invisible here: an additive schema change needs no fixture refresh. A field
+    // that *moves* or changes value still shows up, which is what these traces are for.
     private val json = Json {
         serializersModule = engineSerializersModule
         allowStructuredMapKeys = true
-        encodeDefaults = true
+        encodeDefaults = false
     }
 
     init {
@@ -30,6 +33,7 @@ class SuspensionTraceTest : ScenarioTestBase() {
                 manifest.getValue("sourceRevision").jsonPrimitive.content shouldBe
                     "fba4b704cb213843a1420809e0cf6aee656045c9"
                 manifest.getValue("verified") shouldBe JsonPrimitive(true)
+                manifest.getValue("representationEncodeDefaults") shouldBe JsonPrimitive(false)
                 var state = json.decodeFromString<GameState>(original.toString())
                 manifest.getValue("representationReaderRevision").jsonPrimitive.content shouldBe
                     "6f222eb05a1d9e61f540217b2b372960ddf051c7"
@@ -84,7 +88,8 @@ class SuspensionTraceTest : ScenarioTestBase() {
     private fun assertCurrentRoundTrip(state: GameState) {
         val encoded = encodeState(state)
         encoded.containsKey("pendingDecision") shouldBe false
-        containsObsoleteId(encoded.getValue("continuationStack")) shouldBe false
+        // An empty stack is the default, so it is omitted once the stack has drained.
+        (encoded["continuationStack"]?.let(::containsObsoleteId) ?: false) shouldBe false
         json.decodeFromString<GameState>(encoded.toString()) shouldBe state
     }
 

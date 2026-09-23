@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Rest in Peace (Return to Ravnica #18):
@@ -48,7 +49,7 @@ class RestInPeaceScenarioTest : FunSpec({
 
         val rip = driver.putCardInHand(you, "Rest in Peace")
         driver.giveMana(you, Color.WHITE, 2)
-        driver.castSpell(you, rip).isSuccess shouldBe true
+        driver.castSpell(you, rip).outcome shouldBe Outcome.Done
         driver.bothPass() // Rest in Peace resolves and enters
         driver.bothPass() // the ETB "exile all graveyards" trigger resolves
 
@@ -68,7 +69,7 @@ class RestInPeaceScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // Bolt resolves, deals 3 to the 1/1 — it would die
 
         driver.getGraveyard(opp) shouldNotContain victim
@@ -82,7 +83,7 @@ class RestInPeaceScenarioTest : FunSpec({
         driver.putPermanentOnBattlefield(you, "Rest in Peace")
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, targets = listOf(you)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, targets = listOf(you)).outcome shouldBe Outcome.Done
         driver.bothPass() // Bolt resolves and would head to the graveyard
 
         driver.getGraveyard(you) shouldNotContain bolt

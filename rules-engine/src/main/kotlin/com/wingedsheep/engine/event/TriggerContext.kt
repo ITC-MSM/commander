@@ -23,7 +23,21 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
 
 /**
- * Context information about what caused a trigger.
+ * Context information about what caused a trigger — the one record of trigger facts.
+ *
+ * **Rule: a new trigger fact is one field here; carriers hold this whole record.** The fact is
+ * produced in [fromEvent] (or by [TriggerDetector] when it needs game state), and read where it
+ * matters through `EffectContext.triggerContext`. Nothing in between copies it field by field:
+ * [PendingTrigger], the target-selection frames
+ * ([com.wingedsheep.engine.core.TriggeredAbilityContinuation],
+ * [com.wingedsheep.engine.core.TriggerDamageDistributionContinuation]), the stack object
+ * ([com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent]), the
+ * resolving [com.wingedsheep.engine.handlers.EffectContext] and a reflexive trigger's
+ * [com.wingedsheep.engine.core.ReflexiveAbilityTriggeredEvent] all carry this object as-is.
+ * `TriggerContextCarrierInvariantTest` fails if a carrier grows a per-fact `trigger*` field again.
+ *
+ * Persisted games written before the record existed carried the facts as flat fields on those
+ * carriers; `GameStateSerializer` lifts them into this record on read.
  */
 @kotlinx.serialization.Serializable
 data class TriggerContext(

@@ -10,6 +10,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for declaring attacking bands (CR 702.22). A band groups one or more attacking
@@ -37,7 +38,7 @@ class BandDeclarationTest : FunSpec({
         driver.removeSummoningSickness(courser)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackingBand(active, listOf(scout, courser), opponent).isSuccess shouldBe true
+        driver.declareAttackingBand(active, listOf(scout, courser), opponent).outcome shouldBe Outcome.Done
 
         // Both attackers carry the same, non-null band id (CR 702.22).
         val scoutBand = driver.state.getEntity(scout)?.get<AttackingComponent>()?.bandId
@@ -57,7 +58,7 @@ class BandDeclarationTest : FunSpec({
         driver.removeSummoningSickness(scout)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(active, listOf(scout), opponent).isSuccess shouldBe true
+        driver.declareAttackers(active, listOf(scout), opponent).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(scout)?.get<AttackingComponent>()?.bandId shouldBe null
     }
@@ -76,7 +77,7 @@ class BandDeclarationTest : FunSpec({
         val result = driver.submit(
             DeclareAttackers(active, mapOf(scout to opponent), bands = listOf(setOf(scout)))
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldNotBe null
     }
 
@@ -94,7 +95,7 @@ class BandDeclarationTest : FunSpec({
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
         val result = driver.declareAttackingBand(active, listOf(courserA, courserB), opponent)
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldNotBe null
     }
 })

@@ -17,6 +17,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Ixalli's Lorekeeper (LCI #194) — {G} Creature — Human Druid 1/1
@@ -86,7 +88,7 @@ class IxallisLorekeeperScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = dino, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("restricted mana cannot pay for a non-Dinosaur spell") {
@@ -101,6 +103,6 @@ class IxallisLorekeeperScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = elf, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

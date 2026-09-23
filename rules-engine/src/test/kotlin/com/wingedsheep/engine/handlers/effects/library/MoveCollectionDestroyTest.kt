@@ -29,6 +29,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 class MoveCollectionDestroyTest : FunSpec({
 
@@ -105,7 +106,7 @@ class MoveCollectionDestroyTest : FunSpec({
         val ctx = context(playerId, "targets", listOf(cardId1))
         val result = executor.execute(state, effect, ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)) shouldContain cardId1
         result.state.getZone(ZoneKey(playerId, Zone.BATTLEFIELD)) shouldNotContain cardId1
 
@@ -123,7 +124,7 @@ class MoveCollectionDestroyTest : FunSpec({
         val ctx = context(playerId, "targets", listOf(cardId1))
         val result = executor.execute(state, effect, ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(playerId, Zone.BATTLEFIELD)) shouldContain cardId1
         result.state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)) shouldNotContain cardId1
         result.events.filterIsInstance<ZoneChangeEvent>() shouldBe emptyList()
@@ -141,7 +142,7 @@ class MoveCollectionDestroyTest : FunSpec({
         val ctx = context(playerId, "targets", listOf(cardId1, cardId2))
         val result = executor.execute(state, effect, ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Normal creature dies
         result.state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)) shouldContain cardId1
         result.state.getZone(ZoneKey(playerId, Zone.BATTLEFIELD)) shouldNotContain cardId1
@@ -163,7 +164,7 @@ class MoveCollectionDestroyTest : FunSpec({
         val ctx = context(playerId, "targets", listOf(cardId1))
         val result = executor.execute(state, effect, ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Creature stays on battlefield (regenerated)
         result.state.getZone(ZoneKey(playerId, Zone.BATTLEFIELD)) shouldContain cardId1
         result.state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)) shouldNotContain cardId1
@@ -204,7 +205,7 @@ class MoveCollectionDestroyTest : FunSpec({
         val ctx = context(playerId, "targets", listOf(cardId1))
         val result = executor.execute(state, effect, ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Goes to owner's graveyard, not controller's
         result.state.getZone(ZoneKey(opponentId, Zone.GRAVEYARD)) shouldContain cardId1
         result.state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)) shouldNotContain cardId1
@@ -219,7 +220,7 @@ class MoveCollectionDestroyTest : FunSpec({
         val ctx = context(playerId, "targets", listOf(cardId1))
         val result = executor.execute(state, effect, ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         val container = result.state.getEntity(cardId1)!!
         container.has<ControllerComponent>() shouldBe false
     }
@@ -233,7 +234,7 @@ class MoveCollectionDestroyTest : FunSpec({
         val ctx = context(playerId, "targets", emptyList())
         val result = executor.execute(state, effect, ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.events shouldBe emptyList()
     }
 
@@ -258,7 +259,7 @@ class MoveCollectionDestroyTest : FunSpec({
         val ctx = context(playerId, "targets", listOf(cardId1))
         val result = executor.execute(state, effect, ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)) shouldContain cardId1
         // Floating effect targeting destroyed entity is removed
         result.state.floatingEffects.size shouldBe 0

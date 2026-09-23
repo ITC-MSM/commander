@@ -8,6 +8,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Joraga Invocation (ORI #183).
@@ -99,7 +101,7 @@ class JoragaInvocationScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         // The Hill Giant is able to block, so "no blockers" violates the requirement.
-        driver.declareNoBlockers(opponent).isSuccess shouldBe false
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(bears))).isSuccess shouldBe true
+        driver.declareNoBlockers(opponent).outcome shouldNotBe Outcome.Done
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(bears))).outcome shouldBe Outcome.Done
     }
 })

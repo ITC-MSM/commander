@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Viridian Longbow — {1} Artifact — Equipment (Mirrodin #270)
@@ -59,7 +60,7 @@ class ViridianLongbowScenarioTest : FunSpec({
                 abilityId = equipAbilityId(),
                 targets = listOf(ChosenTarget.Permanent(creature))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         bothPass()
 
         state.getEntity(longbow)?.get<AttachedToComponent>()?.targetId shouldBe creature
@@ -82,7 +83,7 @@ class ViridianLongbowScenarioTest : FunSpec({
                 abilityId = grantedAbilityId(),
                 targets = listOf(ChosenTarget.Permanent(lions))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 1 damage is lethal to a 1/1, so the damage demonstrably landed.
@@ -108,7 +109,7 @@ class ViridianLongbowScenarioTest : FunSpec({
                 abilityId = grantedAbilityId(),
                 targets = listOf(ChosenTarget.Player(opponent))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getLifeTotal(opponent) shouldBe 19
@@ -130,7 +131,7 @@ class ViridianLongbowScenarioTest : FunSpec({
                 abilityId = grantedAbilityId(),
                 targets = listOf(ChosenTarget.Permanent(courser))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // If the Longbow were the source the 3/3 would survive 1 damage. It doesn't:
@@ -156,7 +157,7 @@ class ViridianLongbowScenarioTest : FunSpec({
                 abilityId = grantedAbilityId(),
                 targets = listOf(ChosenTarget.Player(opponent))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
         driver.getLifeTotal(opponent) shouldBe 20
     }
 })

@@ -58,11 +58,14 @@ class BattleProtectorCheck : StateBasedActionCheck {
             val cardComponent = container.get<CardComponent>() ?: continue
             if (!Battles.isBattle(newState, entityId)) continue
 
-            val protector = Battles.protectorOf(newState, entityId)
+            // 704.5x reads "no player *in the game* designated as its protector": a protector who
+            // has lost or left counts as none, so they fall under 704.5x's attack carve-out rather
+            // than 704.5y's immediate re-choice.
+            val protector = Battles.protectorOf(newState, entityId)?.takeIf { it in newState.activePlayers }
             val eligible = Battles.eligibleProtectors(newState, entityId)
             val needsChoice = when {
-                // 704.5x — no protector at all. Skipped while the battle is being attacked, so a
-                // protector who leaves mid-combat doesn't hand the battle to someone new.
+                // 704.5x — no protector in the game. Skipped while the battle is being attacked, so
+                // a protector who leaves mid-combat doesn't hand the battle to someone new.
                 protector == null -> !isBeingAttacked(newState, entityId)
                 // 704.5y — the protector must still be a player who can be one. For a Siege that
                 // excludes its own controller (CR 310.12a); for a typeless battle it means the
@@ -108,7 +111,9 @@ class BattleProtectorCheck : StateBasedActionCheck {
     /** True if any creature is currently attacking [battleId] (the CR 704.5x carve-out). */
     private fun isBeingAttacked(state: GameState, battleId: EntityId): Boolean =
         state.getBattlefield().any {
-            state.getEntity(it)?.get<AttackingComponent>()?.defenderId == battleId
+            val attacking = state.getEntity(it)?.get<AttackingComponent>()
+            // An attacker whose battle was removed from combat (CR 506.4) no longer attacks it.
+            attacking != null && attacking.defenderId == battleId && !attacking.attackTargetRemoved
         }
 
     private fun playerNameOf(state: GameState, playerId: EntityId): String =

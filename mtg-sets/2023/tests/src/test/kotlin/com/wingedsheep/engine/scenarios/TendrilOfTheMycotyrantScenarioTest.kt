@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Tendril of the Mycotyrant (LCI #215) — {1}{G} 2/2 Creature — Fungus Wizard.
@@ -66,7 +67,7 @@ class TendrilOfTheMycotyrantScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(land))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

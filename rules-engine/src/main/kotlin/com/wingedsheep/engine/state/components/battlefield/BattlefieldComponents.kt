@@ -467,9 +467,11 @@ data class ProtectorComponent(
  * would never be cast. Damage dealt by a *resolving* spell needs no marker: triggers from that
  * resolution are already detected before the next SBA pass.
  *
- * The marker buys exactly one SBA pass. `BattleDefenseCheck` clears it instead of binning the
- * battle, so if the defeat trigger never materialises (it was countered, or the permanent stopped
- * being a Siege) the very next check puts the battle into its owner's graveyard as normal. A Siege
+ * The marker lasts until the Settler's trigger-detection pass: `BattleDefenseCheck` reads it but
+ * never clears it (an SBA pass can loop several times inside the combat damage step), and the
+ * Settler removes it once triggers are queued ([com.wingedsheep.engine.mechanics.battle.Battles.disarmDefeatTriggers]).
+ * From then on the queued defeat trigger is what spares the Siege; if none materialised (the
+ * permanent stopped being a Siege) the next check puts the battle into its owner's graveyard. A Siege
  * that never had a defense counter is never marked, which is what makes the "you won't exile it or
  * cast the other face" ruling fall out.
  */

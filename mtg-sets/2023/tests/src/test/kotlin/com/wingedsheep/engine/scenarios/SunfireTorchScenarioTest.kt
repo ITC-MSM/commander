@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sunfire Torch (LCI #167) — {R} Artifact — Equipment.
@@ -55,7 +56,7 @@ class SunfireTorchScenarioTest : FunSpec({
                 abilityId = equipAbilityId,
                 targets = listOf(ChosenTarget.Permanent(courser))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         d.state.getEntity(attachedTorch)?.get<AttachedToComponent>()?.targetId shouldBe courser
 

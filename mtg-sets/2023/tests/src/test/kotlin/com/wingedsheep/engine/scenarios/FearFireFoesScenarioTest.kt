@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Fear, Fire, Foes! — {X}{R} sorcery.
@@ -73,7 +74,7 @@ class FearFireFoesScenarioTest : FunSpec({
             targets = listOf(ChosenTarget.Permanent(target)),
             xValue = 2
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
         d.bothPass()
 
         // Target took X = 2.
@@ -106,7 +107,7 @@ class FearFireFoesScenarioTest : FunSpec({
             sourceId = medic,
             abilityId = medicAbilityId,
             targets = listOf(ChosenTarget.Permanent(target))
-        )).isSuccess shouldBe true
+        )).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // Sanity: the prevention shield is live.
@@ -125,7 +126,7 @@ class FearFireFoesScenarioTest : FunSpec({
             targets = listOf(ChosenTarget.Permanent(target)),
             xValue = 3
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
         d.bothPass()
 
         // Full 3 damage applied despite the prevent-1 shield (it would otherwise reduce it to 2).

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests that modal spells support cast-time mode selection.
@@ -67,7 +68,7 @@ class ModalCastTimeModeTest : FunSpec({
             chosenModes = listOf(0),
             modeTargetsOrdered = listOf(listOf(com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent(creatureId)))
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Verify chosenModes is stored on the spell
         val spellOnStack = driver.state.stack.firstOrNull()?.let { spellId ->
@@ -104,7 +105,7 @@ class ModalCastTimeModeTest : FunSpec({
             cardId = charm,
             chosenModes = listOf(1)
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Capture hand size after casting (charm moved to stack)
         val handSizeAfterCast = driver.state.getHand(activePlayer).size

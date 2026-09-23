@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Passenger Ferry (SPM) — {3} Artifact — Vehicle 4/3, Crew 2.
@@ -61,7 +62,7 @@ class PassengerFerryScenarioTest : FunSpec({
 
         d.passPriorityUntil(Step.DECLARE_ATTACKERS)
         // Both the animated Vehicle and the runner attack.
-        d.declareAttackers(you, listOf(ferry, runner), opponent).isSuccess shouldBe true
+        d.declareAttackers(you, listOf(ferry, runner), opponent).outcome shouldBe Outcome.Done
 
         // Answer the reflexive decisions in engine order: pay {U} (yes) → auto-pay mana →
         // choose the *other* attacking creature as the target.
@@ -103,7 +104,7 @@ class PassengerFerryScenarioTest : FunSpec({
         d.bothPass()
 
         d.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        d.declareAttackers(you, listOf(ferry, runner), opponent).isSuccess shouldBe true
+        d.declareAttackers(you, listOf(ferry, runner), opponent).outcome shouldBe Outcome.Done
 
         // Decline the optional {U}; the reflexive "when you do" never fires.
         var answered = false

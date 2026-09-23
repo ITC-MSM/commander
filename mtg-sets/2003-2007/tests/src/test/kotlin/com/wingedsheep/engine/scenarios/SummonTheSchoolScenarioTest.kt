@@ -16,6 +16,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Summon the School (LRW #42) — {3}{W} Kindred Sorcery — Merfolk.
@@ -63,7 +65,7 @@ class SummonTheSchoolScenarioTest : FunSpec({
 
         val spell = driver.putCardInHand(me, "Summon the School")
         driver.giveMana(me, Color.WHITE, 4)
-        driver.castSpell(me, spell).isSuccess shouldBe true
+        driver.castSpell(me, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val tokens = driver.getCreatures(me)
@@ -97,7 +99,7 @@ class SummonTheSchoolScenarioTest : FunSpec({
         val card = driver.putCardInGraveyard(me, "Summon the School")
         val divers = List(3) { driver.putCreatureOnBattlefield(me, "Inkfathom Divers") }
 
-        activate(driver, me, card, divers).isSuccess shouldBe false
+        activate(driver, me, card, divers).outcome shouldNotBe Outcome.Done
         driver.state.getZone(ZoneKey(me, Zone.GRAVEYARD)).contains(card) shouldBe true
     }
 
@@ -110,7 +112,7 @@ class SummonTheSchoolScenarioTest : FunSpec({
         val divers = List(4) { driver.putCreatureOnBattlefield(me, "Inkfathom Divers") }
         driver.tapPermanent(divers.first())
 
-        activate(driver, me, card, divers).isSuccess shouldBe false
+        activate(driver, me, card, divers).outcome shouldNotBe Outcome.Done
         driver.state.getZone(ZoneKey(me, Zone.GRAVEYARD)).contains(card) shouldBe true
     }
 
@@ -122,7 +124,7 @@ class SummonTheSchoolScenarioTest : FunSpec({
         val card = driver.putCardInGraveyard(me, "Summon the School")
         val divers = List(4) { driver.putCreatureOnBattlefield(me, "Inkfathom Divers") }
 
-        activate(driver, me, card, divers).isSuccess shouldBe true
+        activate(driver, me, card, divers).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.isPaused && guard++ < 20) driver.autoResolveDecision()
         driver.bothPass()

@@ -22,23 +22,36 @@ export function DraggedCardOverlay() {
       return
     }
 
+    // One state update per frame at most; high-rate mice fire mousemove well above 60 Hz.
+    let frame: number | null = null
+    let latest = { x: 0, y: 0 }
+    const schedule = (x: number, y: number) => {
+      latest = { x, y }
+      if (frame !== null) return
+      frame = requestAnimationFrame(() => {
+        frame = null
+        setMousePos(latest)
+      })
+    }
+
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY })
+      schedule(e.clientX, e.clientY)
     }
 
     const handleTouchMove = (e: TouchEvent) => {
       const touch = e.touches[0]
       if (touch) {
-        setMousePos({ x: touch.clientX, y: touch.clientY })
+        schedule(touch.clientX, touch.clientY)
       }
     }
 
     // Set initial position
-    handleMouseMove({ clientX: 0, clientY: 0 } as MouseEvent)
+    setMousePos({ x: 0, y: 0 })
 
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('touchmove', handleTouchMove)
     return () => {
+      if (frame !== null) cancelAnimationFrame(frame)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('touchmove', handleTouchMove)
     }

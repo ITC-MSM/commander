@@ -18,6 +18,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for feature B — batched may-question (backlog/stack-collapse-and-batch-decisions.md §B).
@@ -67,7 +68,7 @@ class BatchMayQuestionTest : FunSpec({
 
         driver.giveColorlessMana(player, 1)
         val bear = driver.putCardInHand(player, "Batch Bear")
-        driver.castSpell(player, bear).isSuccess shouldBe true
+        driver.castSpell(player, bear).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the bear; it enters and every Batch Pinger triggers
         return Triple(driver, player, opponent)
     }

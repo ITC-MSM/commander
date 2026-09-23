@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.dsl.basicLand
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Lavaleaper ({3}{R}, 4/4 Elemental).
@@ -62,7 +63,7 @@ class LavaleaperTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = mountain, abilityId = manaAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()!!
         pool.red shouldBe 2
@@ -88,7 +89,7 @@ class LavaleaperTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = forest, abilityId = manaAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()!!
         pool.green shouldBe 2

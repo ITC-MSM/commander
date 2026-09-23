@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Echo, Perceptive Prodigy (MSH #51) — {2}{U} Legendary Creature — Human Hero, 1/4.
@@ -152,7 +153,7 @@ class EchoPerceptiveProdigyScenarioTest : FunSpec({
             driver.bothPass(); guard++
         }
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
-        driver.submitTargetSelection(me, listOf(creatureB)).isSuccess shouldBe true
+        driver.submitTargetSelection(me, listOf(creatureB)).outcome shouldBe Outcome.Done
 
         guard = 0
         while (driver.stackSize > 0 && guard < 20) { driver.bothPass(); guard++ }

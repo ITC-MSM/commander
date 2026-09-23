@@ -20,6 +20,7 @@ import {
 } from './cardGrouping'
 import { teamLabel } from './teamLabel'
 import { castOfferFace } from '@/utils/castFace'
+import { isBattle, tableSideOf } from '@/utils/combatTargets'
 
 /**
  * Select the game state (works for both normal play and spectating).
@@ -779,14 +780,18 @@ export function useBattlefieldCards(
     // dropping it (it is only ever rendered nested under a host card otherwise).
     const cardIdSet = new Set(cards.map((c) => c.id))
     const isNotAttached = (c: ClientCard) => !c.attachedTo || !cardIdSet.has(c.attachedTo)
-    const playerCards = cards.filter((c) => c.controllerId === playerId)
+    // Sides go by `tableSideOf`, not raw controller: a battle sits in front of its protector, so
+    // a Siege you cast lands across the table where your attacks go and your opponent blocks.
+    const playerCards = cards.filter((c) => tableSideOf(c) === playerId)
     const opponentCards = opponentId
-      ? cards.filter((c) => c.controllerId === opponentId)
-      : cards.filter((c) => c.controllerId !== playerId)
+      ? cards.filter((c) => tableSideOf(c) === opponentId)
+      : cards.filter((c) => tableSideOf(c) !== playerId)
 
     const isLand = (c: ClientCard) => c.cardTypes.includes('LAND')
     const isCreature = (c: ClientCard) => c.cardTypes.includes('CREATURE')
-    const isPlaneswalker = (c: ClientCard) => c.cardTypes.includes('PLANESWALKER')
+    // Planeswalkers and battles share the front-row slot beside the creatures: both are the
+    // permanents creatures attack, so they read as one group during combat.
+    const isPlaneswalker = (c: ClientCard) => c.cardTypes.includes('PLANESWALKER') || isBattle(c)
 
     // Animated lands (both creature + land) should appear in the creatures row
     const isNonCreatureLand = (c: ClientCard) => isLand(c) && !isCreature(c)
@@ -831,18 +836,28 @@ export function useBattlefieldCards(
   }, [gameState, playerId, opponentId])
 }
 
+const EMPTY_CARDS: readonly ClientCard[] = Object.freeze([]) as readonly ClientCard[]
+
 /**
  * Hook to get stack items in order.
  */
 export function useStackCards(): readonly ClientCard[] {
   const gameState = useGameStore(selectGameState)
+  const previousRef = useRef<readonly ClientCard[]>(EMPTY_CARDS)
   return useMemo(() => {
-    if (!gameState) return []
-    const stack = gameState.zones.find((z) => z.zoneId.zoneType === ZoneType.STACK)
-    if (!stack || !stack.cardIds) return []
-    return stack.cardIds
-      .map((id) => gameState.cards[id])
-      .filter((card): card is ClientCard => card !== null && card !== undefined)
+    const stack = gameState?.zones.find((z) => z.zoneId.zoneType === ZoneType.STACK)
+    const next = !gameState || !stack?.cardIds
+      ? EMPTY_CARDS
+      : stack.cardIds
+          .map((id) => gameState.cards[id])
+          .filter((card): card is ClientCard => card !== null && card !== undefined)
+    // Card objects survive a delta untouched, so an element-wise identity check is enough to keep
+    // the array stable while the stack itself didn't change — downstream (split-out target ids,
+    // every battlefield grouping) is keyed on this array's identity.
+    const prev = previousRef.current
+    if (prev.length === next.length && prev.every((card, i) => card === next[i])) return prev
+    previousRef.current = next
+    return next
   }, [gameState])
 }
 

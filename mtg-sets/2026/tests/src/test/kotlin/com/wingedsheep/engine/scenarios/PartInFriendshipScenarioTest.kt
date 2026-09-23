@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Part in Friendship {4}{G} — Enchantment
@@ -51,7 +52,7 @@ class PartInFriendshipScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, listOf(doomed)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(doomed)).outcome shouldBe Outcome.Done
         driver.bothPass() // Lightning Bolt kills the Lions
         driver.bothPass() // Part in Friendship's trigger
     }
@@ -95,13 +96,13 @@ class PartInFriendshipScenarioTest : FunSpec({
 
         val firstBolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, firstBolt, listOf(first)).isSuccess shouldBe true
+        driver.castSpell(you, firstBolt, listOf(first)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 
         val secondBolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, secondBolt, listOf(second)).isSuccess shouldBe true
+        driver.castSpell(you, secondBolt, listOf(second)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 

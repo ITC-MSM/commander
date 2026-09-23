@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Lie in Wait — {B}{G}{U} Sorcery.
@@ -58,7 +59,7 @@ class LieInWaitScenarioTest : FunSpec({
                 ),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The Force of Nature was returned to hand.
@@ -94,7 +95,7 @@ class LieInWaitScenarioTest : FunSpec({
                 ),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getZone(ZoneKey(player, Zone.HAND)).contains(graveyardCreature) shouldBe true

@@ -1215,6 +1215,155 @@
     ]
 }
 
+// Blossom-Blessed Angel
+{
+    "name": "Blossom-Blessed Angel",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Angel Cleric",
+    "oracleText": "Flying, vigilance\nThis creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE",
+        "PREPARED"
+    ],
+    "metadata": {
+        "collectorNumber": "3",
+        "artist": "Joshua Raphael",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5e77fbf0-9d1f-4e7d-a02e-43065d11b0d9.jpg?1789692643",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Seed Suture",
+            "manaCost": "{G/W}",
+            "typeLine": "Sorcery",
+            "oracleText": "Put a +1/+1 counter on target creature. You gain 1 life.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+// Break Under Pressure
+{
+    "name": "Break Under Pressure",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target opponent sacrifices a creature or planeswalker with the greatest mana value among creatures and planeswalkers they control. You gain 2 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "ControlledPermanents",
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        },
+                        "filter": "creature|planeswalker"
+                    },
+                    "storeAs": "candidates"
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "candidates",
+                    "filter": "GreatestManaValue",
+                    "storeMatching": "greatest"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "greatest",
+                    "selection": {
+                        "type": "ChooseExactly",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "chooser": "TargetPlayer",
+                    "storeSelected": "sacrificed",
+                    "prompt": "Choose a creature or planeswalker with the greatest mana value to sacrifice",
+                    "useTargetingUI": true
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "sacrificed",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Sacrifice"
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetOpponent",
+                "id": "target opponent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff Miracola",
+        "flavorText": "\"Please, do take it personally.\"\n—Ingris Stingerquill",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/46974d94-e900-43e4-92b5-4fb9b9f7cf46.jpg?1789385622",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Budding Insurgent
 {
     "name": "Budding Insurgent",
@@ -1395,6 +1544,108 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Carnivorous Cultivator
+{
+    "name": "Carnivorous Cultivator",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Warlock",
+    "oracleText": "Deathtouch\nThis creature enters prepared.\nWhenever this creature deals combat damage to a player, return target land card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "PREPARED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land card from your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "land own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target land card from your graveyard"
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, return target land card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "rarity": "RARE",
+        "artist": "Martina Fačková",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/9/79dd5c54-5ea5-47b5-8f9b-50ed57a5ea45.jpg?1789385967",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Enroot",
+            "manaCost": "{G}",
+            "typeLine": "Sorcery",
+            "oracleText": "Search your library for a land card, put it into your graveyard, then shuffle.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "land"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                }
+            }
+        }
     ]
 }
 
@@ -1584,6 +1835,92 @@
     "colorIdentityOverride": [
         "RED",
         "WHITE"
+    ]
+}
+
+// Command the Stage
+{
+    "name": "Command the Stage",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create a 2/2 colorless Wizard Soldier creature token named Cadet, then put a +1/+1 counter on each other Wizard token you control.\nAt the beginning of each upkeep, if an opponent was dealt noncombat damage last turn, return this card from your graveyard to your hand.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "token Wizard",
+                        "player": "You"
+                    },
+                    "storeAs": "otherWizardTokens"
+                },
+                {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Wizard",
+                        "Soldier"
+                    ],
+                    "name": "Cadet",
+                    "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f4534d8-2783-484f-8ebf-a47b1cc4c6df.jpg?1789734318"
+                },
+                {
+                    "type": "AddCountersToCollection",
+                    "collectionName": "otherWizardTokens",
+                    "counterType": "+1/+1"
+                }
+            ]
+        },
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand",
+                    "fromZone": "Graveyard"
+                },
+                "activeZones": [
+                    "Graveyard"
+                ],
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "EachOpponent",
+                        "tracker": "DEALT_NONCOMBAT_DAMAGE_LAST_TURN"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "At the beginning of each upkeep, if an opponent was dealt noncombat damage last turn, return this card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "rarity": "UNCOMMON",
+        "artist": "Jarel Threat",
+        "flavorText": "Stingerquill admits only the fiercest hearts.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3307da2-6dad-4ef2-9614-a7d34f38088e.jpg?1789644825",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -1943,6 +2280,121 @@
     ]
 }
 
+// Danitha, Spear of Agony
+{
+    "name": "Danitha, Spear of Agony",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Human Knight",
+    "oracleText": "First strike\nWhenever you cast a spell that targets an opponent or a creature an opponent controls, put a +1/+1 counter on Danitha.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellAnyOf",
+                            "options": [
+                                "SpellTargetsOpponent",
+                                {
+                                    "type": "SpellTargetsMatching",
+                                    "filter": "creature ctrl:opponent"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "227",
+        "rarity": "UNCOMMON",
+        "artist": "Bryan Sola",
+        "flavorText": "\"To know the Cabal is to know despair. None can stand against its legions.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/4/6489814b-3d10-423e-988c-324740d36748.jpg?1789127194",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Danitha, Sword of Hope
+{
+    "name": "Danitha, Sword of Hope",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Human Knight",
+    "oracleText": "First strike\nWhenever you cast an Equipment spell or a spell that targets a creature you control, draw a card. This ability triggers only once each turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellAnyOf",
+                            "options": [
+                                {
+                                    "type": "SpellMatches",
+                                    "filter": "Equipment"
+                                },
+                                {
+                                    "type": "SpellTargetsMatching",
+                                    "filter": "creature ctrl:you"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "oncePerTurn": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "196",
+        "rarity": "UNCOMMON",
+        "artist": "Bryan Sola",
+        "flavorText": "\"Benalia stands for hope and light. I pledge my blade to any that fall under its banner.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d5cb9810-3c2d-4ae4-b8b6-0155ca3f47ad.jpg?1789127178",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Dark Matter Manipulator
 {
     "name": "Dark Matter Manipulator",
@@ -2196,6 +2648,180 @@
     "colorIdentityOverride": [
         "BLUE",
         "WHITE"
+    ]
+}
+
+// Desperate Futurescribe
+{
+    "name": "Desperate Futurescribe",
+    "manaCost": "{2}{W}{U}",
+    "typeLine": "Creature — Kor Scout",
+    "oracleText": "Flying\nAt the beginning of combat on your turn, another target creature you control gets +1/+1 until end of turn. If you've scried or surveilled this turn, put a +1/+1 counter on that creature instead.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "TurnTracking",
+                                "player": "You",
+                                "tracker": "SCRIED_OR_SURVEILED"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "another target creature you control"
+                        }
+                    },
+                    "otherwise": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "another target creature you control"
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "another target creature you control"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "rarity": "UNCOMMON",
+        "artist": "Sidharth Chaturvedi",
+        "flavorText": "As realities merged, the futures she could read dwindled.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cfaa3ebd-5c21-4e99-a0dd-8426d19b53a5.jpg?1789644852",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
+// Diviner of Victory
+{
+    "name": "Diviner of Victory",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Dwarf Wizard",
+    "oracleText": "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)\nWhenever you scry or surveil, this creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "ScriedOrSurveiledEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you scry or surveil, this creature gets +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "rarity": "RARE",
+        "artist": "Justyna Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/0853bb80-8664-432a-8457-600139fd96d5.jpg?1788878145",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Unwind History",
+            "manaCost": "{1}{U}",
+            "typeLine": "Sorcery",
+            "oracleText": "Return target creature an opponent controls with mana value 3 or less to its owner's hand. Surveil 1.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls with mana value 3 or less"
+                            },
+                            "destination": "Hand"
+                        },
+                        {
+                            "type": "Surveil",
+                            "count": 1
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature mv<=3 ctrl:opponent"
+                        },
+                        "id": "target creature an opponent controls with mana value 3 or less"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -2564,6 +3190,72 @@
     ]
 }
 
+// Emergency Phytomedic
+{
+    "name": "Emergency Phytomedic",
+    "manaCost": "{G/W}",
+    "typeLine": "Creature — Dryad Cleric",
+    "oracleText": "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "metadata": {
+        "collectorNumber": "130",
+        "artist": "Dmitry Burmak",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/de94d388-919d-44ff-baef-8c90a417ac6d.jpg?1789637792",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Seed Suture",
+            "manaCost": "{G/W}",
+            "typeLine": "Sorcery",
+            "oracleText": "Put a +1/+1 counter on target creature. You gain 1 life.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Essence Burn
 {
     "name": "Essence Burn",
@@ -2674,6 +3366,91 @@
     ]
 }
 
+// Eye of Jace
+{
+    "name": "Eye of Jace",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of your upkeep, surveil 1. Then if there are seven or more cards in your graveyard, sacrifice this artifact, it deals 2 damage to each opponent, and you gain 2 life. (To surveil 1, look at the top card of your library. You may put it into your graveyard.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Surveil",
+                            "count": 1
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "Count",
+                                        "player": "You",
+                                        "zone": "Graveyard"
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 7
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "SacrificeTarget",
+                                        "target": "Self"
+                                    },
+                                    {
+                                        "type": "DealDamage",
+                                        "amount": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        },
+                                        "target": {
+                                            "type": "PlayerRef",
+                                            "player": "EachOpponent"
+                                        }
+                                    },
+                                    {
+                                        "type": "GainLife",
+                                        "amount": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your upkeep, surveil 1. Then if there are seven or more cards in your graveyard, sacrifice this artifact, it deals 2 damage to each opponent, and you gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "rarity": "UNCOMMON",
+        "artist": "Ioannis Fiore",
+        "flavorText": "All cadets wore the Eye. None discussed how it followed their every move.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0edba64a-39cf-4a8d-ba20-4f7da10b6c3d.jpg?1789614864",
+        "inBooster": false
+    },
+    "colorIdentityOverride": []
+}
+
 // Fatehold Annex
 {
     "name": "Fatehold Annex",
@@ -2725,6 +3502,204 @@
     "colorIdentityOverride": [
         "BLUE",
         "WHITE"
+    ]
+}
+
+// Fatehold Charm
+{
+    "name": "Fatehold Charm",
+    "manaCost": "{W}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Draw a card. Empower Jace 2.\n• Return target spell or creature to its owner's hand.\n• Creatures you control get +1/+2 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "Gated",
+                                        "gate": {
+                                            "type": "Gate.WhenCondition",
+                                            "condition": {
+                                                "type": "Exists",
+                                                "player": "You",
+                                                "zone": "Battlefield",
+                                                "filter": "planeswalker Jace token",
+                                                "negate": true
+                                            }
+                                        },
+                                        "then": {
+                                            "type": "CreatePredefinedToken",
+                                            "tokenType": "Jace"
+                                        }
+                                    },
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "BattlefieldMatching",
+                                            "filter": "planeswalker Jace token",
+                                            "player": "You"
+                                        },
+                                        "storeAs": "empower_jaces"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "empower_jaces",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "empower_jace",
+                                        "prompt": "Empower Jace 2 — choose a Jace token you control",
+                                        "useTargetingUI": true
+                                    },
+                                    {
+                                        "type": "AddCountersToCollection",
+                                        "collectionName": "empower_jace",
+                                        "counterType": "loyalty",
+                                        "amount": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    }
+                                ],
+                                "descriptionOverride": "Empower Jace 2"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "effect": {
+                        "type": "ReturnSpellOrPermanentToOwnersHand",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target spell or creature"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetSpellOrPermanent",
+                            "id": "target spell or creature",
+                            "permanentFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ]
+                            }
+                        }
+                    ],
+                    "description": "Return target spell or creature to its owner's hand"
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        },
+                        "body": {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": "Self"
+                        }
+                    },
+                    "description": "Creatures you control get +1/+2 until end of turn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "132",
+        "rarity": "UNCOMMON",
+        "artist": "Rovina Cai",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cfc54011-647e-4428-bcdb-59400e1da49d.jpg?1789127637",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
+// Fatehold Chronologist
+{
+    "name": "Fatehold Chronologist",
+    "manaCost": "{1}{W/U}",
+    "typeLine": "Creature — Bird Wizard",
+    "oracleText": "Flying\nThis creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "PREPARED"
+    ],
+    "metadata": {
+        "collectorNumber": "133",
+        "artist": "Alexander Mokhov",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/29e7ec16-0c16-48aa-8e09-ce6e0d5bd40b.jpg?1789060173",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "WHITE"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Peer Review",
+            "manaCost": "{2}{W/U}",
+            "typeLine": "Sorcery",
+            "oracleText": "Create a 2/2 colorless Wizard Soldier creature token named Cadet. Surveil 1.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 2,
+                            "colors": [],
+                            "creatureTypes": [
+                                "Wizard",
+                                "Soldier"
+                            ],
+                            "name": "Cadet",
+                            "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f4534d8-2783-484f-8ebf-a47b1cc4c6df.jpg?1789734318"
+                        },
+                        {
+                            "type": "Surveil",
+                            "count": 1
+                        }
+                    ]
+                }
+            }
+        }
     ]
 }
 
@@ -3066,6 +4041,162 @@
     ]
 }
 
+// Gallia, Tragic Host
+{
+    "name": "Gallia, Tragic Host",
+    "manaCost": "{1}{B}",
+    "typeLine": "Legendary Creature — Zombie Satyr",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\n{4}{B}, Exile another creature card from your graveyard: Return this card from your graveyard to the battlefield tapped with a +1/+1 counter on her.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{4}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomExileFrom",
+                                "zone": "Graveyard",
+                                "filter": "creature",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Battlefield",
+                    "placement": "Tapped",
+                    "fromZone": "Graveyard",
+                    "addCounterType": "PLUS_ONE_PLUS_ONE"
+                },
+                "activateFromZone": "Graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "rarity": "UNCOMMON",
+        "artist": "Andrea Piparo",
+        "flavorText": "The party never ends, but the guests will never arrive.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/498fa810-8522-4020-b773-52ad404c9f65.jpg?1789385697",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Gallia, the Merrymaker
+{
+    "name": "Gallia, the Merrymaker",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Satyr",
+    "oracleText": "Haste\nEach other creature you control with +1/+1 counter on it has haste.\n{1}{R}, {T}: Put a +1/+1 counter on target creature that entered this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{R}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature that entered this turn"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "EnteredThisTurn"
+                                ]
+                            }
+                        },
+                        "id": "target creature that entered this turn"
+                    }
+                ],
+                "descriptionOverride": "{1}{R}, {T}: Put a +1/+1 counter on target creature that entered this turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "+1/+1"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    },
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "245",
+        "rarity": "UNCOMMON",
+        "artist": "Andrea Piparo",
+        "flavorText": "All of Theros is her dance floor.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f27d50f0-d76e-4ce1-a8d9-d997af6a5b41.jpg?1789385716",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Geist of Saint Thalia
 {
     "name": "Geist of Saint Thalia",
@@ -3245,6 +4376,79 @@
     ]
 }
 
+// Gideon the Oathless
+{
+    "name": "Gideon the Oathless",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Human Mercenary",
+    "oracleText": "Ward—Discard a card.\nWhenever a creature an opponent controls enters, Gideon deals 1 damage to that player.\nWhenever an opponent activates a loyalty ability, Gideon deals 1 damage to that player.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": "WardCost.Discard"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:opponent",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "ControllerOfTriggeringEntity"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "AbilityActivatedEvent",
+                    "player": "EachOpponent",
+                    "requireLoyalty": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "230",
+        "rarity": "RARE",
+        "artist": "Manuel Castañón",
+        "flavorText": "\"The man who was Kytheon Iora, hero of the people, was lost long ago. I serve no one now.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c985b0d1-25bd-4069-aab7-a566ff27a8f6.jpg?1789127990",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Graft Surgeon
 {
     "name": "Graft Surgeon",
@@ -3348,6 +4552,83 @@
     ]
 }
 
+// Grim Repriser
+{
+    "name": "Grim Repriser",
+    "manaCost": "{B}{R}",
+    "typeLine": "Creature — Zombie Bard",
+    "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\n{B}{R}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if an opponent has been dealt noncombat damage this turn. (If a creature with a finality counter on it would die, exile it instead.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "PROWESS"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Battlefield",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "finality",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "TurnTracking",
+                                "player": "EachOpponent",
+                                "tracker": "DEALT_NONCOMBAT_DAMAGE"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                ],
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "{B}{R}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if an opponent has been dealt noncombat damage this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/8295c48c-b4dd-4bc1-a206-04cf12b79bbd.jpg?1789470746",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Guiding Hydra
 {
     "name": "Guiding Hydra",
@@ -3436,6 +4717,183 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Hallway Heckler
+{
+    "name": "Hallway Heckler",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Elemental Sorcerer",
+    "oracleText": "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)\n{T}, Discard a card: Draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{T}, Discard a card: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "artist": "Gustavo Pelissari",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7e324816-552f-455d-97c4-5ea6b26d2e6e.jpg?1789127576",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Vicious Verse",
+            "manaCost": "{B/R}",
+            "typeLine": "Sorcery",
+            "oracleText": "Vicious Verse deals 1 damage to target opponent.",
+            "script": {
+                "spellEffect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetOpponent",
+                        "id": "target opponent"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+// Hapatra, the Desert Frost
+{
+    "name": "Hapatra, the Desert Frost",
+    "manaCost": "{3}{U}",
+    "typeLine": "Legendary Creature — Human Wizard",
+    "oracleText": "When Hapatra enters, for each opponent, tap up to one target creature that player controls. Put a stun counter on each of those creatures. (If a permanent with a stun counter would become untapped, remove one from it instead.)\n{2}{U}: Untap target creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "TapUntap",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "type": "AddCounters",
+                                "counterType": "stun",
+                                "count": 1,
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            }
+                        ]
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "up to one target creature each opponent controls",
+                    "dynamicMaxCount": "PlayerCount",
+                    "differentControllers": true
+                },
+                "descriptionOverride": "When Hapatra enters, for each opponent, tap up to one target creature that player controls. Put a stun counter on each of those creatures."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "tap": false
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "215",
+        "rarity": "UNCOMMON",
+        "artist": "Jodie Muir",
+        "flavorText": "\"Kefnet always told me to apply my knowledge. I merely chose to apply it in usurping him.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/85faaa9d-4656-4365-871d-7cba53ed0996.jpg?1789387113",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -5025,6 +6483,67 @@
     ]
 }
 
+// Mabel, Valley Hero
+{
+    "name": "Mabel, Valley Hero",
+    "manaCost": "{1}{R}{W}",
+    "typeLine": "Legendary Creature — Mouse Soldier",
+    "oracleText": "Whenever Mabel or another creature you control enters, put a +1/+1 counter on target creature that entered this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature that entered this turn"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                "EnteredThisTurn"
+                            ]
+                        }
+                    },
+                    "id": "target creature that entered this turn"
+                },
+                "descriptionOverride": "Whenever Mabel or another creature you control enters, put a +1/+1 counter on target creature that entered this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "274",
+        "rarity": "UNCOMMON",
+        "artist": "Matt Stewart",
+        "flavorText": "Mabel had learned that mother, adventurer, and protector were not all that far apart.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/47abea4b-9848-48aa-bc1b-f04f4799e920.jpg?1789385857",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Marwyn, the Clearcutter
 {
     "name": "Marwyn, the Clearcutter",
@@ -5143,6 +6662,148 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Massacre Girl, Most Wanted
+{
+    "name": "Massacre Girl, Most Wanted",
+    "manaCost": "{4}{B}",
+    "typeLine": "Legendary Creature — Human Assassin",
+    "oracleText": "Whenever another creature or planeswalker you control dies, Massacre Girl deals 1 damage to target opponent and you gain 1 life.\nWhenever an opponent is dealt noncombat damage, put a +1/+1 counter on Massacre Girl.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature|planeswalker ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target opponent"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageNonCombat",
+                    "recipient": "RecipientOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever an opponent is dealt noncombat damage, put a +1/+1 counter on Massacre Girl."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "UNCOMMON",
+        "artist": "Cristi Balanescu",
+        "flavorText": "Ravnica's most feared—and most adored—serial killer.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/9028d31f-9c41-47e3-885b-6a869bca8178.jpg?1789644882",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Master of Barbs
+{
+    "name": "Master of Barbs",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Lizard Bard",
+    "oracleText": "Menace\nWhenever one or more opponents are dealt noncombat damage, creatures you control get +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageNonCombat",
+                    "recipient": "RecipientOpponent",
+                    "batch": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever one or more opponents are dealt noncombat damage, creatures you control get +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "88",
+        "rarity": "RARE",
+        "artist": "Aldo Domínguez",
+        "flavorText": "\"The question isn't *if* he'll make his students cry. Only when.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/4404d9d4-9cdd-4dad-a4f6-574d90db5052.jpg?1789127596",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -6176,6 +7837,96 @@
     ]
 }
 
+// Pompous Battlemage
+{
+    "name": "Pompous Battlemage",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin Sorcerer",
+    "oracleText": "Prowess\nThis creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "PROWESS",
+        "PREPARED"
+    ],
+    "metadata": {
+        "collectorNumber": "90",
+        "rarity": "RARE",
+        "artist": "Justin Gerard",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa0f77ac-741a-444a-8bf0-a42c644726bf.jpg?1788878186",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Improvised Act",
+            "manaCost": "{R}",
+            "typeLine": "Sorcery",
+            "oracleText": "You may discard a card. If you do, draw a card.",
+            "script": {
+                "spellEffect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.DoAction",
+                            "action": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        },
+                        "then": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    },
+                    "descriptionOverride": "You may discard a card. If you do, draw a card."
+                }
+            }
+        }
+    ]
+}
+
 // Precise Redaction
 {
     "name": "Precise Redaction",
@@ -6260,6 +8011,168 @@
     ]
 }
 
+// Primal Witchstalker
+{
+    "name": "Primal Witchstalker",
+    "manaCost": "{1}{B}{G}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen this creature enters, mill four cards. When you do, return target land card from your graveyard to the battlefield tapped. (To mill four cards, put the top four cards of your library into your graveyard.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 4
+                                    },
+                                    "isMill": true
+                                },
+                                "storeAs": "milled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "milled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            }
+                        ]
+                    },
+                    "optional": false,
+                    "reflexiveEffect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Battlefield",
+                        "placement": "Tapped"
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "land own:you",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "rarity": "UNCOMMON",
+        "artist": "Kaitlyn McCulley",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/04e64af7-cca1-499e-8951-f386e84c8b5b.jpg?1789644850",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
+// Proctor of Potential
+{
+    "name": "Proctor of Potential",
+    "manaCost": "{W}{U}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Whenever this creature or another creature you control enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)\n{W}{U}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if you've scried or surveilled this turn. (If a creature with a finality counter on it would die, exile it instead.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Surveil",
+                    "count": 1
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard",
+                    "addCounterType": "FINALITY"
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "TurnTracking",
+                                "player": "You",
+                                "tracker": "SCRIED_OR_SURVEILED"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                ],
+                "activateFromZone": "Graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "rarity": "RARE",
+        "artist": "Andrey Kuzinskiy",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cf0eec8c-0475-4050-8144-481a9bb13a0f.jpg?1789127661",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Proft, Consulting Detective
 {
     "name": "Proft, Consulting Detective",
@@ -6318,6 +8231,95 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Proft, Sinister Mastermind
+{
+    "name": "Proft, Sinister Mastermind",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Human Rogue",
+    "oracleText": "Threshold — You can't cast this spell unless there are seven or more cards in your graveyard.\nMenace\n{B}, Discard this card: Target creature gets -3/-1 until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "activateFromZone": "Hand"
+            }
+        ],
+        "castRestrictions": [
+            {
+                "type": "CastOnlyIfCondition",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "UNCOMMON",
+        "artist": "Lindsey Look",
+        "flavorText": "If the crime is violent, it's the Rakdos. If it's covert, it's the Dimir. If it's intricate, it's him.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/3/d36b0e06-cb82-4c48-bf35-e76f109116f6.jpg?1789127196",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -6480,6 +8482,96 @@
     ]
 }
 
+// Prudent Fateseer
+{
+    "name": "Prudent Fateseer",
+    "manaCost": "{1}{W/U}{W/U}",
+    "typeLine": "Creature — Dwarf Wizard",
+    "oracleText": "This creature enters prepared.\nWhenever you scry or surveil, creatures you control get +1/+0 until end of turn. This ability triggers only once each turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "ScriedOrSurveiledEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    }
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you scry or surveil, creatures you control get +1/+0 until end of turn. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "146",
+        "rarity": "UNCOMMON",
+        "artist": "Gustavo Pelissari",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/c/6c1c790b-9e0e-4964-9ea3-554843907f06.jpg?1788329412",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "WHITE"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Peer Review",
+            "manaCost": "{2}{W/U}",
+            "typeLine": "Sorcery",
+            "oracleText": "Create a 2/2 colorless Wizard Soldier creature token named Cadet. Surveil 1.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 2,
+                            "colors": [],
+                            "creatureTypes": [
+                                "Wizard",
+                                "Soldier"
+                            ],
+                            "name": "Cadet",
+                            "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f4534d8-2783-484f-8ebf-a47b1cc4c6df.jpg?1789734318"
+                        },
+                        {
+                            "type": "Surveil",
+                            "count": 1
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Rampart Hunter
 {
     "name": "Rampart Hunter",
@@ -6621,6 +8713,85 @@
         "inBooster": false
     },
     "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Recursive Recruitment
+{
+    "name": "Recursive Recruitment",
+    "manaCost": "{2}{U}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create two 2/2 colorless Wizard Soldier creature tokens named Cadet. If this spell was cast from a graveyard, put a +1/+1 counter on each of them for every three cards in your graveyard.\nFlashback {6}{U}{B} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{6}{U}{B}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Wizard",
+                        "Soldier"
+                    ],
+                    "name": "Cadet",
+                    "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f4534d8-2783-484f-8ebf-a47b1cc4c6df.jpg?1789734318"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "WasCastFromZone",
+                            "zone": "Graveyard"
+                        }
+                    },
+                    "then": {
+                        "type": "AddCountersToCollection",
+                        "collectionName": "createdTokens",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "Divide",
+                            "numerator": {
+                                "type": "Count",
+                                "player": "You",
+                                "zone": "Graveyard"
+                            },
+                            "denominator": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "roundUp": false
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "rarity": "UNCOMMON",
+        "artist": "Dominik Mayer",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/68fddb6a-86d4-4ebb-907d-fdcaadebc4b3.jpg?1789556898",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE",
         "BLACK"
     ]
 }
@@ -7001,6 +9172,99 @@
         "rarity": "UNCOMMON",
         "artist": "Matt Stewart",
         "imageUri": "https://cards.scryfall.io/normal/front/4/5/453cfde7-c460-4b55-9472-b714e16f24bb.jpg?1788952087",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Rise of the Deathbringer
+{
+    "name": "Rise of the Deathbringer",
+    "manaCost": "{4}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Draw cards equal to the greatest power among creatures you control. You lose life equal to the number of cards drawn this way.\n• All creatures get -3/-3 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "StoreNumber",
+                                "name": "drawnBefore",
+                                "amount": {
+                                    "type": "TurnTracking",
+                                    "player": "You",
+                                    "tracker": "CARDS_DRAWN"
+                                }
+                            },
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "AggregateBattlefield",
+                                    "player": "You",
+                                    "filter": "creature",
+                                    "aggregation": "MAX",
+                                    "property": "POWER"
+                                }
+                            },
+                            {
+                                "type": "LoseLife",
+                                "amount": {
+                                    "type": "Subtract",
+                                    "left": {
+                                        "type": "TurnTracking",
+                                        "player": "You",
+                                        "tracker": "CARDS_DRAWN"
+                                    },
+                                    "right": {
+                                        "type": "VariableReference",
+                                        "variableName": "drawnBefore"
+                                    }
+                                },
+                                "target": "Controller"
+                            }
+                        ]
+                    },
+                    "description": "Draw cards equal to the greatest power among creatures you control. You lose life equal to the number of cards drawn this way."
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        },
+                        "body": {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": -3
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": -3
+                            },
+                            "target": "Self"
+                        }
+                    },
+                    "description": "All creatures get -3/-3 until end of turn."
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "RARE",
+        "artist": "Lie Setiawan",
+        "flavorText": "\"I am the curse.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/1/811719ad-b5a3-4d31-8c6f-5dbdfccf7c1f.jpg?1789470807",
         "inBooster": false
     },
     "colorIdentityOverride": [
@@ -7512,6 +9776,79 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Semester Foreseer
+{
+    "name": "Semester Foreseer",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)\nWhen this creature enters, surveil 1.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Surveil",
+                    "count": 1
+                },
+                "descriptionOverride": "When this creature enters, surveil 1."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "artist": "Alix Branwyn",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7e5a640b-fd88-4b5a-9dfc-1d8f5a5cef41.jpg?1789127516",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "WHITE"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Peer Review",
+            "manaCost": "{2}{W/U}",
+            "typeLine": "Sorcery",
+            "oracleText": "Create a 2/2 colorless Wizard Soldier creature token named Cadet. Surveil 1.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 2,
+                            "colors": [],
+                            "creatureTypes": [
+                                "Wizard",
+                                "Soldier"
+                            ],
+                            "name": "Cadet",
+                            "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f4534d8-2783-484f-8ebf-a47b1cc4c6df.jpg?1789734318"
+                        },
+                        {
+                            "type": "Surveil",
+                            "count": 1
+                        }
+                    ]
+                }
+            }
+        }
     ]
 }
 
@@ -8041,6 +10378,102 @@
     ]
 }
 
+// Sphinx of False Conclusions
+{
+    "name": "Sphinx of False Conclusions",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Creature — Sphinx Illusion",
+    "oracleText": "Flash\nFlying\nWhenever this creature attacks, draw a card, then discard a card.\nWhen this creature dies, if it isn't a token, create a token that's a copy of it.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": "CreateTokenCopyOfSource",
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "nontoken"
+                },
+                "descriptionOverride": "When this creature dies, if it isn't a token, create a token that's a copy of it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "rarity": "RARE",
+        "artist": "Wylie Beckert",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/08ffbd51-2bd3-4262-8809-09576ce2b6f5.jpg?1789385594",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Stingcaster Mage
 {
     "name": "Stingcaster Mage",
@@ -8250,6 +10683,83 @@
     "colorIdentityOverride": [
         "BLACK",
         "RED"
+    ]
+}
+
+// Stingerquill Voxmancer
+{
+    "name": "Stingerquill Voxmancer",
+    "manaCost": "{B/R}",
+    "typeLine": "Creature — Goblin Sorcerer",
+    "oracleText": "At the beginning of your upkeep, if this creature isn't prepared, it becomes prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": "BecomePrepared",
+                "interveningIf": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "EntityMatches",
+                        "entity": "Self",
+                        "filter": {
+                            "statePredicates": [
+                                "IsPrepared"
+                            ]
+                        }
+                    }
+                },
+                "descriptionOverride": "At the beginning of your upkeep, if this creature isn't prepared, it becomes prepared."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "rarity": "UNCOMMON",
+        "artist": "Igor Grechanyi",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/4/84b1c268-3b8a-41b6-92e3-a2ce0cc3d738.jpg?1788329418",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Vicious Verse",
+            "manaCost": "{B/R}",
+            "typeLine": "Sorcery",
+            "oracleText": "Vicious Verse deals 1 damage to target opponent.",
+            "script": {
+                "spellEffect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetOpponent",
+                        "id": "target opponent"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -8485,6 +10995,68 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Surveillance Phantasm
+{
+    "name": "Surveillance Phantasm",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Bird Illusion",
+    "oracleText": "Defender, flying, vigilance\nAs long as you've scried or surveilled this turn, this creature can attack as though it didn't have defender.\n{3}{U}: Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEFENDER",
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "Surveil",
+                    "count": 1
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CanAttackDespiteDefender",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "SCRIED_OR_SURVEILED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "artist": "Randy Vargas",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9df8a06d-c7de-49af-8c01-06dca3dfef4b.jpg?1789385597",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -9166,6 +11738,47 @@
     ]
 }
 
+// Thalia, the Survivor
+{
+    "name": "Thalia, the Survivor",
+    "manaCost": "{3}{W}",
+    "typeLine": "Legendary Creature — Human Soldier",
+    "oracleText": "Lifelink\nNoncreature spells your opponents cast cost {1} more to cast.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "OpponentsCast",
+                    "filter": "noncreature"
+                },
+                "modification": {
+                    "type": "IncreaseGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "rarity": "UNCOMMON",
+        "artist": "Ryan Pancoast",
+        "flavorText": "\"In Sigarda's name, I will ensure your peaceful rest.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/80226231-9e70-430e-aabc-f262f70b9226.jpg?1789127700",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // The Echoverse Fulcrum
 {
     "name": "The Echoverse Fulcrum",
@@ -9625,6 +12238,120 @@
     ]
 }
 
+// Theorix Metamage
+{
+    "name": "Theorix Metamage",
+    "manaCost": "{2}{U/B}",
+    "typeLine": "Creature — Shade Wizard",
+    "oracleText": "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)\nThreshold — This creature gets +1/+0 and has flying as long as there are seven or more cards in your graveyard.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "156",
+        "artist": "Slawomir Maniak",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb6bad96-841d-4738-8e62-92f346f914fd.jpg?1789556930",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Omit Variables",
+            "manaCost": "{U/B}",
+            "typeLine": "Sorcery",
+            "oracleText": "Mill three cards. (Put the top three cards of your library into your graveyard.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Tinybones, Pocket Nuisance
 {
     "name": "Tinybones, Pocket Nuisance",
@@ -9773,6 +12500,40 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Tomik, Izzet Sparkmage
+{
+    "name": "Tomik, Izzet Sparkmage",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Human Wizard",
+    "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nIf a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, it deals that much damage plus 1 instead.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "PROWESS"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "NoncombatDamageBonus",
+                "bonusAmount": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "253",
+        "rarity": "UNCOMMON",
+        "artist": "Randy Vargas",
+        "flavorText": "\"Laws are made to be broken. This includes physics and thermodynamics.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5c5afd5f-6f37-4c3e-83f0-68fdcea98810.jpg?1789729773",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -9956,6 +12717,61 @@
         "inBooster": false
     },
     "colorIdentityOverride": []
+}
+
+// Twinned Vision
+{
+    "name": "Twinned Vision",
+    "manaCost": "{1}{U/R}",
+    "typeLine": "Instant",
+    "oracleText": "Draw a card. If this spell wasn't cast from your hand, draw two cards instead.\nFlashback—{1}{U/R}{U/R}, Discard a card. (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{1}{U/R}{U/R}",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": "AtomDiscard"
+            }
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": {
+                "type": "Gate.WhenCondition",
+                "condition": "WasCastFromHand"
+            },
+            "then": {
+                "type": "DrawCards",
+                "count": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "otherwise": {
+                "type": "DrawCards",
+                "count": {
+                    "type": "Fixed",
+                    "amount": 2
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "\"She will rage and burn until her fuel is expended. It's almost sad to see me like this.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/5/55f85984-0137-4899-8993-bbc8c4794d33.jpg?1789556940",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
 }
 
 // Twisted Fates
@@ -10324,6 +13140,95 @@
     ]
 }
 
+// Vigorbloom Vanguard
+{
+    "name": "Vigorbloom Vanguard",
+    "manaCost": "{1}{G/W}",
+    "typeLine": "Creature — Troll Druid",
+    "oracleText": "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)\nEach creature you control with a +1/+1 counter on it has vigilance.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "+1/+1"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "161",
+        "rarity": "UNCOMMON",
+        "artist": "Denman Rooke",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/acefc515-bf97-4dc0-b0f7-ae8ae5a61671.jpg?1788329423",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Seed Suture",
+            "manaCost": "{G/W}",
+            "typeLine": "Sorcery",
+            "oracleText": "Put a +1/+1 counter on target creature. You gain 1 life.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Vinelasher Adept
 {
     "name": "Vinelasher Adept",
@@ -10385,6 +13290,96 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Void Extrapolator
+{
+    "name": "Void Extrapolator",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Aetherborn Warlock",
+    "oracleText": "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)\nThreshold — This creature gets +1/+1 as long as there are seven or more cards in your graveyard.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0eae2efb-bf25-48ee-9c07-9098008110ad.jpg?1789556787",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Omit Variables",
+            "manaCost": "{U/B}",
+            "typeLine": "Sorcery",
+            "oracleText": "Mill three cards. (Put the top three cards of your library into your graveyard.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
     ]
 }
 
@@ -10589,6 +13584,177 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Way of the Deathbringer
+{
+    "name": "Way of the Deathbringer",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Enchantment",
+    "oracleText": "When Way of the Deathbringer enters, empower Jace 5. (Put five loyalty counters on a Jace token you control. If you don't control one, first create a blue Jace planeswalker token with \"[−1]: Surveil 1\" and \"[−3]: Draw a card.\")\nPlaneswalkers you control have \"[−2]: You may sacrifice a creature. If you do, create a 4/4 green Beast creature token with trample.\"",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "planeswalker Jace token",
+                                    "negate": true
+                                }
+                            },
+                            "then": {
+                                "type": "CreatePredefinedToken",
+                                "tokenType": "Jace"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "planeswalker Jace token",
+                                "player": "You"
+                            },
+                            "storeAs": "empower_jaces"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "empower_jaces",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "empower_jace",
+                            "prompt": "Empower Jace 5 — choose a Jace token you control",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "AddCountersToCollection",
+                            "collectionName": "empower_jace",
+                            "counterType": "loyalty",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 5
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Empower Jace 5"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostLoyalty",
+                        "change": -2
+                    },
+                    "effect": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayDecide",
+                            "feasibility": {
+                                "type": "ControlsPermanentMatching",
+                                "filter": "creature ctrl:you"
+                            }
+                        },
+                        "then": {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.DoAction",
+                                "action": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "BattlefieldMatching",
+                                                "filter": "creature",
+                                                "player": "You"
+                                            },
+                                            "storeAs": "gathered0"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "gathered0",
+                                            "selection": {
+                                                "type": "ChooseExactly",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "storeSelected": "selected1",
+                                            "prompt": "Choose a creature to sacrifice",
+                                            "useTargetingUI": true
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "selected1",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard"
+                                            },
+                                            "moveType": "Sacrifice"
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "CreateToken",
+                                "power": 4,
+                                "toughness": 4,
+                                "colors": [
+                                    "GREEN"
+                                ],
+                                "creatureTypes": [
+                                    "Beast"
+                                ],
+                                "keywords": [
+                                    "TRAMPLE"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/normal/front/8/5/859bda9a-fa90-4ad3-b0c1-6fc62e27c12f.jpg?1789736256"
+                            }
+                        },
+                        "descriptionOverride": "You may sacrifice a creature. If you do, create a 4/4 green Beast creature token with trample."
+                    },
+                    "timing": "SorcerySpeed",
+                    "isPlaneswalkerAbility": true,
+                    "descriptionOverride": "You may sacrifice a creature. If you do, create a 4/4 green Beast creature token with trample."
+                },
+                "filter": {
+                    "baseFilter": "planeswalker ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "238",
+        "rarity": "UNCOMMON",
+        "artist": "Joshua Raphael",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/12dd46b2-e892-4660-b120-55766fd4d878.jpg?1789729576",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -10928,6 +14094,114 @@
     ]
 }
 
+// Way of the Paradox
+{
+    "name": "Way of the Paradox",
+    "manaCost": "{2}{G}",
+    "typeLine": "Legendary Enchantment",
+    "oracleText": "When Way of the Paradox enters, empower Jace 5. (Put five loyalty counters on a Jace token you control. If you don't control one, first create a blue Jace planeswalker token with \"[−1]: Surveil 1\" and \"[−3]: Draw a card.\")\nWhenever you activate a loyalty ability, you gain 1 life. You may play an additional land this turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "planeswalker Jace token",
+                                    "negate": true
+                                }
+                            },
+                            "then": {
+                                "type": "CreatePredefinedToken",
+                                "tokenType": "Jace"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "planeswalker Jace token",
+                                "player": "You"
+                            },
+                            "storeAs": "empower_jaces"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "empower_jaces",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "empower_jace",
+                            "prompt": "Empower Jace 5 — choose a Jace token you control",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "AddCountersToCollection",
+                            "collectionName": "empower_jace",
+                            "counterType": "loyalty",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 5
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Empower Jace 5"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "AbilityActivatedEvent",
+                    "requireLoyalty": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "PlayAdditionalLands",
+                            "count": 1
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "267",
+        "rarity": "UNCOMMON",
+        "artist": "Josh Hass",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/98dc5470-507a-4364-8480-42607255e56c.jpg?1789729606",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Way of the Pyromancer
 {
     "name": "Way of the Pyromancer",
@@ -11027,6 +14301,146 @@
         "rarity": "UNCOMMON",
         "artist": "Andrey Kuzinskiy",
         "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1a00020-7c14-4503-a057-5763704bb83e.jpg?1788878311",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Way of the Warlord
+{
+    "name": "Way of the Warlord",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Enchantment",
+    "oracleText": "When Way of the Warlord enters, empower Jace 5. (Put five loyalty counters on a Jace token you control. If you don't control one, first create a blue Jace planeswalker token with \"[−1]: Surveil 1\" and \"[−3]: Draw a card.\")\nPlaneswalkers you control have \"[−4]: This planeswalker deals 2 damage to up to one target creature or planeswalker and 2 damage to target player.\"",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "planeswalker Jace token",
+                                    "negate": true
+                                }
+                            },
+                            "then": {
+                                "type": "CreatePredefinedToken",
+                                "tokenType": "Jace"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "planeswalker Jace token",
+                                "player": "You"
+                            },
+                            "storeAs": "empower_jaces"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "empower_jaces",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "empower_jace",
+                            "prompt": "Empower Jace 5 — choose a Jace token you control",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "AddCountersToCollection",
+                            "collectionName": "empower_jace",
+                            "counterType": "loyalty",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 5
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Empower Jace 5"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostLoyalty",
+                        "change": -4
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target creature or planeswalker"
+                                }
+                            },
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target player"
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "target player"
+                        },
+                        {
+                            "type": "TargetCreatureOrPlaneswalker",
+                            "optional": true,
+                            "id": "up to one target creature or planeswalker"
+                        }
+                    ],
+                    "timing": "SorcerySpeed",
+                    "isPlaneswalkerAbility": true,
+                    "descriptionOverride": "This planeswalker deals 2 damage to up to one target creature or planeswalker and 2 damage to target player."
+                },
+                "filter": {
+                    "baseFilter": "planeswalker ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "255",
+        "rarity": "UNCOMMON",
+        "artist": "Danny Schwartz",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6d86e410-20c4-4248-96bf-5780ece6274a.jpg?1789729585",
         "inBooster": false
     },
     "colorIdentityOverride": [
@@ -11151,6 +14565,111 @@
     ]
 }
 
+// Whiplash Wordsmith
+{
+    "name": "Whiplash Wordsmith",
+    "manaCost": "{3}{B/R}",
+    "typeLine": "Creature — Vampire Sorcerer",
+    "oracleText": "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)\nAs long as an opponent was dealt noncombat damage this turn, this creature has flying and haste.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "EachOpponent",
+                        "tracker": "DEALT_NONCOMBAT_DAMAGE"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "EachOpponent",
+                        "tracker": "DEALT_NONCOMBAT_DAMAGE"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "artist": "Anastasia Ovchinnikova",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/8096bc9a-a610-448f-bef2-7230e17e9777.jpg?1789127692",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Vicious Verse",
+            "manaCost": "{B/R}",
+            "typeLine": "Sorcery",
+            "oracleText": "Vicious Verse deals 1 damage to target opponent.",
+            "script": {
+                "spellEffect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetOpponent",
+                        "id": "target opponent"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Winter, Team Player
 {
     "name": "Winter, Team Player",
@@ -11211,6 +14730,76 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Winter, Tormented Loner
+{
+    "name": "Winter, Tormented Loner",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Human Warlock",
+    "oracleText": "When Winter enters, you may sacrifice a creature or planeswalker. When you do, each opponent sacrifices a creature of their choice.\nWinter gets +1/+0 for each creature and planeswalker card in your graveyard.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "Sacrifice",
+                        "filter": "creature|planeswalker"
+                    },
+                    "reflexiveEffect": {
+                        "type": "ForceSacrifice",
+                        "filter": "creature",
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "EachOpponent"
+                        }
+                    },
+                    "descriptionOverride": "You may sacrifice a creature or planeswalker. When you do, each opponent sacrifices a creature of their choice."
+                },
+                "descriptionOverride": "When Winter enters, you may sacrifice a creature or planeswalker. When you do, each opponent sacrifices a creature of their choice."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "AggregateZone",
+                    "player": "You",
+                    "zone": "Graveyard",
+                    "filter": "creature|planeswalker"
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "UNCOMMON",
+        "artist": "Aurore Folny",
+        "flavorText": "He had no one left to betray but himself.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/9670f754-f41f-45ac-8e8b-025ad2c0f66b.jpg?1789127724",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -11570,5 +15159,84 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Yuriko, Hope from the Shadows
+{
+    "name": "Yuriko, Hope from the Shadows",
+    "manaCost": "{U}",
+    "typeLine": "Legendary Creature — Human Ninja",
+    "oracleText": "Flash\nWhen Yuriko enters, choose one —\n• Target creature gets -X/-0 until end of turn, where X is the number of cards in your graveyard.\n• Surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Multiply",
+                                    "amount": {
+                                        "type": "Count",
+                                        "player": "You",
+                                        "zone": "Graveyard"
+                                    },
+                                    "multiplier": -1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                },
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature"
+                                    }
+                                }
+                            ],
+                            "description": "Target creature gets -X/-0 until end of turn, where X is the number of cards in your graveyard."
+                        },
+                        {
+                            "effect": {
+                                "type": "Surveil",
+                                "count": 2
+                            },
+                            "description": "Surveil 2."
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "rarity": "UNCOMMON",
+        "artist": "Lie Setiawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/45e81487-8b8c-480b-922a-eaa9edc7201d.jpg?1789127717",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }

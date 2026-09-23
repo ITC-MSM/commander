@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ignis Scientia — {1}{G}{U} Legendary Creature — Human Advisor, 2/2
@@ -68,7 +69,7 @@ class IgnisScientiaScenarioTest : FunSpec({
                 targets = listOf(entityIdToChosenTarget(driver.state, bearInGy))
             )
         )
-        withClue("error=${result.error}") { result.isSuccess shouldBe true }
+        withClue("error=${result.error}") { result.outcome shouldBe Outcome.Done }
         driver.bothPass()
 
         // The creature card is exiled and a Food token was created.
@@ -99,7 +100,7 @@ class IgnisScientiaScenarioTest : FunSpec({
                 targets = listOf(entityIdToChosenTarget(driver.state, landInGy))
             )
         )
-        withClue("error=${result.error}") { result.isSuccess shouldBe true }
+        withClue("error=${result.error}") { result.outcome shouldBe Outcome.Done }
         driver.bothPass()
 
         driver.getExile(p1).contains(landInGy) shouldBe true

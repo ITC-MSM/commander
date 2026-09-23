@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Gisa and Geralf — {2}{U}{B} Legendary Creature — Human Wizard 4/4
@@ -83,7 +84,7 @@ class GisaAndGeralfScenarioTest : FunSpec({
         driver.giveMana(player, Color.BLUE, 1)
         driver.giveMana(player, Color.BLACK, 1)
         driver.giveColorlessMana(player, 2)
-        driver.castSpell(player, gisa).isSuccess shouldBe true
+        driver.castSpell(player, gisa).outcome shouldBe Outcome.Done
         // One pass resolves the creature spell, the next resolves the enters trigger it put on the stack.
         driver.bothPass()
         driver.bothPass()
@@ -116,7 +117,7 @@ class GisaAndGeralfScenarioTest : FunSpec({
         val second = driver.putCardInGraveyard(player, "Rotting Zombie")
         giveZombieMana(driver, player)
 
-        driver.submit(CastSpell(playerId = player, cardId = first)).isSuccess shouldBe true
+        driver.submit(CastSpell(playerId = player, cardId = first)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.findPermanent(player, "Shambling Zombie") shouldNotBe null
 
@@ -135,7 +136,7 @@ class GisaAndGeralfScenarioTest : FunSpec({
         val first = driver.putCardInGraveyard(player, "Shambling Zombie")
         val second = driver.putCardInGraveyard(player, "Rotting Zombie")
         giveZombieMana(driver, player)
-        driver.submit(CastSpell(playerId = player, cardId = first)).isSuccess shouldBe true
+        driver.submit(CastSpell(playerId = player, cardId = first)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Round the table back to the controller's own precombat main: a fresh use.

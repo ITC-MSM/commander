@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Vincent Valentine // Galian Beast (FIN #125).
@@ -55,7 +56,7 @@ class VincentValentineScenarioTest : FunSpec({
     fun GameTestDriver.boltDeath(caster: EntityId, victim: EntityId) {
         val bolt = putCardInHand(caster, "Lightning Bolt")
         giveMana(caster, Color.RED, 1)
-        castSpell(caster, bolt, listOf(victim)).isSuccess shouldBe true
+        castSpell(caster, bolt, listOf(victim)).outcome shouldBe Outcome.Done
         resolveStack(this) // bolt resolves, victim dies, dies-trigger goes on the stack
         resolveStack(this) // dies trigger resolves
     }
@@ -90,7 +91,7 @@ class VincentValentineScenarioTest : FunSpec({
         driver.removeSummoningSickness(vincent)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(you, mapOf(vincent to opponent)).isSuccess shouldBe true
+        driver.declareAttackers(you, mapOf(vincent to opponent)).outcome shouldBe Outcome.Done
         resolveStack(driver) // attack trigger resolves into the may-transform yes/no prompt
         driver.isPaused shouldBe true
         driver.submitYesNo(you, false)
@@ -107,7 +108,7 @@ class VincentValentineScenarioTest : FunSpec({
         driver.removeSummoningSickness(vincent)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(you, mapOf(vincent to opponent)).isSuccess shouldBe true
+        driver.declareAttackers(you, mapOf(vincent to opponent)).outcome shouldBe Outcome.Done
         resolveStack(driver)
         driver.isPaused shouldBe true
         driver.submitYesNo(you, true)
@@ -126,7 +127,7 @@ class VincentValentineScenarioTest : FunSpec({
 
         // Transform Vincent into Galian Beast via the attack trigger.
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(you, mapOf(vincent to opponent)).isSuccess shouldBe true
+        driver.declareAttackers(you, mapOf(vincent to opponent)).outcome shouldBe Outcome.Done
         resolveStack(driver)
         driver.submitYesNo(you, true)
         driver.state.getEntity(vincent)!!.get<CardComponent>()!!.name shouldBe "Galian Beast"
@@ -136,7 +137,7 @@ class VincentValentineScenarioTest : FunSpec({
         val bolt = driver.putCardInHand(opponent, "Lightning Bolt")
         driver.giveMana(opponent, Color.RED, 1)
         driver.passPriority(you)
-        driver.castSpell(opponent, bolt, listOf(vincent)).isSuccess shouldBe true
+        driver.castSpell(opponent, bolt, listOf(vincent)).outcome shouldBe Outcome.Done
         resolveStack(driver) // bolt resolves, Galian Beast dies, dies-trigger goes on the stack
         resolveStack(driver) // dies trigger: return it to the battlefield tapped
 

@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Edgar, King of Figaro (FIN #51).
@@ -79,7 +80,7 @@ class EdgarKingOfFigaroScenarioTest : FunSpec({
         // The Gold Saucer mints a Treasure — no matter the RNG seed.
         driver.giveColorlessMana(me, 2)
         driver.submit(ActivateAbility(playerId = me, sourceId = saucer, abilityId = flipAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         treasureCount(driver, me) shouldBe 1
@@ -98,7 +99,7 @@ class EdgarKingOfFigaroScenarioTest : FunSpec({
 
         driver.giveColorlessMana(me, 2)
         driver.submit(ActivateAbility(playerId = me, sourceId = saucer, abilityId = flipAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         // The flip still happened and is tracked (so a first-flip replacement introduced later this
@@ -118,7 +119,7 @@ class EdgarKingOfFigaroScenarioTest : FunSpec({
         val edgar = driver.putCardInHand(me, "Edgar, King of Figaro")
         driver.giveColorlessMana(me, 4)
         driver.giveMana(me, Color.BLUE, 2)
-        driver.castSpell(me, edgar).isSuccess shouldBe true
+        driver.castSpell(me, edgar).outcome shouldBe Outcome.Done
 
         // Edgar is on the stack now (out of hand); count draws from here.
         val handBeforeEtb = driver.getHandSize(me)

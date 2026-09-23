@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel (FIN #115).
@@ -62,7 +63,7 @@ class SephirothFabledSoldierScenarioTest : FunSpec({
     fun killWithBolt(driver: GameTestDriver, caster: EntityId, victim: EntityId, opponent: EntityId) {
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
         driver.giveMana(caster, Color.RED, 1)
-        driver.castSpell(caster, bolt, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, targets = listOf(victim)).outcome shouldBe Outcome.Done
 
         var guard = 0
         while (guard++ < 40 && (driver.state.stack.isNotEmpty() || driver.isPaused)) {

@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Into the Roil (ZEN #48) — "Return target nonland permanent to its owner's hand. If this spell
@@ -50,7 +51,7 @@ class IntoTheRoilScenarioTest : FunSpec({
                 declaredCostSlot = null,
                 paymentStrategy = PaymentStrategy.AutoPay
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         resolveStack(driver)
 
         // Creature bounced off the battlefield; no card drawn (hand only shrank by the spell itself).
@@ -77,7 +78,7 @@ class IntoTheRoilScenarioTest : FunSpec({
                 declaredCostSlot = ChoiceSlot.KICKED,
                 paymentStrategy = PaymentStrategy.AutoPay
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         resolveStack(driver)
 
         // Creature bounced, and the kicker drew a card: -1 (spell cast) +1 (draw) = net unchanged.

@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tunnel Vision (RAV #72) — "Choose a card name. Target player reveals cards from the top of their
@@ -44,7 +45,7 @@ class TunnelVisionScenarioTest : FunSpec({
     fun GameTestDriver.tunnelVision(caster: EntityId, victim: EntityId, name: String) {
         giveMana(caster, Color.BLUE, 6)
         val spell = putCardInHand(caster, "Tunnel Vision")
-        castSpellWithTargets(caster, spell, listOf(ChosenTarget.Player(victim))).isSuccess shouldBe true
+        castSpellWithTargets(caster, spell, listOf(ChosenTarget.Player(victim))).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && pendingDecision == null && guard++ < 10) bothPass()
 

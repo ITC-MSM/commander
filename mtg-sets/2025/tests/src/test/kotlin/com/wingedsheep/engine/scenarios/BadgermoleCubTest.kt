@@ -20,6 +20,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Badgermole Cub ({1}{G}, 2/2 Badger Mole).
@@ -163,7 +164,7 @@ class BadgermoleCubTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = elf, abilityId = manaAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val activePool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()!!
         val opponentPool = driver.state.getEntity(opponent)?.get<ManaPoolComponent>()!!

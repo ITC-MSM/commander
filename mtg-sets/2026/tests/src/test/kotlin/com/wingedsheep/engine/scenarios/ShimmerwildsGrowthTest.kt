@@ -20,6 +20,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Shimmerwilds Growth.
@@ -124,7 +125,7 @@ class ShimmerwildsGrowthTest : FunSpec({
                 abilityId = manaAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Forest's base {G} is swapped to {U} + 1 extra {U} from the bonus trigger.
         val pool = driver.state.getEntity(activePlayer)!!.get<ManaPoolComponent>()!!
@@ -164,7 +165,7 @@ class ShimmerwildsGrowthTest : FunSpec({
                 sourceId = mountain,
                 abilityId = mountainManaAbilityId
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)!!.get<ManaPoolComponent>()!!
         pool.red shouldBe 0
@@ -229,7 +230,7 @@ class ShimmerwildsGrowthTest : FunSpec({
                 sourceId = forest,
                 abilityId = manaAbilityId
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)!!.get<ManaPoolComponent>()!!
         pool.green shouldBe 2

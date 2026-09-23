@@ -21,6 +21,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Psychogenic Probe (MRD #231) — "Whenever a spell or ability causes a player to shuffle their
@@ -71,7 +72,7 @@ class PsychogenicProbeScenarioTest : FunSpec({
      */
     fun GameTestDriver.shuffleWith(playerId: EntityId, myr: EntityId) {
         while (priorityPlayer != playerId) passPriority(priorityPlayer!!)
-        submit(ActivateAbility(playerId, myr, mindservantAbility)).isSuccess shouldBe true
+        submit(ActivateAbility(playerId, myr, mindservantAbility)).outcome shouldBe Outcome.Done
         bothPass()
         while (stackSize > 0) bothPass()
     }
@@ -132,7 +133,7 @@ class PsychogenicProbeScenarioTest : FunSpec({
         d.giveColorlessMana(d.player1, 2)
         d.giveMana(d.player1, Color.BLUE, 1)
 
-        d.castSpell(d.player1, fabricate).isSuccess shouldBe true
+        d.castSpell(d.player1, fabricate).outcome shouldBe Outcome.Done
         d.bothPass()
 
         val search = d.state.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
@@ -179,7 +180,7 @@ class PsychogenicProbeScenarioTest : FunSpec({
         d.registerCards(TestCards.all + PsychogenicProbe)
         d.initMirrorMatch(deck = Deck.of("Mountain" to 40), skipMulligans = false, startingPlayer = 0)
 
-        d.submit(TakeMulligan(d.player1)).isSuccess shouldBe true
+        d.submit(TakeMulligan(d.player1)).outcome shouldBe Outcome.Done
 
         val mulliganShuffles = d.events.filterIsInstance<LibraryShuffledEvent>()
             .filter { it.playerId == d.player1 && it.cause != ShuffleCause.GAME_SETUP }

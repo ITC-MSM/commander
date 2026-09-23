@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Relentless X-ATM092 — {6} Artifact Creature — Robot Spider, 6/5.
@@ -45,7 +46,7 @@ class RelentlessXatm092ScenarioTest : FunSpec({
         val xatm = driver.putCardInGraveyard(me, "Relentless X-ATM092")
         driver.giveMana(me, Color.RED, 8)
 
-        driver.submit(ActivateAbility(playerId = me, sourceId = xatm, abilityId = abilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(playerId = me, sourceId = xatm, abilityId = abilityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.isPaused shouldBe false
 

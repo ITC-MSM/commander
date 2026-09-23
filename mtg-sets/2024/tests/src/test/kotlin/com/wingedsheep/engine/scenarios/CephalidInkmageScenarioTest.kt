@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Cephalid Inkmage — {2}{U} Octopus Wizard 2/2
@@ -50,7 +52,7 @@ class CephalidInkmageScenarioTest : FunSpec({
         val result = driver.submitExpectFailure(
             DeclareBlockers(driver.player2, mapOf(blocker to listOf(inkmage)))
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "can't be blocked"
     }
 
@@ -70,6 +72,6 @@ class CephalidInkmageScenarioTest : FunSpec({
 
         driver.declareBlockers(
             driver.player2, mapOf(blocker to listOf(inkmage))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
     }
 })

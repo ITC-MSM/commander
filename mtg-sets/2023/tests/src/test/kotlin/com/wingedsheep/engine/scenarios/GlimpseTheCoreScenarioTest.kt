@@ -16,6 +16,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Glimpse the Core (LCI #186, {1}{G} Sorcery).
@@ -67,7 +68,7 @@ class GlimpseTheCoreScenarioTest : FunSpec({
             )
         )
         withClue("Casting Glimpse the Core mode 0 should succeed") {
-            cast.isSuccess shouldBe true
+            cast.outcome shouldBe Outcome.Done
         }
 
         // Resolve until the library-search SelectCardsDecision pauses.
@@ -122,7 +123,7 @@ class GlimpseTheCoreScenarioTest : FunSpec({
             )
         )
         withClue("Casting Glimpse the Core mode 1 should succeed") {
-            cast.isSuccess shouldBe true
+            cast.outcome shouldBe Outcome.Done
         }
 
         // Mode 1 requires no interactive decisions — resolve the whole stack.

@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.effects.ManaExpiry
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sozin's Comet (TLA) — {3}{R}{R} — Sorcery — Mythic.
@@ -91,7 +92,7 @@ class SozinsCometScenarioTest : FunSpec({
 
         val comet = driver.putCardInHand(me, "Sozin's Comet")
         driver.giveMana(me, Color.RED, 5) // {3}{R}{R}
-        driver.castSpell(me, comet).isSuccess shouldBe true
+        driver.castSpell(me, comet).outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         // The creature carries the granted firebending trigger.
@@ -125,7 +126,7 @@ class SozinsCometScenarioTest : FunSpec({
 
         // It cannot be cast the turn it was foretold (CR 702.143a).
         driver.giveMana(me, Color.RED, 3) // enough for {2}{R}, so the failure is timing, not mana
-        driver.castSpell(me, comet).isSuccess shouldBe false
+        driver.castSpell(me, comet).outcome shouldNotBe Outcome.Done
     }
 
     test("foretell: cast it from exile for {2}{R} on a later turn; the firebending grant happens") {
@@ -145,7 +146,7 @@ class SozinsCometScenarioTest : FunSpec({
         driver.removeSummoningSickness(creature)
 
         driver.giveMana(me, Color.RED, 3) // {2}{R}
-        driver.castSpell(me, comet).isSuccess shouldBe true
+        driver.castSpell(me, comet).outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         // Resolved into a firebending grant on the creature I control.

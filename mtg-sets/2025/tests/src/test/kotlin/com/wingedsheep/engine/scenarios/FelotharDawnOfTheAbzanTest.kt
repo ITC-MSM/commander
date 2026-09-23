@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Felothar, Dawn of the Abzan ({W}{B}{G}, 3/3, Trample):
@@ -47,7 +48,7 @@ class FelotharDawnOfTheAbzanTest : FunSpec({
         driver.giveMana(me, Color.BLACK, 1)
         driver.giveMana(me, Color.GREEN, 1)
         val felotharCard = driver.putCardInHand(me, "Felothar, Dawn of the Abzan")
-        driver.castSpell(me, felotharCard).isSuccess shouldBe true
+        driver.castSpell(me, felotharCard).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature spell
         driver.bothPass() // resolve the enters trigger off the stack
 
@@ -75,7 +76,7 @@ class FelotharDawnOfTheAbzanTest : FunSpec({
         driver.giveMana(me, Color.BLACK, 1)
         driver.giveMana(me, Color.GREEN, 1)
         val felotharCard = driver.putCardInHand(me, "Felothar, Dawn of the Abzan")
-        driver.castSpell(me, felotharCard).isSuccess shouldBe true
+        driver.castSpell(me, felotharCard).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Archenemy's Charm — {B}{B}{B} Instant, modal "Choose one —".
@@ -57,7 +58,7 @@ class ArchenemysCharmScenarioTest : FunSpec({
                 chosenModes = listOf(1),
                 modeTargetsOrdered = listOf(targets)
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getHand(me).contains(dead) shouldBe true
@@ -88,7 +89,7 @@ class ArchenemysCharmScenarioTest : FunSpec({
                 chosenModes = listOf(1),
                 modeTargetsOrdered = listOf(targets)
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getHand(me).containsAll(listOf(first, second)) shouldBe true
@@ -131,7 +132,7 @@ class ArchenemysCharmScenarioTest : FunSpec({
                 chosenModes = listOf(0),
                 modeTargetsOrdered = listOf(targets)
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getExile(opponent).contains(victim) shouldBe true
@@ -157,7 +158,7 @@ class ArchenemysCharmScenarioTest : FunSpec({
                 chosenModes = listOf(2),
                 modeTargetsOrdered = listOf(targets)
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         projector.getProjectedPower(driver.state, mine) shouldBe 5

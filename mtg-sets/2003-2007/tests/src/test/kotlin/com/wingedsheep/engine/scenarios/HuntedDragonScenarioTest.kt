@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Hunted Dragon (RAV #131) — {3}{R}{R} Creature — Dragon 6/6.
@@ -33,7 +34,7 @@ class HuntedDragonScenarioTest : ScenarioTestBase() {
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                game.castSpell(1, "Hunted Dragon").isSuccess shouldBe true
+                game.castSpell(1, "Hunted Dragon").outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val dragon = game.findPermanent("Hunted Dragon")!!

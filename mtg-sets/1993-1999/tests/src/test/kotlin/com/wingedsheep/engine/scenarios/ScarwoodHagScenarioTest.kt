@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Scarwood Hag — a give/take pair on forestwalk.
@@ -56,17 +58,17 @@ class ScarwoodHagScenarioTest : FunSpec({
                 abilityId = grantAbilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, attacker)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.projectedState.hasKeyword(attacker, Keyword.FORESTWALK) shouldBe true
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("the defender controls a Forest, so forestwalk shuts the block down") {
-            driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe false
+            driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldNotBe Outcome.Done
         }
     }
 
@@ -94,7 +96,7 @@ class ScarwoodHagScenarioTest : FunSpec({
                 abilityId = removeAbilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, walker)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("and the Hag takes it away for the turn") {

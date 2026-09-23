@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Circle of Solace (ONS #13).
@@ -64,7 +65,7 @@ class CircleOfSolaceTest : FunSpec({
                 abilityId = circleAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the ability
 
         // Advance to combat

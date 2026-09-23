@@ -17,6 +17,8 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Secret Tunnel's printed "This land can't be blocked" must be honored once the land is animated
@@ -111,7 +113,7 @@ class SecretTunnelAnimatedUnblockableTest : FunSpec({
 
         driver.advanceToPlayer1DeclareAttackers()
         driver.currentStep shouldBe Step.DECLARE_ATTACKERS
-        driver.declareAttackers(driver.player1, listOf(tunnel), driver.player2).isSuccess shouldBe true
+        driver.declareAttackers(driver.player1, listOf(tunnel), driver.player2).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
@@ -119,7 +121,7 @@ class SecretTunnelAnimatedUnblockableTest : FunSpec({
             DeclareBlockers(driver.player2, mapOf(blocker to listOf(tunnel)))
         )
         withClue("Secret Tunnel can't be blocked, so declaring a blocker on it must be rejected") {
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
         }
         withClue("the rejection must be BECAUSE it can't be blocked (not some unrelated setup reason): ${result.error}") {
             result.error shouldContainIgnoringCase "blocked"

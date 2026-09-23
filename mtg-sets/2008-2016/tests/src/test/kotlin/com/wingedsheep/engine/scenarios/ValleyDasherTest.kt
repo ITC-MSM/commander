@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Valley Dasher's "attacks each combat if able" with haste.
@@ -52,7 +54,7 @@ class ValleyDasherTest : FunSpec({
                 attackers = emptyMap()
             )
         )
-        noAttackResult.isSuccess shouldBe false
+        noAttackResult.outcome shouldNotBe Outcome.Done
         noAttackResult.error shouldContain "must attack"
 
         // Declare Valley Dasher as attacker - should succeed
@@ -62,7 +64,7 @@ class ValleyDasherTest : FunSpec({
                 attackers = mapOf(dasherId to opponent)
             )
         )
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
     }
 
     test("Valley Dasher without summoning sickness must attack") {
@@ -82,7 +84,7 @@ class ValleyDasherTest : FunSpec({
                 attackers = emptyMap()
             )
         )
-        noAttackResult.isSuccess shouldBe false
+        noAttackResult.outcome shouldNotBe Outcome.Done
         noAttackResult.error shouldContain "must attack"
     }
 })

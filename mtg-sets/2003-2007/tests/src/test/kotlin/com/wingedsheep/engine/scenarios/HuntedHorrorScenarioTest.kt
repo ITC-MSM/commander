@@ -7,6 +7,8 @@ import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario test for Hunted Horror (RAV #90) — {B}{B} Creature — Horror 7/7.
@@ -37,7 +39,7 @@ class HuntedHorrorScenarioTest : ScenarioTestBase() {
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                game.castSpell(1, "Hunted Horror").isSuccess shouldBe true
+                game.castSpell(1, "Hunted Horror").outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val horror = game.findPermanent("Hunted Horror")!!
@@ -71,14 +73,14 @@ class HuntedHorrorScenarioTest : ScenarioTestBase() {
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                game.castSpell(1, "Hunted Horror").isSuccess shouldBe true
+                game.castSpell(1, "Hunted Horror").outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val centaur = game.findPermanents("Centaur Token").first()
 
                 val kill = game.castSpell(1, "Terror", centaur)
                 withClue("Protection from black should make the Centaur an illegal target") {
-                    kill.isSuccess shouldBe false
+                    kill.outcome shouldNotBe Outcome.Done
                 }
                 withClue("The Centaur is still on the battlefield") {
                     game.findPermanents("Centaur Token") shouldHaveSize 2

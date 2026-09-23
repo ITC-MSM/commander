@@ -13,6 +13,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Eternal Witness (5DN #86) — {1}{G}{G} 2/1 Human Shaman, "When this creature enters, you may return
@@ -43,7 +44,7 @@ class EternalWitnessScenarioTest : FunSpec({
     fun castWitness(d: GameTestDriver) {
         val card = d.putCardInHand(d.player1, "Eternal Witness")
         d.giveMana(d.player1, Color.GREEN, 3)
-        d.castSpell(d.player1, card).isSuccess shouldBe true
+        d.castSpell(d.player1, card).outcome shouldBe Outcome.Done
         d.bothPass() // resolve the creature; its enters trigger goes on the stack and wants a target
         // "you may return target card …" — the consent gate is answered before the target is asked
         // for, so accept it here and leave the target decision pending for the caller. A trigger

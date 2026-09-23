@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Rolling Hamsphere has a permanent static "This Vehicle gets +1/+1 for each Hamster
@@ -63,7 +64,7 @@ class RollingHamsphereVehiclePTGatingTest : FunSpec({
         projector.getProjectedToughness(driver.state, hamsphere) shouldBe 4
 
         // Crew it. Jolly Gerbils is 2/3, so two of them well over Crew 3.
-        driver.submit(CrewVehicle(you, hamsphere, listOf(gerbil1, gerbil2))).isSuccess shouldBe true
+        driver.submit(CrewVehicle(you, hamsphere, listOf(gerbil1, gerbil2))).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the Crew ability
 
         // Now a creature with 2 Hamsters present (the two Jolly Gerbils): 4+2 / 4+2.

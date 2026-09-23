@@ -20,6 +20,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests F1 / F2 from [`backlog/modal-cast-time-choices-plan.md`]: enforcement of
@@ -78,7 +79,7 @@ class ModalAllowRepeatTest : FunSpec({
 
         val spell = d.putCardInHand(p1, "Test Non-Repeat Modal")
         val result = d.submit(CastSpell(playerId = p1, cardId = spell))
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
 
         // First decision offers all three modes (none picked yet).
         val firstDecision = d.pendingDecision.shouldBeInstanceOf<ChooseOptionDecision>()

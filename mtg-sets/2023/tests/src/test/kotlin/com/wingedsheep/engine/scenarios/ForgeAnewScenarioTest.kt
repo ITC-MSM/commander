@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Forge Anew — ETB reanimates a target Equipment from your graveyard, then grants instant-speed
@@ -57,7 +58,7 @@ class ForgeAnewScenarioTest : FunSpec({
         // First equip this turn is free even with no mana.
         driver.submit(
             ActivateAbility(you, sword, equipId, targets = listOf(ChosenTarget.Permanent(a)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(sword)?.get<AttachedToComponent>()?.targetId shouldBe a
 
@@ -138,7 +139,7 @@ class ForgeAnewScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.BEGIN_COMBAT)
         driver.submit(
             ActivateAbility(you, sword, equipId, targets = listOf(ChosenTarget.Permanent(courser)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(sword)?.get<AttachedToComponent>()?.targetId shouldBe courser
     }

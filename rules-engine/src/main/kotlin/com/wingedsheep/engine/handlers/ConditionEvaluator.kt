@@ -791,27 +791,27 @@ class ConditionEvaluator(
             is TriggeringEntityEnteredOrWasCastFromGraveyard ->
                 ifResolution { evaluateTriggeringEntityEnteredOrWasCastFromGraveyard(state, it) }
             is TriggeringEntityHadMinusOneMinusOneCounter ->
-                ifResolution { (it.triggerMinusOneMinusOneCounterCount ?: 0) > 0 }
+                ifResolution { (it.triggerContext?.minusOneMinusOneCounterCount ?: 0) > 0 }
             is TriggeringEntityHadCounters ->
-                ifResolution { (it.triggerTotalCounterCount ?: 0) > 0 }
+                ifResolution { (it.triggerContext?.totalCounterCount ?: 0) > 0 }
             is com.wingedsheep.sdk.scripting.conditions.TriggeringEntityHadSubtype ->
                 // Subtype names are captured in projected form (e.g. "Demon"); compare
                 // case-insensitively so card authors can pass either Subtype.X.value or a literal.
                 ifResolution { ctx ->
-                    ctx.triggerLastKnownSubtypes.orEmpty().any { it.equals(condition.subtype, ignoreCase = true) }
+                    ctx.triggerContext?.lastKnownSubtypes.orEmpty().any { it.equals(condition.subtype, ignoreCase = true) }
                 }
             is com.wingedsheep.sdk.scripting.conditions.TriggeringEntityHadCardType ->
                 // Card-type names are captured from the projected TypeLine's enum names (e.g.
                 // "CREATURE"); compare case-insensitively so card authors can pass either
                 // CardType.X.name or a literal.
                 ifResolution { ctx ->
-                    ctx.triggerLastKnownCardTypes.orEmpty().any { it.equals(condition.cardType, ignoreCase = true) }
+                    ctx.triggerContext?.lastKnownCardTypes.orEmpty().any { it.equals(condition.cardType, ignoreCase = true) }
                 }
             // CR 701.30d — "if you won" on a "Whenever you clash" trigger. The clash is over by the
             // time the ability resolves, so the outcome travels as trigger context; a null (this
             // trigger was not fired by a clash) reads as "did not win".
             is com.wingedsheep.sdk.scripting.conditions.YouWonTheClash ->
-                ifResolution { it.triggerClashWon == true }
+                ifResolution { it.triggerContext?.clashWon == true }
             is TriggeringEntityWasNotPutByThisSource ->
                 ifResolution { evaluateTriggeringEntityWasNotPutByThisSource(state, it) }
             is TriggeringSpellHasSingleTarget -> ifResolution { evaluateTriggeringSpellHasSingleTarget(state, it) }

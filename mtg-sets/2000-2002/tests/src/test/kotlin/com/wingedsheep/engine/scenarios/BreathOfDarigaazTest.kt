@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Breath of Darigaaz.
@@ -72,7 +73,7 @@ class BreathOfDarigaazTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = player1, cardId = breath, declaredCostSlot = null, paymentStrategy = PaymentStrategy.AutoPay)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Non-flier dies to 1 damage; flier untouched.
@@ -99,7 +100,7 @@ class BreathOfDarigaazTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = player1, cardId = breath, declaredCostSlot = ChoiceSlot.KICKED, paymentStrategy = PaymentStrategy.AutoPay)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 4-toughness non-flier dies only because the spell was kicked; flier untouched.

@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Sizzling Changeling.
@@ -54,10 +55,10 @@ class SizzlingChangelingTest : FunSpec({
         val blocker = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(changeling), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(changeling), p2).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(p2, mapOf(blocker to listOf(changeling))).isSuccess shouldBe true
+        driver.declareBlockers(p2, mapOf(blocker to listOf(changeling))).outcome shouldBe Outcome.Done
 
         // Resolve combat damage (Changeling dies) and its dies trigger (exile + grant may-play).
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN, maxPasses = 200)
@@ -103,7 +104,7 @@ class SizzlingChangelingTest : FunSpec({
         driver.state.mayPlayPermissions.any { exiled in it.cardIds } shouldBe true
 
         // And the card can actually be played from exile.
-        driver.playLand(p1, exiled).isSuccess shouldBe true
+        driver.playLand(p1, exiled).outcome shouldBe Outcome.Done
         driver.getExile(p1).contains(exiled) shouldBe false
     }
 
@@ -147,6 +148,6 @@ class SizzlingChangelingTest : FunSpec({
 
         // Cast the {B} creature from exile.
         driver.giveMana(p1, Color.BLACK, 1)
-        driver.castSpell(p1, exiled).isSuccess shouldBe true
+        driver.castSpell(p1, exiled).outcome shouldBe Outcome.Done
     }
 })

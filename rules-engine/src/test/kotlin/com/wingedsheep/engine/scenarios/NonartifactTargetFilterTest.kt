@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Covers the `CardPredicate.IsNonartifact` predicate end-to-end on the battlefield, via a
@@ -60,7 +62,7 @@ class NonartifactTargetFilterTest : FunSpec({
         driver.giveMana(player, Color.BLACK, 2) // pays {1}{B}
 
         val result = driver.castSpellWithTargets(player, spell, listOf(ChosenTarget.Permanent(centaur)))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(player, "Centaur Courser") shouldBe null
@@ -76,7 +78,7 @@ class NonartifactTargetFilterTest : FunSpec({
         driver.giveMana(player, Color.BLACK, 2) // pays {1}{B}
 
         val result = driver.castSpellWithTargets(player, spell, listOf(ChosenTarget.Permanent(golem)))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         // The artifact creature survives the illegal cast attempt.
         driver.findPermanent(player, "Artifact Creature") shouldBe golem
     }
@@ -90,7 +92,7 @@ class NonartifactTargetFilterTest : FunSpec({
         driver.giveMana(player, Color.BLACK, 2) // pays {1}{B}
 
         val result = driver.castSpellWithTargets(player, spell, listOf(ChosenTarget.Permanent(zombie)))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.findPermanent(player, "Black Creature") shouldBe zombie
     }
 })

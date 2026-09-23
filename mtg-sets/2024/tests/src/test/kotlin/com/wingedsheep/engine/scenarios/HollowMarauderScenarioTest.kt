@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Hollow Marauder — {6}{B} Creature — Specter Rogue, 4/2, Flying
@@ -81,7 +82,7 @@ class HollowMarauderScenarioTest : FunSpec({
                 cardId = marauder,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve the creature spell + ETB trigger, driving each decision as it appears:
         //  - controller chooses the target opponent(s)
@@ -116,7 +117,7 @@ class HollowMarauderScenarioTest : FunSpec({
                 cardId = marauder,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         drivePassesAndDecisions(driver, me, opponent, bigCard)
 
@@ -149,6 +150,6 @@ class HollowMarauderScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

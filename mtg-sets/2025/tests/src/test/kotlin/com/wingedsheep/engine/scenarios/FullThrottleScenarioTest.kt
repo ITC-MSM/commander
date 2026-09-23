@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /** Full Throttle and its repeating beginning-of-combat delayed trigger. */
 class FullThrottleScenarioTest : FunSpec({
@@ -49,7 +50,7 @@ class FullThrottleScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         driver.giveMana(attacker, Color.RED, 6)
         val fullThrottle = driver.putCardInHand(attacker, "Full Throttle")
-        driver.castSpell(attacker, fullThrottle).isSuccess shouldBe true
+        driver.castSpell(attacker, fullThrottle).outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         driver.state.getEntity(attacker)?.get<AdditionalPhasesComponent>() shouldBe

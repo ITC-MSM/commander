@@ -11,6 +11,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Combat damage assignment flow, driven through the combat resolution board
@@ -42,10 +43,10 @@ class CombatDamageAssignmentTest : FunSpec({
         driver.removeSummoningSickness(trampler)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(trampler), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(trampler), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(trampler))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(trampler))).outcome shouldBe Outcome.Done
 
         // Advance to combat damage — the board pauses here (passPriorityUntil stops at the step
         // boundary before it would auto-resolve the decision).
@@ -84,10 +85,10 @@ class CombatDamageAssignmentTest : FunSpec({
         driver.removeSummoningSickness(trampler)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(trampler), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(trampler), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(trampler))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(trampler))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.COMBAT_DAMAGE)
 
@@ -116,7 +117,7 @@ class CombatDamageAssignmentTest : FunSpec({
         driver.removeSummoningSickness(trampler)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(trampler), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(trampler), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         // Damage-assignment order is folded into the board (declaration order is the default).
@@ -160,10 +161,10 @@ class CombatDamageAssignmentTest : FunSpec({
         driver.removeSummoningSickness(trampler)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(trampler), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(trampler), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(trampler))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(trampler))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.COMBAT_DAMAGE)
 
@@ -200,10 +201,10 @@ class CombatDamageAssignmentTest : FunSpec({
         driver.removeSummoningSickness(rat)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(rat), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(rat), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(bigCreature to listOf(rat))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(bigCreature to listOf(rat))).outcome shouldBe Outcome.Done
 
         // Single blocker, no trample: no board, auto-resolves.
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
@@ -229,10 +230,10 @@ class CombatDamageAssignmentTest : FunSpec({
         driver.removeSummoningSickness(attacker)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(attacker), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldBe Outcome.Done
 
         // Should pass straight through combat damage with no decision
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
@@ -256,10 +257,10 @@ class CombatDamageAssignmentTest : FunSpec({
         driver.removeSummoningSickness(trampler)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(trampler), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(trampler), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(trampler))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(trampler))).outcome shouldBe Outcome.Done
 
         // passPriorityUntil(POSTCOMBAT_MAIN) auto-resolves the board with its defaults.
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
@@ -285,10 +286,10 @@ class CombatDamageAssignmentTest : FunSpec({
         driver.removeSummoningSickness(trampler)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(trampler), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(trampler), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(clericBlocker to listOf(trampler))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(clericBlocker to listOf(trampler))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.COMBAT_DAMAGE)
 
@@ -328,10 +329,10 @@ class CombatDamageAssignmentTest : FunSpec({
         driver.removeSummoningSickness(trampler)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(trampler), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(trampler), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(clericBlocker to listOf(trampler))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(clericBlocker to listOf(trampler))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.COMBAT_DAMAGE)
 

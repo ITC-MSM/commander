@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Regression tests for explicit mana payment color enforcement.
@@ -69,7 +71,7 @@ class ExplicitManaPaymentColorTest : FunSpec({
                 paymentStrategy = PaymentStrategy.Explicit(listOf(mountain))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         // Creature should still be face-down
         driver.state.getEntity(rangers)?.has<FaceDownComponent>() shouldBe true
     }
@@ -94,7 +96,7 @@ class ExplicitManaPaymentColorTest : FunSpec({
                 paymentStrategy = PaymentStrategy.Explicit(listOf(forest))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.state.getEntity(rangers)?.has<FaceDownComponent>() shouldBe false
     }
 
@@ -116,7 +118,7 @@ class ExplicitManaPaymentColorTest : FunSpec({
                 paymentStrategy = PaymentStrategy.Explicit(listOf(forest))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("cast spell: can pay {R} cost by tapping a Mountain") {
@@ -137,6 +139,6 @@ class ExplicitManaPaymentColorTest : FunSpec({
                 paymentStrategy = PaymentStrategy.Explicit(listOf(mountain))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

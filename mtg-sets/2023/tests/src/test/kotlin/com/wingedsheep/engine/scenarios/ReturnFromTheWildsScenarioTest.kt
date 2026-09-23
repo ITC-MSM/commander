@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /** Scenario tests for Return from the Wilds. */
 class ReturnFromTheWildsScenarioTest : ScenarioTestBase() {
@@ -28,7 +29,7 @@ class ReturnFromTheWildsScenarioTest : ScenarioTestBase() {
                 val cardId = game.findCardsInHand(1, "Return from the Wilds").first()
                 game.execute(
                     CastSpell(game.player1Id, cardId, emptyList(), chosenModes = listOf(1, 2))
-                ).isSuccess shouldBe true
+                ).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 game.findPermanents("Human Token").size shouldBe 1
@@ -52,7 +53,7 @@ class ReturnFromTheWildsScenarioTest : ScenarioTestBase() {
                 val cardId = game.findCardsInHand(1, "Return from the Wilds").first()
                 game.execute(
                     CastSpell(game.player1Id, cardId, emptyList(), chosenModes = listOf(0, 1))
-                ).isSuccess shouldBe true
+                ).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 // The library holds a single Plains — the search auto-resolves to it.
@@ -84,7 +85,7 @@ class ReturnFromTheWildsScenarioTest : ScenarioTestBase() {
                 val cardId = game.findCardsInHand(1, "Return from the Wilds").first()
                 game.execute(
                     CastSpell(game.player1Id, cardId, emptyList(), chosenModes = listOf(2))
-                ).isSuccess shouldBe false
+                ).outcome shouldNotBe Outcome.Done
             }
         }
     }

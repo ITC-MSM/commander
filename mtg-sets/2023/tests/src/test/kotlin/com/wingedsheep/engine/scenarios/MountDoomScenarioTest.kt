@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Mount Doom — "{5}{B}{R}, {T}, Sacrifice Mount Doom and a legendary artifact: Choose up to two
@@ -52,7 +54,7 @@ class MountDoomScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(stone)),
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Both halves of the cost were paid up front.
         driver.findPermanent(p1, "Mount Doom") shouldBe null
@@ -92,7 +94,7 @@ class MountDoomScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = emptyList()),
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.findPermanent(p1, "Mount Doom").let { it shouldBe mountDoom }
     }
 })

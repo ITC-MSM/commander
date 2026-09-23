@@ -12,6 +12,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.collections.shouldHaveSize
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario 3: Stack War (Counter Battle)
@@ -74,7 +75,7 @@ class StackWarTest : FunSpec({
         val result = driver.castSpell(activePlayer, bolt, listOf(opponent))
 
         // Spell should be on the stack
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 1
         driver.getTopOfStackName() shouldBe "Lightning Bolt"
     }
@@ -152,7 +153,7 @@ class StackWarTest : FunSpec({
                     paymentStrategy = PaymentStrategy.AutoPay
                 )
             )
-            result.isSuccess shouldBe false
+            result.outcome shouldNotBe Outcome.Done
         }
     }
 
@@ -271,7 +272,7 @@ class StackWarTest : FunSpec({
 
         val result = driver.castSpell(opponent, opponentBolt, listOf(activePlayer))
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 2
     }
 

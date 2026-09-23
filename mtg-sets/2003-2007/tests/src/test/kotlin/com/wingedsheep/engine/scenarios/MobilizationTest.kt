@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Mobilization.
@@ -81,7 +82,7 @@ class MobilizationTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

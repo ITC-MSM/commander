@@ -16,6 +16,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Psychic Battle (INV #68) — Invasion engine gap #19: reveal-and-compare target swap.
@@ -60,7 +61,7 @@ class PsychicBattleTest : FunSpec({
         // Psychic Battle's ability goes on the stack above the Bolt.
         val bolt = driver.putCardInHand(opp, "Lightning Bolt")
         driver.giveMana(opp, Color.RED, 1)
-        driver.castSpellWithTargets(opp, bolt, listOf(ChosenTarget.Permanent(lions))).isSuccess shouldBe true
+        driver.castSpellWithTargets(opp, bolt, listOf(ChosenTarget.Permanent(lions))).outcome shouldBe Outcome.Done
         driver.state.stack.contains(bolt) shouldBe true
 
         return Triple(driver, listOf(you, opp, courser, lions), bolt)

@@ -3,7 +3,6 @@ package com.wingedsheep.engine.handlers.actions.ability
 import com.wingedsheep.engine.core.CardCycledEvent
 import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.CycleCard
-import com.wingedsheep.engine.core.CycleDrawContinuation
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.GameEvent
@@ -11,8 +10,6 @@ import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.core.ZoneChangeEvent
-import com.wingedsheep.engine.event.TriggerDetector
-import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.EffectContext
@@ -34,6 +31,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.PreventCycling
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Handler for the CycleCard action.
@@ -44,8 +42,6 @@ import kotlin.reflect.KClass
 class CycleCardHandler(
     private val cardRegistry: CardRegistry,
     private val manaSolver: ManaSolver,
-    private val triggerDetector: TriggerDetector,
-    private val triggerProcessor: TriggerProcessor,
     private val manaAbilitySideEffectExecutor: ManaAbilitySideEffectExecutor,
     private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)?,
     private val replacementProcessor: ReplacementEffectProcessor = ReplacementEffectProcessor()
@@ -260,35 +256,6 @@ class CycleCardHandler(
 
         currentState = currentState.tick()
 
-        // Detect and process triggers from discard + cycling events before drawing,
-        // since the draw may pause for replacement effects (e.g., Words cycle)
-        val preTriggers = triggerDetector.detectTriggers(currentState, events)
-        if (preTriggers.isNotEmpty()) {
-            // Push draw continuation BEFORE processing triggers, so it ends up below
-            // any trigger continuations on the stack. After all triggers resolve,
-            // checkForMoreContinuations() will find this and execute the draw.
-            val stateWithDrawContinuation = currentState.pushContinuation(
-                CycleDrawContinuation(playerId = action.playerId)
-            )
-            val triggerResult = triggerProcessor.processTriggers(stateWithDrawContinuation, preTriggers)
-
-            if (triggerResult.isPaused) {
-                // triggersAlreadyProcessed: the cycling events above have been through
-                // detectTriggers here. Without the flag, SubmitDecisionHandler re-scans this
-                // result's events when the cycle was resumed from a decision (an {X} cycling
-                // cost's ChooseNumber) and queues the cycling trigger a second time.
-                return ExecutionResult.propagatePause(
-                    triggerResult.state,
-                    events + triggerResult.events
-                ).copy(triggersAlreadyProcessed = true)
-            }
-
-            // Triggers resolved synchronously — pop the draw continuation and draw inline
-            val (_, stateAfterPop) = triggerResult.newState.popContinuation()
-            currentState = stateAfterPop
-            events.addAll(triggerResult.events)
-        }
-
         // Draw a card using DrawCardsExecutor (checks replacement shields).
         // Cycling is "Discard this card: Draw a card" (CR 702.29a). The announcement-site
         // modifier (CR 121.2a) fires via executeDraws → checkDrawAmount before the per-card loop.
@@ -298,18 +265,17 @@ class CycleCardHandler(
             replacementProcessor = replacementProcessor
         )
         val drawResult = drawExecutor.executeDraws(currentState, action.playerId, 1)
-        if (drawResult.isPaused) {
+        if (drawResult.outcome is Outcome.Paused) {
             return ExecutionResult.propagatePause(
                 drawResult.state,
                 events + drawResult.events
-            ).copy(triggersAlreadyProcessed = true)
+            )
         }
         currentState = drawResult.newState
         events.addAll(drawResult.events)
 
         // Cycling doesn't change priority
         return ExecutionResult.success(currentState, events)
-            .copy(triggersAlreadyProcessed = true)
     }
 
     private fun isCyclingPrevented(state: GameState): Boolean {
@@ -328,8 +294,6 @@ class CycleCardHandler(
             return CycleCardHandler(
                 services.cardRegistry,
                 services.manaSolver,
-                services.triggerDetector,
-                services.triggerProcessor,
                 services.manaAbilitySideEffectExecutor,
                 services.effectExecutorRegistry::execute,
                 services.replacementEffectProcessor
