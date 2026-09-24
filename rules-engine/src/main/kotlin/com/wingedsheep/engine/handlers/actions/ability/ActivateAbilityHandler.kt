@@ -35,6 +35,7 @@ import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
 import com.wingedsheep.engine.state.components.player.EquipActivationsThisTurnComponent
 import com.wingedsheep.engine.state.components.player.ExhaustAbilitiesActivatedThisTurnComponent
+import com.wingedsheep.engine.state.components.player.LoyaltyAbilitiesActivatedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.captureEntitySnapshots
@@ -315,6 +316,17 @@ class ActivateAbilityHandler(
             }
         }
 
+        // Track loyalty activations per player this turn ("if you've activated a loyalty ability
+        // this turn" — Kiora of Salt and Sand). Counted at activation (CR 602.2), independent of the
+        // per-planeswalker CR 606.3 tally above, which dies with the planeswalker.
+        if (ability.isPlaneswalkerAbility) {
+            currentState = currentState.updateEntity(action.playerId) { c ->
+                val tracker = c.get<LoyaltyAbilitiesActivatedThisTurnComponent>()
+                    ?: LoyaltyAbilitiesActivatedThisTurnComponent()
+                c.with(tracker.copy(count = tracker.count + 1))
+            }
+        }
+
         // Track equip activations this turn (Forge Anew's free-first-equip keys off count == 0).
         if (ability.isEquipAbility) {
             currentState = currentState.updateEntity(action.playerId) { c ->
@@ -412,6 +424,11 @@ class ActivateAbilityHandler(
             isExhaust = ability.isExhaust,
             cantBeCopied = ability.cantBeCopied,
             isLoyalty = ability.isPlaneswalkerAbility,
+            loyaltyCountersRemoved = when (val cost = ability.cost) {
+                is AbilityCost.Loyalty -> if (cost.change < 0) -cost.change else 0
+                AbilityCost.LoyaltyX -> activation.effectiveXValue ?: 0
+                else -> 0
+            },
         )
         var currentState = stackResult.newState
         events.addAll(stackResult.events)

@@ -5,7 +5,9 @@ import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.Patterns
+import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.model.CreatureStats
@@ -864,6 +866,34 @@ class CardLinterTest : DescribeSpec({
                 ),
             )
             findings(beast(CardScript(), back = back)).shouldBeEmpty()
+        }
+    }
+
+    describe("prowess keyword without its trigger") {
+
+        fun findings(card: CardDefinition) = CardLinter.lint(card)
+            .filterIsInstance<CardValidationError.ProwessWithoutTrigger>()
+
+        it("flags a card that lists Keyword.PROWESS through keywords(...)") {
+            val card = card("Display Prowess") {
+                manaCost = "{1}{R}"
+                typeLine = "Creature — Human Monk"
+                power = 1
+                toughness = 1
+                keywords(Keyword.PROWESS)
+            }
+            findings(card).shouldHaveSize(1)
+        }
+
+        it("accepts the prowess() builder, which adds the trigger") {
+            val card = card("Real Prowess") {
+                manaCost = "{1}{R}"
+                typeLine = "Creature — Human Monk"
+                power = 1
+                toughness = 1
+                prowess()
+            }
+            findings(card).shouldBeEmpty()
         }
     }
 })

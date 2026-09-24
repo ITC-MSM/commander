@@ -251,7 +251,17 @@ enum class TurnTracker {
      * things the card is measuring. `Compare(TurnTracking(You, CARDS_IN_HAND_AT_TURN_START), GTE,
      * Fixed(1))` powers Mindstorm Crown.
      */
-    CARDS_IN_HAND_AT_TURN_START;
+    CARDS_IN_HAND_AT_TURN_START,
+    /**
+     * Number of loyalty abilities (CR 606) the player has activated this turn. Backed by
+     * `LoyaltyAbilitiesActivatedThisTurnComponent`, reset to 0 for every player at the start of
+     * each turn and counted at activation time (CR 602.2), so an ability that was later countered —
+     * or whose planeswalker has since left the battlefield — still counts.
+     * `Compare(TurnTracking(You, LOYALTY_ABILITIES_ACTIVATED), GTE, Fixed(1))` is "if you've
+     * activated a loyalty ability this turn" (Kiora of Salt and Sand) — reach for it via
+     * `Conditions.YouActivatedLoyaltyAbilityThisTurn`.
+     */
+    LOYALTY_ABILITIES_ACTIVATED;
 
     fun descriptionFor(player: Player): String = when (this) {
         CREATURES_DIED -> "the number of creatures that died under ${player.possessive} control this turn"
@@ -299,6 +309,8 @@ enum class TurnTracker {
         }
         CARDS_IN_HAND_AT_TURN_START ->
             "the number of cards ${player.description} had in hand at the beginning of this turn"
+        LOYALTY_ABILITIES_ACTIVATED ->
+            "the number of loyalty abilities ${player.description} activated this turn"
     }
 }
 

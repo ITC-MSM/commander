@@ -23,7 +23,7 @@ val VedalkenBlademaster = card("Vedalken Blademaster") {
     power = 2
     toughness = 3
 
-    keywords(Keyword.PROWESS)
+    prowess()
 
     metadata {
         rarity = Rarity.COMMON

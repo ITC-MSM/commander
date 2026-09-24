@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.legalactions.enumerators.*
+import com.wingedsheep.engine.mechanics.SplitSecond
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.registry.CardRegistry
@@ -85,8 +86,16 @@ class LegalActionEnumerator(
         }
 
         // Normal priority: enumerate all action categories
+        val offers = enumerators.flatMap { it.enumerate(context) }
+        // Split second (CR 702.61): while a spell with it is on the stack, withhold every spell and
+        // non-mana activated ability — the same verdict ActionProcessor.validate reaches.
+        val permitted = if (SplitSecond.isLocked(state, cardRegistry)) {
+            offers.filterNot { SplitSecond.forbids(it.action, it.isManaAbility) }
+        } else {
+            offers
+        }
         return com.wingedsheep.engine.legalactions.enumerators.AdditionalManaForCountersOffer
-            .annotate(context, enumerators.flatMap { it.enumerate(context) })
+            .annotate(context, permitted)
     }
 
     /**

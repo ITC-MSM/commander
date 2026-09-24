@@ -771,6 +771,12 @@ data class AbilityActivatedEvent(
     val isExhaust: Boolean = false,
     /** True for a loyalty ability (CR 606) — "whenever you activate a loyalty ability". */
     val isLoyalty: Boolean = false,
+    /**
+     * How many loyalty counters the activation's cost removed (CR 606.4): N for a [−N] cost, the
+     * chosen X for [−X], 0 for [+N] / [0] and for every non-loyalty ability. Read by "if you
+     * removed two or more loyalty counters to activate it" (Way of the Mind Sculptor).
+     */
+    val loyaltyCountersRemoved: Int = 0,
 ) : GameEvent
 
 /**

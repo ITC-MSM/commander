@@ -215,10 +215,11 @@ class StackResolver(
         isExhaust: Boolean = false,
         cantBeCopied: Boolean = false,
         isLoyalty: Boolean = false,
+        loyaltyCountersRemoved: Int = 0,
     ): ExecutionResult =
         StackPlacement.putActivatedAbility(
             state, ability, targets, targetRequirements, emitActivationEvent, costsTap, isExhaust,
-            cantBeCopied, isLoyalty
+            cantBeCopied, isLoyalty, loyaltyCountersRemoved
         )
 
     // =========================================================================

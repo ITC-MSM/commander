@@ -11,6 +11,7 @@ import com.wingedsheep.engine.handlers.actions.priority.PriorityModule
 import com.wingedsheep.engine.handlers.actions.room.RoomModule
 import com.wingedsheep.engine.handlers.actions.special.SpecialActionsModule
 import com.wingedsheep.engine.handlers.actions.spell.SpellModule
+import com.wingedsheep.engine.mechanics.SplitSecond
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.core.UndoPolicyComputer
@@ -126,6 +127,14 @@ class ActionProcessor(
         // Check player exists
         if (!state.turnOrder.contains(action.playerId)) {
             return "Unknown player: ${action.playerId}"
+        }
+
+        // Split second (CR 702.61): no spells, no non-mana activated abilities. An ActivateAbility
+        // is decided by ActivationValidator, the only place that knows whether it's a mana ability.
+        if (action !is ActivateAbility && SplitSecond.forbids(action) &&
+            SplitSecond.isLocked(state, services.cardRegistry)
+        ) {
+            return SplitSecond.REJECTION
         }
 
         return null

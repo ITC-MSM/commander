@@ -48,7 +48,8 @@ val FugitiveCodebreaker = card("Fugitive Codebreaker") {
         "When this creature is turned face up, discard your hand, then draw three cards."
     power = 2
     toughness = 1
-    keywords(Keyword.PROWESS, Keyword.HASTE)
+    keywords(Keyword.HASTE)
+    prowess()
 
     disguise = "{5}{R}"
     disguiseCostReduction = CostReductionSource.CardsInGraveyardMatchingFilter(

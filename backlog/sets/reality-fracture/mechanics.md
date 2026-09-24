@@ -136,11 +136,11 @@ Create red and green artifact tokens with a tap ability producing red or green m
 
 Cards: Aerid Konstrari; Heartwood Crafter; Hungering Puppetbeast; Konstrari Improviser; Tenured Tethermage; Woodwork Prodigy
 
-### - [ ] Loyalty activation interactions (6 cards)
+### - [x] Loyalty activation interactions (6 cards)
 
 Trigger on, modify timing of, or inspect activation of loyalty abilities.
 
-**Engine support:** Loyalty-specific event filtering exists: `Triggers.YouActivateLoyaltyAbility` / `Triggers.OpponentActivatesLoyaltyAbility` (`AbilityActivatedEvent.requireLoyalty`, matched on the event's `isLoyalty` flag) — Gideon the Oathless and Way of the Paradox use it. Still missing: loyalty counters spent on the activation (Way of the Mind Sculptor), "you've activated a loyalty ability this turn" history (Kiora of Salt and Sand), and instant-speed loyalty permission (Jace's Machinations).
+**Engine support:** `Triggers.YouActivateLoyaltyAbility` / `Triggers.OpponentActivatesLoyaltyAbility` (Gideon the Oathless, Way of the Paradox); counters spent on the activation via `Triggers.YouActivateLoyaltyAbilityRemovingAtLeast(n)` (Way of the Mind Sculptor); this-turn history via `TurnTracker.LOYALTY_ABILITIES_ACTIVATED` / `Conditions.YouActivatedLoyaltyAbilityThisTurn` (Kiora of Salt and Sand); instant-speed permission via `Effects.InstantSpeedLoyaltyAbilities` (Jace's Machinations).
 
 Cards: Ajani Unrelenting; Gideon the Oathless; Jace's Machinations; Kiora of Salt and Sand; Way of the Mind Sculptor; Way of the Paradox
 

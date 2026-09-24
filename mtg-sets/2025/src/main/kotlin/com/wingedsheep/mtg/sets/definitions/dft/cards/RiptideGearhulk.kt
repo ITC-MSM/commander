@@ -38,7 +38,9 @@ val RiptideGearhulk = card("Riptide Gearhulk") {
         "When this creature enters, for each opponent, put up to one target nonland permanent that " +
         "player controls into its owner's library third from the top."
 
-    keywords(Keyword.DOUBLE_STRIKE, Keyword.PROWESS)
+    keywords(Keyword.DOUBLE_STRIKE)
+
+    prowess()
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield

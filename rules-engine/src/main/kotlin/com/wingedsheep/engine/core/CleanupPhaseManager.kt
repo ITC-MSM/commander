@@ -705,6 +705,10 @@ class CleanupPhaseManager(
                 if (spellsUncounterable?.removeOn == PlayerEffectRemoval.EndOfTurn) {
                     result = result.without<SpellsCantBeCounteredComponent>()
                 }
+                val loyaltyGrants = result.get<com.wingedsheep.engine.state.components.player.InstantSpeedLoyaltyGrantsComponent>()
+                if (loyaltyGrants?.removeOn == PlayerEffectRemoval.EndOfTurn) {
+                    result = result.without<com.wingedsheep.engine.state.components.player.InstantSpeedLoyaltyGrantsComponent>()
+                }
                 val flashGrants = result.get<FlashGrantsThisTurnComponent>()
                 if (flashGrants?.removeOn == PlayerEffectRemoval.EndOfTurn) {
                     result = result.without<FlashGrantsThisTurnComponent>()

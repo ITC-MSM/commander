@@ -148,6 +148,8 @@ fun ManaRestriction.isSatisfiedBy(context: SpellPaymentContext): Boolean = when 
     // payment passes untouched.
     is ManaRestriction.CannotCastSpellsOtherThan ->
         !context.isSpellCast || cardTypes.any { it in context.cardTypes }
+    // Negative restriction: only a spell cast from hand violates it.
+    is ManaRestriction.CannotCastSpellsFromHand -> !context.isSpellCast || !context.isFromHand
 }
 
 /**

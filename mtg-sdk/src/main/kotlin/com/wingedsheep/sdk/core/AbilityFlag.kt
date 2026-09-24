@@ -128,6 +128,19 @@ enum class AbilityFlag(val displayName: String) {
      */
     ASSIGNS_NO_COMBAT_DAMAGE("Assigns no combat damage this turn"),
 
+    /**
+     * "If this creature's power is negative, it assigns combat damage as though its power were
+     * positive" (Loot, the Anomaly). A creature normally assigns combat damage equal to its power
+     * and assigns none at all when that is 0 or less (CR 510.1a); with this flag a negative power
+     * is read as its absolute value instead, so a -2/4 assigns 2. Only the amount *assigned* is
+     * rewritten — the creature's power itself stays negative for every other purpose.
+     *
+     * Read at the single assignment chokepoint, `CombatDamageUtils.getAssignedCombatDamage`, so it
+     * covers first strike, trample and ordered blockers alike. A projected flag, so "loses all
+     * abilities" removes it.
+     */
+    ASSIGNS_COMBAT_DAMAGE_AS_ABSOLUTE_POWER("Assigns combat damage as though its power were positive"),
+
     // ── Summoning-sickness flags ────────────────────────────────
     /**
      * "You may activate abilities of this creature as though it had haste" — the

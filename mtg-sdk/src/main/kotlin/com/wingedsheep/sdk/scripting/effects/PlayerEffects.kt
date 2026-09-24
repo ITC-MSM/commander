@@ -582,6 +582,49 @@ data class CantActivateLoyaltyAbilitiesEffect(
 }
 
 /**
+ * [target] may activate loyalty abilities of planeswalkers matching [planeswalkerFilter] on any
+ * player's turn, any time they could cast an instant, for [duration] — the permissive mirror of
+ * [CantActivateLoyaltyAbilitiesEffect].
+ *
+ * CR 606.3 lets a player activate a loyalty ability only any time they could cast a sorcery, and
+ * only if none of that permanent's loyalty abilities has been activated that turn. This lifts the
+ * first half alone: the once-per-turn limit still applies. Jace's Machinations: "Until end of turn,
+ * you may activate loyalty abilities of Jace planeswalkers you control on any player's turn any
+ * time you could cast an instant." — `planeswalkerFilter =
+ * GameObjectFilter.Planeswalker.withSubtype("Jace").youControl()`.
+ *
+ * A resolution-time one-shot that records a turn-scoped grant on the player, so it outlives the
+ * instant that made it. [planeswalkerFilter] is matched against the ability's source when the
+ * ability is offered and activated, on projected state, so a permanent that becomes a Jace later in
+ * the turn is covered.
+ */
+@SerialName("GrantInstantSpeedLoyaltyAbilities")
+@Serializable
+data class GrantInstantSpeedLoyaltyAbilitiesEffect(
+    val target: EffectTarget = EffectTarget.Controller,
+    val planeswalkerFilter: GameObjectFilter = GameObjectFilter.Planeswalker,
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String = buildString {
+        if (duration != Duration.Permanent) {
+            append(duration.description.replaceFirstChar { it.uppercase() })
+            append(", ")
+            append(target.description)
+        } else {
+            append(target.description.replaceFirstChar { it.uppercase() })
+        }
+        append(" may activate loyalty abilities of ")
+        append(planeswalkerFilter.description)
+        append("s on any player's turn any time you could cast an instant")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newFilter = planeswalkerFilter.applyTextReplacement(replacer)
+        return if (newFilter !== planeswalkerFilter) copy(planeswalkerFilter = newFilter) else this
+    }
+}
+
+/**
  * Target player loses the game.
  * Used for cards like Phage the Untouchable: "that player loses the game."
  *

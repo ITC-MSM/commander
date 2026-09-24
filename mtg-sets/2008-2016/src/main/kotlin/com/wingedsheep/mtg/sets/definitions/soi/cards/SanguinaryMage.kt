@@ -23,7 +23,7 @@ val SanguinaryMage = card("Sanguinary Mage") {
     toughness = 3
     oracleText = "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)"
 
-    keywords(Keyword.PROWESS)
+    prowess()
 
     metadata {
         rarity = Rarity.COMMON

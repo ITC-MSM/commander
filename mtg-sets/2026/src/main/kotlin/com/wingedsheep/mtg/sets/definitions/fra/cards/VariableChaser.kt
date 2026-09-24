@@ -24,7 +24,9 @@ val VariableChaser = card("Variable Chaser") {
         "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so " +
         "unprepares it.)"
 
-    keywords(Keyword.FLYING, Keyword.PROWESS, Keyword.PREPARED)
+    keywords(Keyword.FLYING, Keyword.PREPARED)
+
+    prowess()
 
     prepare("Arc of Fortune") {
         manaCost = "{2}{U}"

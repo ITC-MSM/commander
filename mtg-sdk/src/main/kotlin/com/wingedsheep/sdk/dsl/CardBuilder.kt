@@ -1910,6 +1910,14 @@ class LoyaltyAbilityBuilder(private val loyaltyCost: AbilityCost) {
     var effect: Effect? = null
     var target: TargetRequirement? = null
     var description: String? = null
+
+    /**
+     * Activation restrictions on top of the loyalty rules — "Activate only if there are twenty-five
+     * or more loyalty counters among Jaces you control" (Jace, Reality Sculptor) is an
+     * [ActivationRestriction.OnlyIfCondition]. CR 606.3's timing and once-per-turn limit are not
+     * restrictions here; the engine applies them to every loyalty ability.
+     */
+    var restrictions: List<ActivationRestriction> = emptyList()
     private val namedTargets: MutableList<Pair<String, TargetRequirement>> = mutableListOf()
 
     /**
@@ -1934,6 +1942,7 @@ class LoyaltyAbilityBuilder(private val loyaltyCost: AbilityCost) {
             targetRequirements = targetReqs,
             isPlaneswalkerAbility = true,
             timing = TimingRule.SorcerySpeed,
+            restrictions = restrictions,
             descriptionOverride = description
         )
     }

@@ -2989,6 +2989,28 @@ class TriggerDetector(
                     continue
                 }
 
+                // "One or more of your opponents are dealt combat damage" — keyed on the damaged
+                // players, any source: one trigger per batch however many opponents were hit.
+                if (trigger is EventPattern.OpponentsDealtCombatDamageEvent) {
+                    val controllerId = entry.controllerId
+                    val hit = combatDamageByDamagedPlayer.entries
+                        .firstOrNull { (playerId, _) -> state.isOpponentOf(playerId, controllerId) }
+                        ?: continue
+                    triggers.add(
+                        PendingTrigger(
+                            ability = ability,
+                            sourceId = entry.entityId,
+                            sourceName = entry.cardComponent.name,
+                            controllerId = controllerId,
+                            triggerContext = TriggerContext(
+                                triggeringEntityId = hit.value.first().sourceId,
+                                triggeringPlayerId = hit.key
+                            )
+                        )
+                    )
+                    continue
+                }
+
                 if (trigger !is EventPattern.OneOrMoreDealCombatDamageToPlayerEvent) continue
 
                 val controllerId = entry.controllerId

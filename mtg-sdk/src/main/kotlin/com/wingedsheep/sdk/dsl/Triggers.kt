@@ -1324,6 +1324,17 @@ object Triggers {
     )
 
     /**
+     * Whenever you activate a loyalty ability, if you removed [atLeast] or more loyalty counters to
+     * activate it (CR 606.4) — Way of the Mind Sculptor. Reads the counters the activation's cost
+     * actually removed: a [−N] cost removes N, a [−X] cost removes the chosen X, and a [+N] or [0]
+     * cost removes none.
+     */
+    fun YouActivateLoyaltyAbilityRemovingAtLeast(atLeast: Int): TriggerSpec = TriggerSpec(
+        event = AbilityActivatedEvent(player = Player.You, requireLoyalty = true, minLoyaltyRemoved = atLeast),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Whenever an opponent activates a loyalty ability (CR 606) — Gideon the Oathless. "That
      * player" in the effect is [com.wingedsheep.sdk.scripting.targets.EffectTarget.PlayerRef] of
      * `Player.TriggeringPlayer`, the activating opponent.
@@ -2500,6 +2511,20 @@ object Triggers {
         filter: GameObjectFilter = GameObjectFilter.Creature
     ): TriggerSpec = TriggerSpec(
         event = OneOrMoreDealCombatDamageToYouEvent(sourceFilter = filter),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * Whenever one or more of your opponents are dealt combat damage — by any source. Batching
+     * trigger: fires at most once per combat-damage step no matter how many opponents were hit.
+     * `triggeringPlayerId` is one of the damaged opponents. Narrow with
+     * `triggerRestriction = Conditions.IsYourTurn` for "during your turn".
+     *
+     * Example: "When one or more of your opponents are dealt combat damage during your turn, draw
+     * two cards." (Fblthp, Impossibly Lost)
+     */
+    val OneOrMoreOpponentsDealtCombatDamage: TriggerSpec = TriggerSpec(
+        event = OpponentsDealtCombatDamageEvent,
         binding = TriggerBinding.ANY
     )
 

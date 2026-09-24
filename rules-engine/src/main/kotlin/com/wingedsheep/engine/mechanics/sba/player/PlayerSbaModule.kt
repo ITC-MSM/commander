@@ -10,6 +10,7 @@ class PlayerSbaModule(private val zones: ZoneTransitionService) : StateBasedActi
         AscendCitysBlessingCheck(),
         StoriedEnduringStoryCheck(),
         PlayerLifeLossCheck(),
+        EmptyLibraryDrawLossCheck(),
         CommanderDamageLossCheck(),
         PoisonLossCheck(),
         TeamLossPropagationCheck(),
