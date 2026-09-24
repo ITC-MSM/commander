@@ -344,6 +344,15 @@ sealed interface CardValidationError {
     ) : CardValidationError
 
     /**
+     * A face that lists `Keyword.PROWESS` without the noncreature-cast trigger that makes it do
+     * anything — the keyword alone is display-only; the `prowess()` builder adds both.
+     */
+    data class ProwessWithoutTrigger(
+        override val cardName: String,
+        override val message: String
+    ) : CardValidationError
+
+    /**
      * An activated ability that adds mana without `isManaAbility = true`. CR 605.1a makes the
      * classification a consequence of the ability rather than a choice, and the engine keys the
      * whole tap-for-mana pipeline off the flag — so an unflagged one silently uses the stack and

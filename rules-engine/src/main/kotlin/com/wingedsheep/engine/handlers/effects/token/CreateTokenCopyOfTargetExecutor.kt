@@ -61,6 +61,11 @@ class CreateTokenCopyOfTargetExecutor(
 
     override val effectType: KClass<CreateTokenCopyOfTargetEffect> = CreateTokenCopyOfTargetEffect::class
 
+    /** Builds the substitute tokens of a `ReplaceTokenCreationWithToken` (Draconic Visitor). */
+    private val substituteExecutor by lazy {
+        CreateTokenExecutor(amountEvaluator, staticAbilityHandler, cardRegistry)
+    }
+
     override fun execute(
         state: GameState,
         effect: CreateTokenCopyOfTargetEffect,
@@ -92,6 +97,20 @@ class CreateTokenCopyOfTargetExecutor(
             state, effect, context, count, controllerId, cardRegistry, staticAbilityHandler
         )
         if (replacementResult != null) return replacementResult
+
+        // "If one or more artifact tokens would be created under your control, that many … are
+        // created instead" (Draconic Visitor): a token copy of an artifact is an artifact token.
+        // The copy's characteristics are the copiable values plus this effect's exceptions.
+        val prospective = CopyExceptionApplier.apply(targetCard, effect.copyExceptions)
+            .copy(ownerId = controllerId, isDoubleFaced = false)
+        TokenCreationReplacementHelper.findTokenSubstitution(state, controllerId, prospective)
+            ?.let { substitute ->
+                return substituteExecutor.createSubstituteTokens(
+                    state, substitute, context,
+                    com.wingedsheep.engine.core.GameLimits.cappedTokenCount(count, "target-copy tokens"),
+                    controllerId
+                )
+            }
 
         // An Aura token needs its host chosen before it can be created (CR 303.4h) — the copy's
         // type line decides, so read it off the copied CardComponent (copiable values only).

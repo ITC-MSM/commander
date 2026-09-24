@@ -35,10 +35,8 @@ data class CreatureStats(
     )
 
     init {
-        // Validate fixed values are non-negative
-        if (power is CharacteristicValue.Fixed) {
-            require(power.value >= 0) { "Base power cannot be negative: ${power.value}" }
-        }
+        // Base toughness is never printed negative. Base power can be: Loot, the Anomaly is a
+        // printed -2/4, and CR 107.1b allows a creature's power to be less than zero.
         if (toughness is CharacteristicValue.Fixed) {
             require(toughness.value >= 0) { "Base toughness cannot be negative: ${toughness.value}" }
         }

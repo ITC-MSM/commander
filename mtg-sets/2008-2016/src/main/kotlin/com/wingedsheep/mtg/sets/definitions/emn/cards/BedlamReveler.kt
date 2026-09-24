@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.emn.cards
 
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.Triggers
@@ -50,7 +49,7 @@ val BedlamReveler = card("Bedlam Reveler") {
         )
     }
 
-    keywords(Keyword.PROWESS)
+    prowess()
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield

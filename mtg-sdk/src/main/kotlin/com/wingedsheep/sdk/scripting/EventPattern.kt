@@ -2348,6 +2348,13 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * [requireLoyalty] narrows to loyalty abilities (CR 606) — "whenever you activate a loyalty
      * ability" (Way of the Paradox), "whenever an opponent activates a loyalty ability" (Gideon the
      * Oathless). Loyalty abilities are never mana abilities, so the default gate is unaffected.
+     *
+     * [minLoyaltyRemoved] further narrows a [requireLoyalty] trigger to activations whose cost
+     * removed at least that many loyalty counters — a [−N] cost with N ≥ the threshold, or a [−X]
+     * cost with X chosen at least that high (Way of the Mind Sculptor: "if you removed two or more
+     * loyalty counters to activate it"). A [+N] or [0] cost removes none. The number is a fact of
+     * the activation, fixed once the cost is paid, so checking it as the trigger is matched is the
+     * same as checking it again on resolution. 0 (the default) imposes nothing.
      */
     @SerialName("AbilityActivatedEvent")
     @Serializable
@@ -2360,11 +2367,19 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val excludeManaAbilities: Boolean = false,
         val includeManaAbilities: Boolean = false,
         val requireLoyalty: Boolean = false,
+        val minLoyaltyRemoved: Int = 0,
     ) : EventPattern {
         override val description: String = buildString {
             if (requireLoyalty) {
                 append(player.description)
                 append(" activates a loyalty ability")
+                if (minLoyaltyRemoved > 0) {
+                    append(", if ")
+                    append(player.description)
+                    append(" removed ")
+                    append(if (minLoyaltyRemoved == 1) "one or more loyalty counters" else "$minLoyaltyRemoved or more loyalty counters")
+                    append(" to activate it")
+                }
                 return@buildString
             }
             // The clause that narrows *which* abilities count, appended after "...ability".
@@ -2925,6 +2940,24 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
             val newFilter = sourceFilter.applyTextReplacement(replacer)
             return if (newFilter !== sourceFilter) copy(sourceFilter = newFilter) else this
         }
+    }
+
+    /**
+     * Whenever one or more of *your opponents* (the trigger controller's opponents, CR 102.3) are
+     * dealt combat damage. Batching trigger keyed on the *damaged players* rather than the sources:
+     * it fires at most once per combat-damage batch however many opponents were hit and whatever
+     * dealt the damage — unlike [OneOrMoreDealCombatDamageToPlayerEvent], which fires once per
+     * damaged player and only counts sources you control.
+     *
+     * Examples:
+     *   → OpponentsDealtCombatDamageEvent + `triggerRestriction = Conditions.IsYourTurn`
+     *     "When one or more of your opponents are dealt combat damage during your turn"
+     *     (Fblthp, Impossibly Lost)
+     */
+    @SerialName("OpponentsDealtCombatDamageEvent")
+    @Serializable
+    data object OpponentsDealtCombatDamageEvent : EventPattern {
+        override val description: String = "one or more of your opponents are dealt combat damage"
     }
 
     // =========================================================================

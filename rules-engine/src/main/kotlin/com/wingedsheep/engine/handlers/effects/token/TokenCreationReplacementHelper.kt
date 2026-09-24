@@ -35,6 +35,8 @@ import com.wingedsheep.sdk.scripting.MultiplyTokenCreation
 import com.wingedsheep.sdk.scripting.EventPattern as SdkGameEvent
 import com.wingedsheep.sdk.scripting.ModifyTokenCount
 import com.wingedsheep.sdk.scripting.ReplaceTokenCreationWithAttachedCopy
+import com.wingedsheep.sdk.scripting.ReplaceTokenCreationWithToken
+import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.events.ControllerFilter
 
@@ -260,6 +262,63 @@ object TokenCreationReplacementHelper {
         }
 
         return newState to events
+    }
+
+    /**
+     * Find a [ReplaceTokenCreationWithToken] ("if one or more artifact tokens would be created under
+     * your control, that many 5/5 red Dragon creature tokens with flying are created instead" —
+     * Draconic Visitor) that applies to tokens with [prospectiveCard]'s characteristics being
+     * created under [tokenControllerId], and return the substitute token spec.
+     *
+     * The tokens don't exist yet, so the event's `tokenFilter` is evaluated against a scratch
+     * entity carrying the would-be token's [CardComponent] (plus [TokenComponent] and its
+     * controller) in a throwaway copy of [state]. The probe isn't on the battlefield, so the
+     * predicate evaluator reads its base characteristics — exactly the characteristics the token
+     * would be created with.
+     *
+     * Printed and granted replacements are both consulted ([ActiveReplacements]). The first match
+     * wins; the substitute is created without re-entering this check, so a second Visitor has no
+     * further work (the Dragons it would see aren't artifacts anyway).
+     *
+     * @return the substitute `CreateTokenEffect`, or null when nothing applies.
+     */
+    fun findTokenSubstitution(
+        state: GameState,
+        tokenControllerId: EntityId,
+        prospectiveCard: CardComponent,
+        predicateEvaluator: PredicateEvaluator = PredicateEvaluator(),
+        conditionEvaluator: ConditionEvaluator = ConditionEvaluator()
+    ): CreateTokenEffect? {
+        val candidates = ActiveReplacements.all(state).filter { it.effect is ReplaceTokenCreationWithToken }
+        if (candidates.isEmpty()) return null
+
+        val (probeId, withProbe) = state.newEntity()
+        val probeState = withProbe.withEntity(
+            probeId,
+            ComponentContainer.of(
+                prospectiveCard.copy(ownerId = tokenControllerId),
+                TokenComponent,
+                ControllerComponent(tokenControllerId)
+            )
+        )
+
+        for (active in candidates) {
+            val effect = active.effect as ReplaceTokenCreationWithToken
+            val event = effect.appliesTo as? SdkGameEvent.TokenCreationEvent ?: continue
+            if (!controllerMatches(event.controller, active.controllerId, tokenControllerId)) continue
+            val filter = event.tokenFilter
+            if (filter != null && !predicateEvaluator.matches(
+                    probeState, state.projectedState, probeId, filter,
+                    PredicateContext(controllerId = tokenControllerId, sourceId = active.sourceId)
+                )
+            ) continue
+            if (effect.restrictions.isNotEmpty()) {
+                val restrictionContext = EffectContext(sourceId = active.sourceId, controllerId = tokenControllerId)
+                if (!effect.restrictions.all { conditionEvaluator.evaluate(state, it, restrictionContext) }) continue
+            }
+            return effect.token as? CreateTokenEffect ?: continue
+        }
+        return null
     }
 
     /**

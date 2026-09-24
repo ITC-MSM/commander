@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.jmp.cards
 
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 
@@ -20,7 +19,7 @@ val LightningVisionary = card("Lightning Visionary") {
     power = 2
     toughness = 1
 
-    keywords(Keyword.PROWESS)
+    prowess()
 
     metadata {
         rarity = Rarity.COMMON

@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.woe.cards
 
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -38,7 +37,7 @@ val ElusiveOtter = card("Elusive Otter") {
     oracleText = "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\n" +
         "Creatures with power less than this creature's power can't block it."
 
-    keywords(Keyword.PROWESS)
+    prowess()
 
     staticAbility {
         ability = CantBeBlockedByCreaturesWithLessPower()

@@ -2,7 +2,7 @@
 
 **Set Size:** 285 cards
 **Release Date:** October 2, 2026
-**Implemented:** 262 / 285
+**Implemented:** 276 / 285
 | Section    | Total | Done |
 |------------|-------|------|
 | Extras     | 285   | 78   |
@@ -64,7 +64,7 @@
 - [x] Desperate Futurescribe
 - [x] Diviner of Victory
 - [x] Divining Duelist
-- [ ] Draconic Visitor
+- [x] Draconic Visitor
 - [x] Eardrum Rattler
 - [x] Edgar, Ancient Bloodlord
 - [x] Edgar, Moonlit Sovereign
@@ -81,7 +81,7 @@
 - [x] Fatehold Charm
 - [x] Fatehold Chronologist
 - [x] Fateshaper Aspirant
-- [ ] Fblthp, Impossibly Lost
+- [x] Fblthp, Impossibly Lost
 - [x] Fblthp, Knows the Way
 - [x] Ferocity of the Hunt
 - [x] Flickering Hound
@@ -112,29 +112,29 @@
 - [x] Hapatra, the Desert Frost
 - [x] Haunted Ridge
 - [x] Heartstring Puller
-- [ ] Heartwood Crafter
+- [x] Heartwood Crafter
 - [x] Hexhaven Battalion
 - [x] Hexhaven Dueling Arena
 - [x] Hexhaven Invigorator
 - [x] Hungering Puppetbeast
 - [x] Hunter's Axe
 - [x] Icy Reception
-- [ ] Identity Echo
+- [x] Identity Echo
 - [x] Infinite Coursework
 - [x] Ingris Stingerquill
 - [x] Innovative Commons
 - [x] Inspired Tethermage
 - [x] Island
-- [ ] Jace's Machinations
-- [ ] Jace, Reality Sculptor
+- [x] Jace's Machinations
+- [x] Jace, Reality Sculptor
 - [x] Jiang Yanggu, Alone
 - [x] Jiang Yanggu, Never Alone
-- [ ] Karn, Argent Defender
+- [x] Karn, Argent Defender
 - [x] Karn, Gilded Guardian
 - [x] Keeper of the Quiet Hour
 - [x] Kindred Judgment
 - [x] Kiora of Fire and Ashes
-- [ ] Kiora of Salt and Sand
+- [x] Kiora of Salt and Sand
 - [x] Konstrari Annex
 - [x] Konstrari Charm
 - [x] Konstrari Improviser
@@ -146,7 +146,7 @@
 - [x] Liliana the Faultless
 - [x] Liliana the Repentant
 - [x] Living Library
-- [ ] Loot, the Anomaly
+- [x] Loot, the Anomaly
 - [x] Loot, the Nexus
 - [x] Loyal Tutor
 - [x] Lyra, Archangel of Dawn
@@ -186,8 +186,8 @@
 - [x] Prophesied End
 - [x] Protege's Awakening
 - [x] Prudent Fateseer
-- [ ] Puppet Crafting
-- [ ] Pyre Rhymer
+- [x] Puppet Crafting
+- [x] Pyre Rhymer
 - [x] Rampart Hunter
 - [x] Rank Rat
 - [x] Recursive Recruitment
@@ -206,7 +206,7 @@
 - [x] Saheeli, Consul of Oversight
 - [x] Saheeli, Jewel of Avishkar
 - [x] Samut, Hazoret's Champion
-- [ ] Samut, Tyrant of Naktamun
+- [x] Samut, Tyrant of Naktamun
 - [x] Sanctum Lurker
 - [x] Screeching Soulbreaker
 - [x] Seasoned Cryomancer
@@ -254,7 +254,7 @@
 - [x] Tinybones, Pocket Nuisance
 - [x] Titanbones, Towering Heart
 - [x] Tomik, Izzet Sparkmage
-- [ ] Tomik, Orzhov Lawmage
+- [x] Tomik, Orzhov Lawmage
 - [x] Transformative Commons
 - [x] Traxos, Academy Guardian
 - [x] Traxos, Scourge Eternal
@@ -281,7 +281,7 @@
 - [x] Way of the Deathbringer
 - [x] Way of the Healer
 - [x] Way of the Mentor
-- [ ] Way of the Mind Sculptor
+- [x] Way of the Mind Sculptor
 - [x] Way of the Necromancer
 - [x] Way of the Paradox
 - [x] Way of the Pyromancer

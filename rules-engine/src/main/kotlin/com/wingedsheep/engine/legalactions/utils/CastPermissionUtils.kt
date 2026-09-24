@@ -428,6 +428,24 @@ class CastPermissionUtils(
         hasActiveEquipPermission(state, playerId) { it is EquipAbilitiesAtInstantSpeed }
 
     /**
+     * True when [playerId] holds a turn-scoped instant-speed loyalty grant
+     * ([com.wingedsheep.engine.state.components.player.InstantSpeedLoyaltyGrantsComponent] —
+     * Jace's Machinations) whose planeswalker filter matches [sourceId], read on projected state
+     * from [playerId]'s perspective. Lifts only the sorcery-timing half of CR 606.3; the caller
+     * still enforces the once-per-turn limit.
+     */
+    fun canActivateLoyaltyAtInstantSpeed(state: GameState, playerId: EntityId, sourceId: EntityId): Boolean {
+        val grants = state.getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.InstantSpeedLoyaltyGrantsComponent>()
+            ?: return false
+        if (grants.filters.isEmpty()) return false
+        val context = PredicateContext(controllerId = playerId, sourceId = sourceId)
+        return grants.filters.any { filter ->
+            predicateEvaluator.matches(state, state.projectedState, sourceId, filter, context)
+        }
+    }
+
+    /**
      * True when [playerId] controls a permanent granting [FreeFirstEquipEachTurn] whose
      * condition (if any) currently holds. The caller still gates the discount on
      * `EquipActivationsThisTurnComponent.count == 0` so only the turn's *first* equip is free.

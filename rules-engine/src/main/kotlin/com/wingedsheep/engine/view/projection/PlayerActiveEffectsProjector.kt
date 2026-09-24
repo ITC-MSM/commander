@@ -425,6 +425,19 @@ internal class PlayerActiveEffectsProjector {
             )
         }
 
+        // Instant-speed loyalty activations (Jace's Machinations).
+        container.get<com.wingedsheep.engine.state.components.player.InstantSpeedLoyaltyGrantsComponent>()?.let { component ->
+            val rendered = component.filters.joinToString(" or ") { "${it.description}s" }
+            effects.add(
+                ClientPlayerEffect(
+                    effectId = "instant_speed_loyalty",
+                    name = "Instant-speed loyalty",
+                    description = "You may activate loyalty abilities of $rendered any time you could cast an instant this turn",
+                    icon = "lightning"
+                )
+            )
+        }
+
         // Hexproof, from a resolution-time effect (Dawn's Truce) or from a permanent that grants it
         // (Shalai, Voice of Plenty). Same union-and-re-evaluate as shroud above; this used to be
         // two blocks, the second scanning the battlefield on the *base* controller so a stolen

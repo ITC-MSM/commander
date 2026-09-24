@@ -10,8 +10,9 @@ object SbaOrder {
     const val ASCEND_CITYS_BLESSING = 60    // 702.131b (ascend on a permanent is a static ability)
     const val STORIED_ENDURING_STORY = 70   // 702.195a (storied is a static ability)
     const val PLAYER_LIFE_LOSS = 100        // 704.5a
-    const val COMMANDER_DAMAGE_LOSS = 150   // 704.5c (Commander format)
-    const val POISON_LOSS = 200             // 704.5b
+    const val EMPTY_LIBRARY_DRAW_LOSS = 120 // 704.5b (attempted draw from an empty library)
+    const val COMMANDER_DAMAGE_LOSS = 150   // 704.6c (Commander format)
+    const val POISON_LOSS = 200             // 704.5c
     const val DURATION_EXPIRY = 240         // 611.2b ("for as long as" durations end one-way)
     const val ATTACHED_COPY_EXPIRY = 245    // 611.2b ("becomes a copy for as long as attached")
     const val CONTROL_CHANGED_COMBAT = 250  // 506.4 (controller change removes from combat)

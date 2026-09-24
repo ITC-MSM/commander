@@ -578,21 +578,38 @@ data object CantBeAttackedWhileAttached : StaticAbility {
 }
 
 /**
- * Global cap on how many creatures may attack in a single combat (Dueling Grounds —
- * "No more than one creature can attack each combat").
+ * Cap on how many creatures may attack in a single combat.
  *
- * Unlike per-creature restrictions, this constrains the *total* declared attacker set
- * regardless of controller, so it is enforced as a whole-declaration check rather than a
- * per-attacker [AttackRestrictionRule]. While any permanent with this ability is on the
- * battlefield, an attack declaration with more than [maxAttackers] attackers is illegal.
+ * Unlike per-creature restrictions, this constrains the declared attacker *set*, so it is
+ * enforced as a whole-declaration check rather than a per-attacker [AttackRestrictionRule].
+ *
+ * - [defenders] `== null` — a **global** cap (Dueling Grounds — "No more than one creature can
+ *   attack each combat"): while any permanent with this ability is on the battlefield, an attack
+ *   declaration with more than [maxAttackers] attackers in total, regardless of controller, is
+ *   illegal.
+ * - [defenders] set — a **per-defender** cap: each battlefield permanent matching [defenders]
+ *   (evaluated relative to this ability's controller, against projected state) may be attacked
+ *   by at most [maxAttackers] creatures in one combat; attacks on anything else are unaffected.
+ *   Tomik, Orzhov Lawmage — "Planeswalkers you control have 'No more than one creature can
+ *   attack this planeswalker each combat.'" — is
+ *   `AttackerCountLimit(1, defenders = GroupFilter.PlaneswalkersYouControl)`.
  */
 @SerialName("AttackerCountLimit")
 @Serializable
 data class AttackerCountLimit(
-    val maxAttackers: Int
+    val maxAttackers: Int,
+    val defenders: GroupFilter? = null
 ) : StaticAbility {
-    override val description: String =
-        "No more than $maxAttackers creature${if (maxAttackers == 1) "" else "s"} can attack each combat"
+    override val description: String
+        get() {
+            val creatures = "No more than $maxAttackers creature${if (maxAttackers == 1) "" else "s"}"
+            return if (defenders == null) {
+                "$creatures can attack each combat"
+            } else {
+                "${defenders.description.replaceFirstChar { it.uppercase() }} have " +
+                    "\"$creatures can attack this permanent each combat.\""
+            }
+        }
 }
 
 /**

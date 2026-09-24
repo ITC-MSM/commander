@@ -216,6 +216,7 @@ internal object StackPlacement {
         isExhaust: Boolean = false,
         cantBeCopied: Boolean = false,
         isLoyalty: Boolean = false,
+        loyaltyCountersRemoved: Int = 0,
     ): ExecutionResult {
         val (abilityId, stateWithId) = state.newEntity()
 
@@ -250,6 +251,7 @@ internal object StackPlacement {
                     isManaAbility = false,
                     isExhaust = isExhaust,
                     isLoyalty = isLoyalty,
+                    loyaltyCountersRemoved = loyaltyCountersRemoved,
                 )
             )
         }

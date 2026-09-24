@@ -263,6 +263,22 @@ sealed interface ManaRestriction {
     }
 
     /**
+     * "This mana can't be spent to cast spells from your hand" (Heartwood Crafter).
+     *
+     * The negative twin of [CastFromNonHandOnly], and like [CannotCastSpellsOtherThan] it blocks
+     * exactly one thing — casting a spell from the caster's hand — and leaves every other spend
+     * legal: casting from exile, the graveyard, the top of the library or the command zone (a
+     * prepare-spell copy included), activating an ability, paying a ward cost or an "unless that
+     * player pays" tax, turning a permanent face up. [CastFromNonHandOnly] is a whitelist of spell
+     * casts and so rejects ability activations; this one must not.
+     */
+    @SerialName("CannotCastSpellsFromHand")
+    @Serializable
+    data object CannotCastSpellsFromHand : ManaRestriction {
+        override val description: String = "This mana can't be spent to cast spells from your hand"
+    }
+
+    /**
      * "Spend this mana only to cast a spell from anywhere other than your hand."
      *
      * Used by Mm'menon, the Right Hand's granted artifact ability. Generalizes

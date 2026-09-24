@@ -25,7 +25,9 @@ val NiblisOfDusk = card("Niblis of Dusk") {
     oracleText = "Flying\n" +
         "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)"
 
-    keywords(Keyword.FLYING, Keyword.PROWESS)
+    keywords(Keyword.FLYING)
+
+    prowess()
 
     metadata {
         rarity = Rarity.COMMON

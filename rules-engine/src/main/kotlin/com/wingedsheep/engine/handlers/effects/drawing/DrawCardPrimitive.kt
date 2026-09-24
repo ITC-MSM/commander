@@ -6,12 +6,10 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
-import com.wingedsheep.engine.mechanics.sba.player.playerCantLoseGame
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent
-import com.wingedsheep.engine.state.components.player.LossReason
-import com.wingedsheep.engine.state.components.player.PlayerLostComponent
+import com.wingedsheep.engine.state.components.player.AttemptedDrawFromEmptyLibraryComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.RevealFirstDrawEachTurn
@@ -74,20 +72,17 @@ class DrawCardPrimitive(
         val library = state.getZone(libraryZone)
 
         if (library.isEmpty()) {
-            // Rule 704.5b: failed to draw from an empty library → lose the game,
-            // unless a controlled permanent grants "can't lose the game" (Platinum Angel).
-            // Shared with the other loss checks so the gate on a conditional grant and the
-            // CR 810.8a team reach are applied identically wherever a player would lose.
-            val cantLose = playerCantLoseGame(state, playerId)
-            val lostState = if (cantLose) {
-                state
-            } else {
-                state.updateEntity(playerId) { container ->
-                    container.with(PlayerLostComponent(LossReason.EMPTY_LIBRARY))
-                }
+            // CR 121.4: a player who attempts to draw from an empty library loses the game the
+            // next time a player would receive priority — a state-based action (CR 704.5b), not
+            // part of the draw. Record the attempt; EmptyLibraryDrawLossCheck turns it into the
+            // loss (and honours "can't lose the game" grants as they stand at that moment). The
+            // rest of the resolving effect still runs first, so "draw two cards. If your library
+            // has no cards in it, you win the game" (Fblthp, Impossibly Lost) wins.
+            val attemptedState = state.updateEntity(playerId) { container ->
+                container.with(AttemptedDrawFromEmptyLibraryComponent)
             }
             return Result(
-                state = lostState,
+                state = attemptedState,
                 events = listOf(DrawFailedEvent(playerId, emptyLibraryReason)),
                 drawnCardId = null,
                 failed = true

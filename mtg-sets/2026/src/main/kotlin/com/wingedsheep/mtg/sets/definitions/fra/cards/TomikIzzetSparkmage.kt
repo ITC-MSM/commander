@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.fra.cards
 
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.NoncombatDamageBonus
@@ -14,7 +13,7 @@ val TomikIzzetSparkmage = card("Tomik, Izzet Sparkmage") {
     oracleText = "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\n" +
         "If a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, it deals that much damage plus 1 instead."
 
-    keywords(Keyword.PROWESS)
+    prowess()
 
     staticAbility {
         ability = NoncombatDamageBonus(1)

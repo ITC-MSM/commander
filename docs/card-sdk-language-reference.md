@@ -2352,6 +2352,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CantActivateLoyaltyAbilitiesEffect(target, duration)` — target can't activate planeswalkers' loyalty abilities.
   Facade: `Effects.CantActivateLoyaltyAbilities(target, duration)`. Sibling of `CantCastSpells`; compose the two for
   cards that forbid both (e.g. Revel in Silence).
+- `GrantInstantSpeedLoyaltyAbilitiesEffect(target, planeswalkerFilter, duration)` — the permissive mirror: target
+  may activate loyalty abilities of planeswalkers matching `planeswalkerFilter` on any player's turn, any time they
+  could cast an instant, for `duration` (default `EndOfTurn`). Facade:
+  `Effects.InstantSpeedLoyaltyAbilities(planeswalkerFilter, duration, target)`. Lifts only the timing half of
+  CR 606.3 — each permanent's one-loyalty-activation-per-turn limit still applies. A resolution-time one-shot that
+  records the grant on the player (`InstantSpeedLoyaltyGrantsComponent`, removed at cleanup), so it outlives the
+  instant that made it; the filter is matched on projected state against the ability's source when the ability is
+  offered and when it is activated, so a Jace that enters later that turn is covered. **Jace's Machinations**:
+  `planeswalkerFilter = GameObjectFilter.Planeswalker.withSubtype("Jace").youControl()`.
 
 ### Forced sacrifice / discard
 
@@ -5644,6 +5653,7 @@ Named sugar for the common cases; reach for the factories for any other combinat
 - `DealsCombatDamageToCreature` — source deals combat damage to a creature (SELF binding).
 - `OneOrMoreDealCombatDamageToPlayerEvent(sourceFilter = Creature)` — **offensive combat-damage batch trigger** (ANY binding, via `TriggerSpec(OneOrMoreDealCombatDamageToPlayerEvent(sourceFilter = …), TriggerBinding.ANY)`): "whenever one or more [matching creatures] you control deal combat damage to a player" (Kastral, the Windcrested: `Creature.withSubtype("Bird")`; Vaan, Street Thief: `Creature.withAnySubtype("Scout", "Pirate", "Rogue")`). The `sourceFilter`'s "you control" is implied by the observer — don't add `youControl()`. Fires **once per damaged player** (a batch per recipient): multiple matching creatures hitting the same player still fire a single trigger, but two players each dealt damage fire it twice. `Player.TriggeringPlayer` resolves to the damaged player, so effects can reference "that player" (e.g. exile the top card of *that player's* library); `triggeringEntityId` is an arbitrary matching source for that player (batch triggers don't dispatch per source). **Face-down attackers count**: a face-down permanent is a creature (CR 708.2), so it satisfies an unfiltered "creatures you control" batch trigger, and the filtered forms are decided by `PredicateEvaluator`'s face-down masking alone (subtypes, colors, mana value and **name** all read as absent) — which is why Yarus, Roar of the Old Gods can filter *to* `Creature.faceDown()` while Kastral's `Bird` filter still excludes one.
 - `OneOrMoreCreaturesDealCombatDamageToYou(filter = Creature)` — **defensive combat-damage batch trigger** (ANY binding): "whenever one or more creatures deal combat damage to *you*" (Witch-king of Angmar). Fires at most once per combat-damage batch regardless of how many creatures connected with the trigger's controller (the damaged player), unlike per-source `dealsDamage(recipient = You, …)` which fires once per connecting creature. The triggering entity is an arbitrary matching damager. Pair with the `dealtCombatDamageToSourceControllerThisTurn()` filter for "...each opponent sacrifices a creature that dealt combat damage to you this turn".
+- `OneOrMoreOpponentsDealtCombatDamage` — **opponent-keyed combat-damage batch trigger** (ANY binding, event `OpponentsDealtCombatDamageEvent`): "when(ever) one or more of your opponents are dealt combat damage" (Fblthp, Impossibly Lost). Keyed on the *damaged players*, not the sources: it fires at most once per combat-damage step however many of the controller's opponents (CR 102.3 — teammates excluded) were hit and whoever controlled the damage sources, unlike `OneOrMoreDealCombatDamageToPlayerEvent`, which fires once per damaged player for sources you control. `triggeringPlayerId` is one damaged opponent. "During your turn" is `triggerRestriction = Conditions.IsYourTurn`.
 - `TakesDamage` — source is dealt damage by any source (SELF binding).
 - `YouAreDealtDamage` — "whenever **you're** dealt damage" (ANY binding, `DealsDamageEvent(recipient = You)` with no source filter): the *player*-recipient sibling of `TakesDamage`, firing for **every** source — a creature in combat, a burn spell, an artifact. Fires once per damage instance; read the amount with `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT)` for "put that many counters" payoffs (Sun Droplet), and the triggering entity is the damage source.
 - `RecipientFilter.EnchantedPlayer` — the *player* the observing ability's source Aura is attached to (CR
@@ -5867,6 +5877,11 @@ Named sugar for the common type-primitive cases; reach for `youCastSpell(...)` p
   **loyalty ability** (CR 606): `AbilityActivatedEvent(requireLoyalty = true)`, matched against the
   activation event's `isLoyalty` flag (set from `ActivatedAbility.isPlaneswalkerAbility`). Way of the
   Paradox, Gideon the Oathless — "that player" is `EffectTarget.PlayerRef(Player.TriggeringPlayer)`.
+- `YouActivateLoyaltyAbilityRemovingAtLeast(n)` — "whenever you activate a loyalty ability, if you removed
+  *n* or more loyalty counters to activate it" (Way of the Mind Sculptor):
+  `AbilityActivatedEvent(requireLoyalty = true, minLoyaltyRemoved = n)`, matched against the activation
+  event's `loyaltyCountersRemoved` — N for a [−N] cost (CR 606.4), the chosen X for [−X], 0 for [+N] / [0].
+  The count is fixed once the cost is paid, so matching it on the event is the same as the CR 603.4 recheck.
 - `YouActivateNonManaExhaustAbility` — the same, but with the "that isn't a mana ability" clause
   (`EventPattern.AbilityActivatedEvent(requireExhaust = true, excludeManaAbilities = true)`). Pit Automaton's
   Oracle text was updated on release to add that clause so its copy payoff can't latch onto a mana ability;
@@ -7100,6 +7115,15 @@ staticAbility {
   first strike, trample and ordered-blocker assignment alike, and an attacker reduced to 0 this way is
   dropped from the manual damage-assignment decision entirely rather than being asked to divide nothing.
   Always granted with a duration — every card that prints it says "this turn".
+- `flags(AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_ABSOLUTE_POWER)` — "if this creature's power is negative, it
+  assigns combat damage as though its power were positive" (Loot, the Anomaly). CR 510.1a has a creature
+  with 0 or less power assign no combat damage; with the flag a negative power is read as its absolute value
+  **for the assignment only** — the power characteristic stays negative for everything else (P/T reads,
+  "power N or less" filters, fight damage, which is not combat damage). Read at the same chokepoint,
+  `CombatDamageUtils.getAssignedCombatDamage`, after the toughness-substitution check (which still compares
+  the real, negative power). A projected flag, so "loses all abilities" removes it; grantable with
+  `GrantKeyword`. Printed negative base power itself is legal data: `CreatureStats` accepts a negative
+  fixed power (CR 107.1b), so `power = -2` in `card { }` is a -2/4.
 - `GrantKeyword(AbilityFlag.MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY.name, filter)` — "you may activate
   abilities of [filter] as though those creatures had haste" (Thousand-Year Elixir, Shang-Chi, Master of
   Kung Fu). CR 302.6 gates a creature's `{T}`/`{Q}` activated abilities *and* its ability to attack on the
@@ -7414,6 +7438,14 @@ staticAbility {
   enforced as a whole-declaration check in `AttackPhaseManager`/`BlockPhaseManager` rather than a
   per-creature rule. While any permanent with the ability is on the battlefield, declaring more
   than the smallest cap is rejected. (`BlockerCountLimit` counts distinct blocking creatures.)
+  - `AttackerCountLimit(maxAttackers, defenders = groupFilter)` — the **per-defender** axis:
+    each battlefield permanent matching `defenders` (relative to the limiting permanent's
+    controller, projected state) may be attacked by at most `maxAttackers` creatures per combat;
+    attacks on players and non-matching permanents are unaffected. **Tomik, Orzhov Lawmage** —
+    "Planeswalkers you control have 'No more than one creature can attack this planeswalker each
+    combat.'" = `AttackerCountLimit(1, defenders = GroupFilter.PlaneswalkersYouControl)`. A
+    face-down permanent imposes no cap of either shape. Neither shape is pre-filtered by the
+    attack enumerator — an over-cap declaration is rejected at validation.
 - `AdditionalETBOrLTBTriggers(filter, mustBeYouControl = true, directions = setOf(ENTERING))` —
   the Panharmonicon family (CR 603.2d "triggers additional times"). When a permanent matching
   `filter` crosses the battlefield boundary in one of `directions`, triggered abilities of
@@ -8314,6 +8346,9 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
     source-read damage keyword is a one-line addition rather than a new hunt for read sites. Combat damage is
     deliberately *not* wired this way: a combat-damage source is always a permanent, which projection already
     covers.
+  - **SPLIT_SECOND** — read by the engine's `SplitSecond` lock for as long as the granted spell is on the stack
+    and its controller still controls the granter (**Samut, Tyrant of Naktamun** →
+    `GrantKeywordToOwnSpells(SPLIT_SECOND, InstantOrSorcery)`). See §11 "Keywords" → Split second.
   **Gating this with a condition is silently inert today.** `staticAbility { condition = … }`
   wraps the ability in a `ConditionalStaticAbility`, and `GrantedKeywordResolver` matches the bare type
   without unwrapping it — so the grant never applies rather than applying conditionally. Teach
@@ -8712,6 +8747,10 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
   Uses the ordinary server X picker and the same sorcery-speed / per-turn loyalty restrictions
   as fixed costs. Spending all loyalty is legal; the ability still resolves after its source leaves.
   The client ability menu receives `loyaltyX = true` and renders −X. Chandra Nalaar uses this shape.
+- Inside either builder, `restrictions = listOf(ActivationRestriction.OnlyIfCondition(...))` adds an
+  "Activate only if …" gate on top of the loyalty rules — Jace, Reality Sculptor's 0 ("only if there are
+  twenty-five or more loyalty counters among Jaces you control") is
+  `Conditions.CounterKindAmongYouControlAtLeast(25, CounterTypeFilter.Loyalty, Planeswalker.withSubtype("Jace"))`.
 - `grantedLoyaltyAbility(±N) { ... }` — top-level builder that *returns* a loyalty ability instead of
   adding it to the card, for "Planeswalkers you control have '[−4]: …'" — pass it to
   `GrantActivatedAbility(ability, GroupFilter(GameObjectFilter.Planeswalker.youControl()))` (Way of the
@@ -8747,6 +8786,20 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > doesn't rebound again. **Ojer Pakpatiq, Deepest Epoch** grants it to instants you cast from hand via
 > `Triggers.youCastSpell(GameObjectFilter.Instant, requires = setOf(SpellCastPredicate.CastFromZone(Zone.HAND)))`
 > → `GrantKeywordToSpellEffect(Keyword.REBOUND, EffectTarget.TriggeringEntity)`.
+
+> **Split second** (`Keyword.SPLIT_SECOND`, CR 702.61). "As long as this spell is on the stack,
+> players can't cast other spells or activate abilities that aren't mana abilities." A plain
+> `keywords(Keyword.SPLIT_SECOND)` on the card; nothing else to wire. The engine's `SplitSecond` object
+> is the single read point: while any spell on the stack has the keyword — printed, stamped on by a
+> one-shot `GrantKeywordToSpellEffect` (`SpellGrantedKeywordsComponent`), or granted continuously by
+> `GrantKeywordToOwnSpells(SPLIT_SECOND, filter)` on a permanent the spell's controller controls — the
+> legal-action enumerator withholds every `CastSpell`, non-mana `ActivateAbility`, cycling, typecycling,
+> crew and saddle offer, and `ActionProcessor.validate` / `ActivationValidator` reject the same actions
+> if submitted anyway. It binds every player, the caster included. Mana abilities and special actions
+> (turning a face-down permanent up, plot, foretell, suspend, unlocking a door) stay legal, and
+> triggered abilities trigger and go on the stack as normal (CR 702.61b). A face-down spell has no
+> abilities and never locks. **Samut, Tyrant of Naktamun** = `GrantKeywordToOwnSpells(SPLIT_SECOND,
+> GameObjectFilter.InstantOrSorcery)`. Engine test: `SplitSecondKeywordScenarioTest`.
 
 > **Enduring** (Duskmourn Glimmer cycle). `card { enduring() }` wires the full mechanic: "When this
 > permanent dies, if it was a creature, return it to the battlefield under its owner's control. It's an
@@ -10592,6 +10645,10 @@ default to "you" so card authors don't need to pass it explicitly.
   `ExhaustAbilitiesActivatedThisTurnComponent` (bumped at activation time, so a countered exhaust ability
   still counts; reset for all players at turn start). Gates Elvish Refueler's
   `ExtraOnceOnlyActivations`.
+- `YouActivatedLoyaltyAbilityThisTurn(atLeast = 1, player = Player.You)` — "if you've activated a loyalty
+  ability this turn" (Kiora of Salt and Sand). A `Compare` over
+  `TurnTracking(player, TurnTracker.LOYALTY_ABILITIES_ACTIVATED)`: turn history on the player, so it stays
+  true after that planeswalker dies or the ability is countered.
 - `TriggeringSpellMatches(filter)` — intervening-if guard: the spell that triggered this ability
   matches `filter`. Reads the triggering entity's static card characteristics (so it stays correct
   after the spell leaves the stack). General "whenever you cast a spell, if it's a/an X ..." gate.
@@ -11716,6 +11773,12 @@ restriction matches the spell context.
   spent to" rather than "spend only to"; the positive composition
   `AnyOf(CardTypeSpellsOrAbilitiesOnly(X), AbilityActivationOnly)` is strictly narrower and
   silently rejects the non-cast spends. Backed by `SpellPaymentContext.isSpellCast`.
+- `ManaRestriction.CannotCastSpellsFromHand` — the other negative restriction: "This mana can't be
+  spent to cast spells from your hand" (Heartwood Crafter). Blocks only a spell cast from the
+  caster's hand; casts from exile / graveyard / library / command zone (a prepare-spell copy
+  included), ability activations, and every non-cast payment are allowed. Not the same as
+  `CastFromNonHandOnly`, which is a spell-cast whitelist and rejects ability activations. Backed by
+  `SpellPaymentContext.isSpellCast` and `isFromHand`.
 - `ManaRestriction.AnyOf(restrictions)` — disjunction; the mana is spendable in any context that
   satisfies *any* listed restriction. Compose atomic restrictions for multi-option mana — e.g.
   Creeping Peeper's "cast an enchantment spell, unlock a door, or turn a permanent face up" is
@@ -11902,6 +11965,10 @@ this turn").
   `Conditions.YouHadNoCardsInHandAtTurnStart`, which backs **Mindstorm Crown**. Do not reach for
   `Conditions.EmptyHand` for these wordings: that reads the hand *now*, and resolves differently on
   any turn where something touched the hand before the upkeep.
+- `LOYALTY_ABILITIES_ACTIVATED` — how many loyalty abilities (CR 606) the player activated this turn,
+  counted at activation (CR 602.2) on the per-player `LoyaltyAbilitiesActivatedThisTurnComponent` and reset
+  for every player at turn start. Wrapped by `Conditions.YouActivatedLoyaltyAbilityThisTurn` (Kiora of Salt
+  and Sand).
 - `RED_NONCOMBAT_DAMAGE_DEALT` — total noncombat damage red sources a player controlled dealt this turn
   (controller-scoped). Backed by the per-player `RedNoncombatDamageDealtThisTurnComponent`, incremented in
   `DamageUtils.dealDamageToTarget` on the source's controller whenever a red source deals positive noncombat
@@ -12717,6 +12784,24 @@ The priority groups are (CR 616.1a–f):
   are declared outside the static-ability builder), so it takes `restrictions = listOf(Conditions.SourceIsSolved)`
   instead — Case of the Pilfered Proof's "Solved — If one or more tokens would be created under your
   control, those tokens plus a Clue token are created instead".
+- `ReplaceTokenCreationWithToken(token, appliesTo)` — "if one or more [filtered] tokens would be created
+  under your control, **that many** [other token] are created instead" (Draconic Visitor: `token =
+  Effects.CreateToken(5, 5, setOf(RED), setOf("Dragon"), setOf(FLYING))`, `appliesTo =
+  TokenCreationEvent(You, GameObjectFilter.Artifact)`). `token` must be built with `Effects.CreateToken`
+  (a `CreateTokenEffect`; enforced at construction). The whole matching batch is swapped one-for-one; the
+  substitute's own `count` / `controller` / `tapped` / `attacking` are ignored ("that many", under the
+  player the replaced tokens were for), and the replaced effect's riders (enters tapped, sacrifice at end
+  step, CREATED_TOKENS follow-ups now point at the substitutes) don't follow — they belonged to tokens that
+  are never created. `tokenFilter` is matched against the would-be token's characteristics before it
+  exists (`TokenCreationReplacementHelper.findTokenSubstitution` probes a scratch entity), so it sees an
+  artifact creature token's type line, a Treasure's, or a token copy's copiable values *plus* its copy
+  exceptions (Molten Duplication's "except it's an artifact"). Read by the three token executors that read
+  the other token replacements — `CreateTokenExecutor` (after count doublers), `CreatePredefinedTokenExecutor`
+  and `CreateTokenCopyOfTargetExecutor` (after the Mirrormind-style attached-copy offer); the substitutes are
+  created without a second doubler pass and without re-checking this family, so they can't loop. Printed
+  or granted (`ActiveReplacements`). Not yet ordered against `CreateAdditionalToken` by the affected
+  player (CR 616.1): the substitution runs first and `CreateAdditionalToken` then judges only the
+  substitutes, so Worldwalker Helm adds no Map for a Treasure that became a Dragon.
 - `EntersAsCopy(optional, copyFilter, copyFromZone, filterByTotalManaSpent, additionalSubtypes, additionalKeywords, nameOverride, powerOverride, toughnessOverride, exileCopiedCard, tappedIfCopied, additionalCounters)` —
   "enter as a copy of …". As the permanent enters, the controller picks an object matching
   `copyFilter` and the permanent enters as a copy (Rule 707 copiable values), with any overrides

@@ -1594,6 +1594,19 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.PlayerActivatedExhaustAbilitiesThisTurn(Player.You, atLeast)
 
     /**
+     * "If you've activated a loyalty ability this turn" (CR 606) — Kiora of Salt and Sand. Turn
+     * history backed by the per-player `LoyaltyAbilitiesActivatedThisTurnComponent`
+     * ([com.wingedsheep.sdk.scripting.values.TurnTracker.LOYALTY_ABILITIES_ACTIVATED]), so it stays
+     * true after that planeswalker leaves the battlefield or the ability is countered.
+     */
+    fun YouActivatedLoyaltyAbilityThisTurn(atLeast: Int = 1, player: Player = Player.You): ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.LOYALTY_ABILITIES_ACTIVATED,
+            atLeast,
+            player,
+        )
+
+    /**
      * As long as you haven't activated an exhaust ability this turn — Elvish Refueler's gate on its
      * "activate exhaust abilities as though they haven't been activated" permission.
      */

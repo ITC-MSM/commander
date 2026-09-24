@@ -2890,9 +2890,35 @@
         "PROWESS"
     ],
     "script": {
-        "activatedAbilities": [
+        "triggeredAbilities": [
             {
                 "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
                 "cost": {
                     "type": "CostComposite",
                     "costs": [
@@ -3736,6 +3762,58 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Draconic Visitor
+{
+    "name": "Draconic Visitor",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying\nIf one or more artifact tokens would be created under your control, that many 5/5 red Dragon creature tokens with flying are created instead.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ReplaceTokenCreationWithToken",
+                "token": {
+                    "type": "CreateToken",
+                    "power": 5,
+                    "toughness": 5,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Dragon"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/9/9/991a5840-adc7-45b5-8d5f-b24dae384bab.jpg?1789734473"
+                },
+                "appliesTo": {
+                    "type": "TokenCreationEvent",
+                    "tokenFilter": "artifact"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "rarity": "RARE",
+        "artist": "Alexander Mokhov",
+        "flavorText": "\"What is that?! A firebreathing sphinx?\"\n—Derenk, Hexhaven cadet",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/112f8478-bd89-4a14-9721-8ab750613129.jpg?1789470842",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -4830,6 +4908,74 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Fblthp, Impossibly Lost
+{
+    "name": "Fblthp, Impossibly Lost",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Homunculus",
+    "oracleText": "When one or more of your opponents are dealt combat damage during your turn, draw two cards. If your library has no cards in it, you win the game. Fblthp's owner shuffles him into their library. (If you draw from an empty library this way, you still win the game.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "OpponentsDealtCombatDamageEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Library",
+                                    "negate": true
+                                }
+                            },
+                            "then": {
+                                "type": "WinGame",
+                                "message": "Fblthp, Impossibly Lost: your library has no cards in it."
+                            }
+                        },
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Library",
+                            "placement": "Shuffled"
+                        }
+                    ]
+                },
+                "triggerRestriction": "IsYourTurn",
+                "descriptionOverride": "When one or more of your opponents are dealt combat damage during your turn, draw two cards. If your library has no cards in it, you win the game. Fblthp's owner shuffles him into their library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "213",
+        "rarity": "UNCOMMON",
+        "artist": "Simon Dominic",
+        "flavorText": "Fblthp had *definitely* made a wrong turn.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/3/a3a2edbb-d144-4670-acad-17316cea98d2.jpg?1789127697",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -6374,9 +6520,35 @@
         "PROWESS"
     ],
     "script": {
-        "activatedAbilities": [
+        "triggeredAbilities": [
             {
                 "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
                 "cost": {
                     "type": "CostAtomWrapper",
                     "atom": {
@@ -6815,6 +6987,66 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Heartwood Crafter
+{
+    "name": "Heartwood Crafter",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf Artificer",
+    "oracleText": "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)\n{T}: Add {C}. This mana can't be spent to cast spells from your hand.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "restriction": "CannotCastSpellsFromHand"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {C}. This mana can't be spent to cast spells from your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "rarity": "UNCOMMON",
+        "artist": "Anastasia Ovchinnikova",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/1/910a1f41-17fd-4ab0-9597-7151e79dc760.jpg?1789127630",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "RED"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Soul Tether",
+            "manaCost": "{2}{R/G}",
+            "typeLine": "Sorcery",
+            "oracleText": "Create a Heartwood token. (It's a red and green artifact with \"{T}: Add {R} or {G}.\")",
+            "script": {
+                "spellEffect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Heartwood"
+                }
+            }
+        }
     ]
 }
 
@@ -7384,6 +7616,100 @@
     ]
 }
 
+// Identity Echo
+{
+    "name": "Identity Echo",
+    "manaCost": "{2}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "{3}{R}: Exile target creature or planeswalker you control. Reveal cards from the top of your library until you reveal a creature or planeswalker card. Put that card onto the battlefield and the rest on the bottom of your library in a random order. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature or planeswalker you control"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "GatherUntilMatch",
+                            "filter": "creature|planeswalker",
+                            "storeMatch": "matched1",
+                            "storeRevealed": "revealed1"
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "revealed1"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "matched1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "revealed1",
+                            "filter": {
+                                "type": "ExcludeOtherCollection",
+                                "otherCollectionName": "matched1"
+                            },
+                            "storeMatching": "matching4"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "matching4",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ],
+                    "descriptionOverride": "Exile target creature or planeswalker you control. Reveal cards from the top of your library until you reveal a creature or planeswalker card. Put that card onto the battlefield and the rest on the bottom of your library in a random order."
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature|planeswalker ctrl:you"
+                        },
+                        "id": "target creature or planeswalker you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{3}{R}: Exile target creature or planeswalker you control. Reveal cards from the top of your library until you reveal a creature or planeswalker card. Put that card onto the battlefield and the rest on the bottom of your library in a random order. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "rarity": "RARE",
+        "artist": "Aldo Domínguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e600b33b-8916-43dd-95d3-d7cbf874933d.jpg?1789385968",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Infinite Coursework
 {
     "name": "Infinite Coursework",
@@ -7699,6 +8025,300 @@
     ]
 }
 
+// Jace's Machinations
+{
+    "name": "Jace's Machinations",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Until end of turn, you may activate loyalty abilities of Jace planeswalkers you control on any player's turn any time you could cast an instant.\nEmpower Jace 8. (Put eight loyalty counters on a Jace token you control. If you don't control one, first create a blue Jace planeswalker token with \"[−1]: Surveil 1\" and \"[−3]: Draw a card.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GrantInstantSpeedLoyaltyAbilities",
+                    "planeswalkerFilter": {
+                        "cardPredicates": [
+                            "IsPlaneswalker",
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Jace"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "planeswalker Jace token",
+                                    "negate": true
+                                }
+                            },
+                            "then": {
+                                "type": "CreatePredefinedToken",
+                                "tokenType": "Jace"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "planeswalker Jace token",
+                                "player": "You"
+                            },
+                            "storeAs": "empower_jaces"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "empower_jaces",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "empower_jace",
+                            "prompt": "Empower Jace 8 — choose a Jace token you control",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "AddCountersToCollection",
+                            "collectionName": "empower_jace",
+                            "counterType": "loyalty",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 8
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Empower Jace 8"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "rarity": "RARE",
+        "artist": "Serena Malyon",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/8/282588b9-3656-453b-aa25-2419e078ddc1.jpg?1788878150",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Jace, Reality Sculptor
+{
+    "name": "Jace, Reality Sculptor",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Legendary Planeswalker — Jace",
+    "oracleText": "+1: Empower Jace X, where X is the number of Islands you control.\n−3: Until your next turn, whenever a creature attacks you or a planeswalker you control, it gets -5/-0 until end of turn.\n0: Exile all but the bottom card of each opponent's library. Activate only if there are twenty-five or more loyalty counters among Jaces you control.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "planeswalker Jace token",
+                                    "negate": true
+                                }
+                            },
+                            "then": {
+                                "type": "CreatePredefinedToken",
+                                "tokenType": "Jace"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "planeswalker Jace token",
+                                "player": "You"
+                            },
+                            "storeAs": "empower_jaces"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "empower_jaces",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "empower_jace",
+                            "prompt": "Empower Jace the number of Island lands you control — choose a Jace token you control",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "AddCountersToCollection",
+                            "collectionName": "empower_jace",
+                            "counterType": "loyalty",
+                            "amount": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "land Island"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Empower Jace the number of Island lands you control"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Empower Jace X, where X is the number of Islands you control."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -3
+                },
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": -5
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "TriggeringEntity"
+                    },
+                    "trigger": {
+                        "event": {
+                            "type": "AttackEvent",
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "IsAttackingYouOrYourPlaneswalkers"
+                                ]
+                            }
+                        },
+                        "binding": "ANY"
+                    },
+                    "expiry": "DelayedTriggerExpiry.UntilControllersNextTurn"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Until your next turn, whenever a creature attacks you or a planeswalker you control, it gets -5/-0 until end of turn."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 0
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "IfPositive",
+                                        "amount": {
+                                            "type": "Subtract",
+                                            "left": {
+                                                "type": "Count",
+                                                "player": "You",
+                                                "zone": "Library"
+                                            },
+                                            "right": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        }
+                                    }
+                                },
+                                "storeAs": "realitySculptorExiled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "realitySculptorExiled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "planeswalker Jace",
+                                "aggregation": "SUM",
+                                "counterType": "Loyalty"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 25
+                            }
+                        }
+                    }
+                ],
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Exile all but the bottom card of each opponent's library. Activate only if there are twenty-five or more loyalty counters among Jaces you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "216",
+        "rarity": "RARE",
+        "artist": "Martina Fačková",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/4/74087795-0b38-4fd2-9841-147583baca41.jpg?1789644880",
+        "inBooster": false
+    },
+    "startingLoyalty": 5,
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Jiang Yanggu, Alone
 {
     "name": "Jiang Yanggu, Alone",
@@ -7876,6 +8496,34 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Karn, Argent Defender
+{
+    "name": "Karn, Argent Defender",
+    "manaCost": "{2}",
+    "typeLine": "Legendary Artifact Creature — Golem",
+    "oracleText": "Artifacts and creatures entering the battlefield don't cause abilities to trigger.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "SuppressEntersTriggers",
+                "filter": "creature|artifact"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "279",
+        "rarity": "RARE",
+        "artist": "Scott M. Fischer",
+        "flavorText": "\"I owe the Multiverse a debt I fear I can never repay. That remedy begins now, with a first step away from the past and toward the future I wish to see.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/e/1ebbbddb-2dc3-4194-b72b-13bcebe2ab89.jpg?1788878301",
+        "inBooster": false
+    }
 }
 
 // Karn, Gilded Guardian
@@ -8153,6 +8801,114 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Kiora of Salt and Sand
+{
+    "name": "Kiora of Salt and Sand",
+    "manaCost": "{1}{G}{U}",
+    "typeLine": "Legendary Creature — Merfolk Noble",
+    "oracleText": "Whenever you attack, if you've activated a loyalty ability this turn, untap target attacking creature. It can't be blocked this turn.\nPlaneswalkers you control have \"[−8]: Create an 8/8 blue Leviathan creature token with hexproof.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature"
+                            },
+                            "tap": false
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "CANT_BE_BLOCKED",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature attacking"
+                    },
+                    "id": "target attacking creature"
+                },
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "LOYALTY_ABILITIES_ACTIVATED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever you attack, if you've activated a loyalty ability this turn, untap target attacking creature. It can't be blocked this turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostLoyalty",
+                        "change": -8
+                    },
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 8,
+                        "toughness": 8,
+                        "colors": [
+                            "BLUE"
+                        ],
+                        "creatureTypes": [
+                            "Leviathan"
+                        ],
+                        "keywords": [
+                            "HEXPROOF"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a4339d5a-7c07-4326-b0e6-d2519332803d.jpg?1789735757"
+                    },
+                    "timing": "SorcerySpeed",
+                    "isPlaneswalkerAbility": true,
+                    "descriptionOverride": "Create an 8/8 blue Leviathan creature token with hexproof."
+                },
+                "filter": {
+                    "baseFilter": "planeswalker ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "273",
+        "rarity": "UNCOMMON",
+        "artist": "Chris Rahn",
+        "flavorText": "\"The sea ends where I say it does.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/1/8151f5f5-e9f6-4fbe-b543-f456ebf22aa5.jpg?1789127745",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
     ]
 }
 
@@ -8887,6 +9643,78 @@
         "inBooster": false
     },
     "colorIdentityOverride": []
+}
+
+// Loot, the Anomaly
+{
+    "name": "Loot, the Anomaly",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Beast Horror",
+    "oracleText": "If Loot's power is negative, he assigns combat damage as though his power were positive.\nThreshold — Sacrifice another creature or planeswalker: Loot gets -2/-0 until end of turn. Activate only if there are seven or more cards in your graveyard.",
+    "creatureStats": {
+        "power": -2,
+        "toughness": 4
+    },
+    "flags": [
+        "ASSIGNS_COMBAT_DAMAGE_AS_ABSOLUTE_POWER"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "creature|planeswalker",
+                        "excludeSelf": true
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "Count",
+                                "player": "You",
+                                "zone": "Graveyard"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 7
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Threshold — Sacrifice another creature or planeswalker: Loot gets -2/-0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "rarity": "UNCOMMON",
+        "artist": "Filip Burburan",
+        "flavorText": "Loot's value is absolute in any Multiverse, so Jace kept him locked away and hidden.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/f/4f6fd2fa-8bc8-4743-bbc8-b56475d64eff.jpg?1789568430",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
 }
 
 // Loot, the Nexus
@@ -10673,6 +11501,34 @@
         "PROWESS",
         "PREPARED"
     ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
     "metadata": {
         "collectorNumber": "90",
         "rarity": "RARE",
@@ -11388,6 +12244,168 @@
                             "count": 1
                         }
                     ]
+                }
+            }
+        }
+    ]
+}
+
+// Puppet Crafting
+{
+    "name": "Puppet Crafting",
+    "manaCost": "{1}{G}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant artifact or non-Aura enchantment\nEnchanted permanent is a Construct creature with base power and toughness 5/5 in addition to its other types.\n{4}{G}: Return this card from your graveyard to your hand.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand",
+                    "fromZone": "Graveyard"
+                },
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "{4}{G}: Return this card from your graveyard to your hand."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantCardType",
+                "cardType": "CREATURE",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                }
+            },
+            {
+                "type": "GrantSubtype",
+                "subtype": "Construct",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                }
+            },
+            {
+                "type": "SetBasePowerToughnessStatic",
+                "power": 5,
+                "toughness": 5
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": {
+                    "cardPredicates": [
+                        {
+                            "type": "Or",
+                            "predicates": [
+                                "IsArtifact",
+                                {
+                                    "type": "And",
+                                    "predicates": [
+                                        "IsEnchantment",
+                                        {
+                                            "type": "NotSubtype",
+                                            "subtype": "Aura"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "111",
+        "rarity": "RARE",
+        "artist": "Anna Pavleeva",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b8789a6-3b63-4198-af5f-c2f2f49fafd9.jpg?1789470736",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Pyre Rhymer
+{
+    "name": "Pyre Rhymer",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Creature — Elemental Sorcerer",
+    "oracleText": "Prowess\nThis creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "PROWESS",
+        "PREPARED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "rarity": "RARE",
+        "artist": "Andrea Piparo",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2b0ebea0-86de-4da4-9fe8-dacc1e75c161.jpg?1789470850",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Molten Tide",
+            "manaCost": "{R}",
+            "typeLine": "Instant",
+            "oracleText": "Until end of turn, whenever you tap a Mountain for mana, add an additional {R}.",
+            "script": {
+                "spellEffect": {
+                    "type": "GrantStaticAbility",
+                    "ability": {
+                        "type": "AdditionalManaOnSourceTap",
+                        "sourceFilter": "land Mountain ctrl:you",
+                        "color": "RED"
+                    },
+                    "target": "Controller"
                 }
             }
         }
@@ -12549,6 +13567,48 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Samut, Tyrant of Naktamun
+{
+    "name": "Samut, Tyrant of Naktamun",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Human Wizard",
+    "oracleText": "Instant and sorcery spells you control have split second. (As long as a spell with split second is on the stack, players can't cast spells or activate abilities that aren't mana abilities.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeywordToOwnSpells",
+                "keyword": "SPLIT_SECOND",
+                "spellFilter": {
+                    "cardPredicates": [
+                        {
+                            "type": "Or",
+                            "predicates": [
+                                "IsInstant",
+                                "IsSorcery"
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "rarity": "RARE",
+        "artist": "Grzegorz Rutkowski",
+        "flavorText": "Everything in her wake stills, then stops.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6d7d8fa7-ce69-4a8c-9af0-55571393a244.jpg?1789729644",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -16069,6 +17129,32 @@
         "PROWESS"
     ],
     "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ],
         "staticAbilities": [
             {
                 "type": "NoncombatDamageBonus",
@@ -16086,6 +17172,77 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Tomik, Orzhov Lawmage
+{
+    "name": "Tomik, Orzhov Lawmage",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Human Advisor",
+    "oracleText": "Flying\nPlaneswalkers you control have \"No more than one creature can attack this planeswalker each combat.\"\n{T}: Target creature with a +1/+1 counter on it gains flying until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature with a +1/+1 counter on it"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "HasCounter",
+                                        "counterType": "+1/+1"
+                                    }
+                                ]
+                            }
+                        },
+                        "id": "target creature with a +1/+1 counter on it"
+                    }
+                ],
+                "descriptionOverride": "{T}: Target creature with a +1/+1 counter on it gains flying until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "AttackerCountLimit",
+                "maxAttackers": 1,
+                "defenders": {
+                    "baseFilter": "planeswalker ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "206",
+        "rarity": "UNCOMMON",
+        "artist": "Randy Vargas",
+        "flavorText": "\"Many wield the law as a cudgel. I prefer to use it as a shield.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7ca95235-6e54-4ff8-bc2e-6a3d483ff007.jpg?1789729766",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -16525,9 +17682,37 @@
     },
     "keywords": [
         "FLYING",
-        "PROWESS",
-        "PREPARED"
+        "PREPARED",
+        "PROWESS"
     ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
     "metadata": {
         "collectorNumber": "47",
         "rarity": "RARE",
@@ -18154,6 +19339,107 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Way of the Mind Sculptor
+{
+    "name": "Way of the Mind Sculptor",
+    "manaCost": "{4}{U}",
+    "typeLine": "Legendary Enchantment",
+    "oracleText": "When Way of the Mind Sculptor enters, empower Jace 5. (Put five loyalty counters on a Jace token you control. If you don't control one, first create a blue Jace planeswalker token with \"[−1]: Surveil 1\" and \"[−3]: Draw a card.\")\nWhenever you activate a loyalty ability, if you removed two or more loyalty counters to activate it, draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "planeswalker Jace token",
+                                    "negate": true
+                                }
+                            },
+                            "then": {
+                                "type": "CreatePredefinedToken",
+                                "tokenType": "Jace"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "planeswalker Jace token",
+                                "player": "You"
+                            },
+                            "storeAs": "empower_jaces"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "empower_jaces",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "empower_jace",
+                            "prompt": "Empower Jace 5 — choose a Jace token you control",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "AddCountersToCollection",
+                            "collectionName": "empower_jace",
+                            "counterType": "loyalty",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 5
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Empower Jace 5"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "AbilityActivatedEvent",
+                    "requireLoyalty": true,
+                    "minLoyaltyRemoved": 2
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever you activate a loyalty ability, if you removed two or more loyalty counters to activate it, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "UNCOMMON",
+        "artist": "Josh Hass",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/5838af68-66c3-4fe8-ab89-0a1721b0cfeb.jpg?1789729565",
+        "inBooster": false
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

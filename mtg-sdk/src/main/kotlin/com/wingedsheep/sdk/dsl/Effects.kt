@@ -4511,6 +4511,22 @@ object Effects {
         CantActivateLoyaltyAbilitiesEffect(target, duration)
 
     /**
+     * "[You] may activate loyalty abilities of [planeswalkerFilter] planeswalkers on any player's
+     * turn any time you could cast an instant" for [duration] (Jace's Machinations). Lifts only the
+     * sorcery-timing half of CR 606.3 — the once-per-turn limit still applies.
+     */
+    fun InstantSpeedLoyaltyAbilities(
+        planeswalkerFilter: com.wingedsheep.sdk.scripting.GameObjectFilter =
+            com.wingedsheep.sdk.scripting.GameObjectFilter.Planeswalker.youControl(),
+        duration: Duration = Duration.EndOfTurn,
+        target: EffectTarget = EffectTarget.Controller,
+    ): Effect = com.wingedsheep.sdk.scripting.effects.GrantInstantSpeedLoyaltyAbilitiesEffect(
+        target = target,
+        planeswalkerFilter = planeswalkerFilter,
+        duration = duration,
+    )
+
+    /**
      * Target player skips their next [count] turns (default one).
      * Used for cards like Lethal Vapors (one turn) and Ral Zarek, Guest Lecturer (a coin-flip
      * tally of turns, via [DynamicAmount.VariableReference]).

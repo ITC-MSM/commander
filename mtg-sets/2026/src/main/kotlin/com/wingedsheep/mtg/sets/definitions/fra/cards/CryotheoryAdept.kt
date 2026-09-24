@@ -1,7 +1,6 @@
 package com.wingedsheep.mtg.sets.definitions.fra.cards
 
 import com.wingedsheep.sdk.core.Counters
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
@@ -18,7 +17,7 @@ val CryotheoryAdept = card("Cryotheory Adept") {
     toughness = 1
     oracleText = "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\n{3}{U}, Exile this card from your graveyard: Tap target creature and put a stun counter on it. Activate only as a sorcery. (If a permanent with a stun counter would become untapped, remove one from it instead.)"
 
-    keywords(Keyword.PROWESS)
+    prowess()
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{3}{U}"), Costs.ExileSelf)
         activateFromZone = Zone.GRAVEYARD

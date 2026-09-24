@@ -280,6 +280,7 @@ class TriggerIndex(
                 is SdkGameEvent.PermanentsSacrificedEvent -> listOf(TriggerCategory.SACRIFICE)
                 is SdkGameEvent.OneOrMoreDealCombatDamageToPlayerEvent -> listOf(TriggerCategory.COMBAT_DAMAGE_BATCH)
                 is SdkGameEvent.OneOrMoreDealCombatDamageToYouEvent -> listOf(TriggerCategory.COMBAT_DAMAGE_BATCH)
+                is SdkGameEvent.OpponentsDealtCombatDamageEvent -> listOf(TriggerCategory.COMBAT_DAMAGE_BATCH)
                 is SdkGameEvent.LeaveBattlefieldWithoutDyingEvent -> listOf(TriggerCategory.LEAVE_WITHOUT_DYING)
                 is SdkGameEvent.CreaturesYouControlDiedEvent -> listOf(TriggerCategory.CREATURES_DIED_BATCH)
                 is SdkGameEvent.PermanentsEnteredEvent -> listOf(TriggerCategory.PERMANENTS_ENTERED_BATCH)

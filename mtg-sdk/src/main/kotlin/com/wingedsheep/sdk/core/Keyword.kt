@@ -180,6 +180,19 @@ enum class Keyword(val displayName: String) {
     FLASHBACK("Flashback"),
 
     /**
+     * Split second (CR 702.61, Time Spiral). "As long as this spell is on the stack, players can't
+     * cast other spells or activate abilities that aren't mana abilities."
+     *
+     * A static ability that functions only while the spell is on the stack (CR 702.61a). Mana
+     * abilities and special actions (morph turn-up, plot, foretell, suspend, unlocking a door) stay
+     * legal, and triggered abilities still trigger and go on the stack (CR 702.61b). Read by the
+     * engine's `SplitSecond` lock, which both the legal-action enumerator and action validation
+     * consult. A spell has it printed or granted to it — `GrantKeywordToOwnSpells` (Samut, Tyrant
+     * of Naktamun) or a one-shot spell grant. Multiple instances are redundant (CR 702.61c).
+     */
+    SPLIT_SECOND("Split second"),
+
+    /**
      * Harmonize—[cost] (Tarkir: Dragonstorm). "You may cast this card from your
      * graveyard for its harmonize cost. You may tap a creature you control to
      * reduce that cost by an amount of generic mana equal to its power. Then exile

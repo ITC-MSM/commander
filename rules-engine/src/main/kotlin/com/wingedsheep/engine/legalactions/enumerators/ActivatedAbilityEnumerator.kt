@@ -127,7 +127,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 // Planeswalker loyalty abilities: sorcery speed + once per turn + loyalty cost check
                 if (ability.isPlaneswalkerAbility) {
                     if (context.cantActivateLoyaltyAbilities) continue
-                    if (!context.canPlaySorcerySpeed) continue
+                    if (!context.canPlaySorcerySpeed &&
+                        !context.castPermissionUtils.canActivateLoyaltyAtInstantSpeed(state, playerId, entityId)
+                    ) continue
                     val tracker = container.get<AbilityActivatedThisTurnComponent>()
                     if (tracker != null && tracker.loyaltyActivationCount > 0) {
                         val maxActivations = context.castPermissionUtils.getMaxLoyaltyActivations(state, playerId)

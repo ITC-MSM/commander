@@ -1,7 +1,6 @@
 package com.wingedsheep.mtg.sets.definitions.fra.cards
 
 import com.wingedsheep.sdk.core.Counters
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Costs
@@ -22,7 +21,7 @@ val GrimRepriser = card("Grim Repriser") {
         "Activate only if an opponent has been dealt noncombat damage this turn. " +
         "(If a creature with a finality counter on it would die, exile it instead.)"
 
-    keywords(Keyword.PROWESS)
+    prowess()
 
     activatedAbility {
         cost = Costs.Mana("{B}{R}")

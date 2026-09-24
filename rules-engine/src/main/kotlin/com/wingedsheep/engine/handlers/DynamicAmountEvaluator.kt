@@ -748,6 +748,11 @@ class DynamicAmountEvaluator(
                             ?.get<com.wingedsheep.engine.state.components.player.BendsThisTurnComponent>()
                             ?.types?.size ?: 0
                     }
+                    TurnTracker.LOYALTY_ABILITIES_ACTIVATED -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.LoyaltyAbilitiesActivatedThisTurnComponent>()
+                            ?.count ?: 0
+                    }
                 }
             }
 

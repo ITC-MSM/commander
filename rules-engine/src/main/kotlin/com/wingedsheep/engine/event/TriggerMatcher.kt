@@ -311,6 +311,7 @@ class TriggerMatcher(
                 if (event !is AbilityActivatedEvent) return false
                 if (!matchesPlayer(state, trigger.player, event.controllerId, controllerId)) return false
                 if (trigger.requireLoyalty && !event.isLoyalty) return false
+                if (event.loyaltyCountersRemoved < trigger.minLoyaltyRemoved) return false
                 if (trigger.requireExhaust) {
                     if (!event.isExhaust) return false
                     // Plain "whenever you activate an exhaust ability" counts an exhaust mana
@@ -836,6 +837,7 @@ class TriggerMatcher(
             // Combat damage batch triggers are handled by detectCombatDamageBatchTriggers
             is EventPattern.OneOrMoreDealCombatDamageToPlayerEvent -> false
             is EventPattern.OneOrMoreDealCombatDamageToYouEvent -> false
+            is EventPattern.OpponentsDealtCombatDamageEvent -> false
             // Leave battlefield without dying batch triggers are handled by detectLeaveBattlefieldWithoutDyingBatchTriggers
             is EventPattern.LeaveBattlefieldWithoutDyingEvent -> false
             // Creatures-you-control-die batch triggers are handled by detectCreaturesDiedBatchTriggers

@@ -126,15 +126,29 @@ internal object CombatDamageUtils {
         if (projected.hasKeyword(creatureId, AbilityFlag.ASSIGNS_NO_COMBAT_DAMAGE)) return 0
 
         val power = projected.getPower(creatureId) ?: 0
-        if (cardRegistry == null) return power
+        if (cardRegistry == null) return powerForAssignment(projected, creatureId, power)
 
+        // The toughness > power gate compares the creature's real (possibly negative) power.
         val toughness = projected.getToughness(creatureId) ?: 0
         return if (assignsDamageAsToughness(state, projected, creatureId, cardRegistry, power, toughness)) {
             toughness.coerceAtLeast(0)
         } else {
-            power
+            powerForAssignment(projected, creatureId, power)
         }
     }
+
+    /**
+     * "If its power is negative, it assigns combat damage as though its power were positive"
+     * (Loot, the Anomaly — [AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_ABSOLUTE_POWER]). CR 510.1a has a
+     * creature whose power is 0 or less assign no combat damage at all; the flag reads a negative
+     * power as its absolute value for the assignment only, leaving the characteristic untouched.
+     */
+    private fun powerForAssignment(projected: ProjectedState, creatureId: EntityId, power: Int): Int =
+        if (power < 0 && projected.hasKeyword(creatureId, AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_ABSOLUTE_POWER)) {
+            -power
+        } else {
+            power
+        }
 
     private fun assignsDamageAsToughness(
         state: GameState,
