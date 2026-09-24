@@ -48,7 +48,8 @@ val ElementalTeachings = card("Elemental Teachings") {
             listOf(
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Land),
-                    storeAs = "searchable"
+                    storeAs = "searchable",
+                    search = true
                 ),
                 SelectFromCollectionEffect(
                     from = "searchable",

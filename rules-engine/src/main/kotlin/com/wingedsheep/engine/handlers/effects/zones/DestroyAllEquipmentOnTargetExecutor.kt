@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.destroyPermanent
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -15,7 +16,7 @@ import com.wingedsheep.engine.core.Outcome
  * Executor for DestroyAllEquipmentOnTargetEffect.
  * Destroys all Equipment attached to the target permanent.
  */
-class DestroyAllEquipmentOnTargetExecutor : EffectExecutor<DestroyAllEquipmentOnTargetEffect> {
+class DestroyAllEquipmentOnTargetExecutor(private val zones: ZoneTransitionService) : EffectExecutor<DestroyAllEquipmentOnTargetEffect> {
 
     override val effectType: KClass<DestroyAllEquipmentOnTargetEffect> = DestroyAllEquipmentOnTargetEffect::class
 
@@ -55,7 +56,7 @@ class DestroyAllEquipmentOnTargetExecutor : EffectExecutor<DestroyAllEquipmentOn
 
         for (equipmentId in equipmentIds) {
             if (!currentState.getBattlefield().contains(equipmentId)) continue
-            val result = destroyPermanent(currentState, equipmentId)
+            val result = destroyPermanent(zones, currentState, equipmentId)
             if (result.outcome is Outcome.Done) {
                 currentState = result.state
                 allEvents.addAll(result.events)

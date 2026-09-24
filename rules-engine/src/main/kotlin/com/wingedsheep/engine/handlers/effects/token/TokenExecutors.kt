@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.effects.token
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ExecutorModule
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.registry.TokenArtRegistry
@@ -15,6 +16,7 @@ import com.wingedsheep.engine.registry.TokenArtRegistry
  * (AI simulation, gym rollouts) leave it out.
  */
 class TokenExecutors(
+    private val zones: ZoneTransitionService,
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator(),
     private val staticAbilityHandler: StaticAbilityHandler? = null,
     private val cardRegistry: CardRegistry,
@@ -23,7 +25,7 @@ class TokenExecutors(
     override fun executors(): List<EffectExecutor<*>> = listOf(
         CreateTokenExecutor(amountEvaluator, staticAbilityHandler, cardRegistry, tokenArtRegistry),
         CreatePredefinedTokenExecutor(cardRegistry, staticAbilityHandler, tokenArtRegistry = tokenArtRegistry),
-        CreateRoleTokenExecutor(cardRegistry, staticAbilityHandler),
+        CreateRoleTokenExecutor(zones, cardRegistry, staticAbilityHandler),
         CreateTokenCopyOfSourceExecutor(cardRegistry, staticAbilityHandler),
         CreateTokenCopyOfEquippedCreatureExecutor(cardRegistry, staticAbilityHandler),
         CreateTokenCopyOfChosenPermanentExecutor(cardRegistry, staticAbilityHandler),

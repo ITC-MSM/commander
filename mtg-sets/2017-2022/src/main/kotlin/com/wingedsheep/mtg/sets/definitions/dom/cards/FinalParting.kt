@@ -34,7 +34,8 @@ val FinalParting = card("Final Parting") {
             // Gather all cards from library
             GatherCardsEffect(
                 source = CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Any),
-                storeAs = "searchable"
+                storeAs = "searchable",
+                search = true
             ),
             // Select exactly 2 cards
             SelectFromCollectionEffect(

@@ -2209,7 +2209,8 @@
                         "zone": "Library",
                         "filter": "land Forest"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -2301,7 +2302,8 @@
                         "type": "FromZone",
                         "zone": "Library"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",

@@ -98,6 +98,12 @@ data class LegalActionInfo(
     val validBlockers: List<EntityId>? = null,
     val hasXCost: Boolean = false,
     val maxAffordableX: Int? = null,
+    /**
+     * Set when the caster may pay "any amount of mana" as an additional cost for this cast
+     * (Chorus of the Conclave): the upper bound for the amount picker. The chosen amount goes out
+     * as `CastSpell.additionalManaForCounters`; null means no such payment is offered.
+     */
+    val maxAdditionalManaForCounters: Int? = null,
     val minX: Int = 0,
     val isManaAbility: Boolean = false,
     val additionalCostInfo: AdditionalCostInfo? = null,

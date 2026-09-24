@@ -281,6 +281,7 @@ class CombatContinuationResumer(
         for ((targetId, damageAmount) in distribution) {
             if (damageAmount > 0) {
                 val result = DamageUtils.dealDamageToTarget(
+                    services.zones,
                     newState,
                     targetId,
                     damageAmount,

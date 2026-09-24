@@ -29,7 +29,7 @@ class UnprepareExecutor : EffectExecutor<UnprepareEffect> {
         effect: UnprepareEffect,
         context: EffectContext
     ): EffectResult {
-        val targetId = context.resolveTarget(effect.target)
+        val targetId = context.resolveTarget(effect.target, state)
             ?: return EffectResult.success(state)
 
         val prepared = state.getEntity(targetId)?.get<PreparedComponent>()

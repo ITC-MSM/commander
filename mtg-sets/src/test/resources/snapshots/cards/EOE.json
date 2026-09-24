@@ -7042,7 +7042,8 @@
                                 "zone": "Library",
                                 "filter": "Equipment"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -8453,7 +8454,8 @@
                                             "zone": "Library",
                                             "filter": "basicland"
                                         },
-                                        "storeAs": "searchable"
+                                        "storeAs": "searchable",
+                                        "search": true
                                     },
                                     {
                                         "type": "SelectFromCollection",
@@ -12937,7 +12939,8 @@
                                     "zone": "Library",
                                     "filter": "artifact"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -14696,7 +14699,8 @@
                                     ]
                                 }
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -17142,7 +17146,8 @@
                                 "zone": "Library",
                                 "filter": "artifact mv<=1"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -17734,7 +17739,8 @@
                                     ]
                                 }
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",

@@ -101,6 +101,14 @@ data class LegalAction(
     val hasXCost: Boolean = false,
     val maxAffordableX: Int? = null,
     val minX: Int = 0,
+    /**
+     * Non-null when the caster may pay "any amount of mana" as an additional cost to cast this
+     * spell (an `AdditionalManaForEntryCounters` static — Chorus of the Conclave). The value is an
+     * upper bound on what the caster could pay on top of the spell's cost right now; the client
+     * asks for an amount in `0..max` and sends it as `CastSpell.additionalManaForCounters`. The
+     * server re-validates the payment, so the bound only shapes the picker.
+     */
+    val maxAdditionalManaForCounters: Int? = null,
     val additionalCostInfo: AdditionalCostData? = null,
 
     // Convoke / Delve

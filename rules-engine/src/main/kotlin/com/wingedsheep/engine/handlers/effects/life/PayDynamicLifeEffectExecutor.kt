@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.PayDynamicLifeEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -19,6 +20,7 @@ import kotlin.reflect.KClass
  * gating [com.wingedsheep.sdk.scripting.effects.Gate.MayPay] still proceeds to its `then`.
  */
 class PayDynamicLifeEffectExecutor(
+    private val zones: ZoneTransitionService,
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator()
 ) : EffectExecutor<PayDynamicLifeEffect> {
 
@@ -38,7 +40,7 @@ class PayDynamicLifeEffectExecutor(
             .resolvePlayerTarget(EffectTarget.PlayerRef(effect.payer), context, state)
             ?: context.controllerId
 
-        val (newState, events) = LifePaymentService.pay(state, playerId, amount)
+        val (newState, events) = LifePaymentService.pay(zones, state, playerId, amount)
             ?: return EffectResult.error(state, "Player not found for life payment")
         return EffectResult.success(newState, events)
     }

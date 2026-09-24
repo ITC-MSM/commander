@@ -139,6 +139,8 @@ export interface CastSpellAction {
    * resolving effect can branch on `WaterbendWasPaid`.
    */
   readonly wasWaterbendPaid?: boolean
+  /** Extra generic mana paid for entry +1/+1 counters (Chorus of the Conclave); 0/absent declines. */
+  readonly additionalManaForCounters?: number
   /**
    * The opponent promised this spell's gift additional cost (Bloomburrow gift — CR 702.174a), or
    * absent when the gift wasn't promised. The server emits a `CastWithGift` variant of the normal

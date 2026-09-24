@@ -437,6 +437,25 @@ data class HijackNextTurnEffect(
 }
 
 /**
+ * "You choose which creatures attack this turn. You choose which creatures block this turn and how
+ * those creatures block." (Master Warcraft.)
+ *
+ * For the rest of the turn the ability's controller makes every attack declaration and every block
+ * declaration, for every player, in every combat phase. Only the *declarations* move — unlike
+ * [HijackNextTurnEffect] (Mindslaver), no other decision, no priority and no hidden information
+ * changes hands. The chosen attackers and blockers must still be legal under the normal rules for
+ * the players who control them (ruling), and they stay those players' creatures.
+ *
+ * If two such effects apply in one turn, the one created last wins.
+ */
+@SerialName("ControlCombatDeclarationsThisTurn")
+@Serializable
+data object ControlCombatDeclarationsThisTurnEffect : Effect {
+    override val description: String =
+        "You choose which creatures attack this turn. You choose which creatures block this turn and how those creatures block"
+}
+
+/**
  * The future window during which a [HijackNextTurnEffect] hands input authority for the
  * affected player to the ability's controller.
  *
@@ -466,6 +485,29 @@ data class CantCastSpellsEffect(
     val duration: Duration = Duration.EndOfTurn
 ) : Effect {
     override val description: String = "${target.description.replaceFirstChar { it.uppercase() }} can't cast spells ${duration.description}"
+}
+
+/**
+ * The [target] player(s) can't search libraries for the specified [duration] — "Players can't
+ * search libraries this turn" (Shadow of Doubt).
+ *
+ * Enforced where a search happens: a [GatherCardsEffect] marked `search = true` whose searching
+ * player (the effect's controller) carries the restriction finds no library cards, and the
+ * search's [EmitLibrarySearchedEventEffect] tail emits nothing because no search took place.
+ * The rest of the instruction still runs — a "search …, then shuffle" still shuffles (the card's
+ * second ruling). Looking at or revealing the top of a library is not a search and is untouched.
+ *
+ * @param target The player(s) who can't search — `PlayerRef(Player.Each)` for "players".
+ * @param duration How long the restriction lasts (default: this turn).
+ */
+@SerialName("CantSearchLibraries")
+@Serializable
+data class CantSearchLibrariesEffect(
+    val target: EffectTarget,
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String =
+        "${target.description.replaceFirstChar { it.uppercase() }} can't search libraries ${duration.description}"
 }
 
 /**

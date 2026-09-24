@@ -676,6 +676,35 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
         override val description: String get() = "unattach this Equipment"
     }
 
+    /**
+     * Put [count] cards matching [filter] from your hand on top of your library — "Put a card from
+     * your hand on top of your library: Return this creature to its owner's hand." (Leashling).
+     *
+     * Not a discard: the cards go to the library, not the graveyard, so no "whenever you discard"
+     * trigger or madness replacement sees them. The payer chooses which cards (a real choice even
+     * over identical-looking hands — the order of the library matters), and the cost is
+     * unpayable with fewer than [count] matching cards in hand (CR 118.3). When [count] > 1 the
+     * cards go on top in the order chosen, the last chosen ending up on top.
+     */
+    @SerialName("AtomPutFromHandOnTopOfLibrary")
+    @Serializable
+    data class PutFromHandOnTopOfLibrary(
+        val count: Int = 1,
+        val filter: GameObjectFilter = GameObjectFilter.Any
+    ) : CostAtom {
+        override val selectionCount: Int get() = count
+        override val description: String get() = buildString {
+            append("put ")
+            append(quantify(count, filter.description))
+            append(" from your hand on top of your library")
+        }
+
+        override fun applyTextReplacement(replacer: TextReplacer): CostAtom {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
+
     /** Reveal [count] cards matching [filter] from your hand (the cards stay in hand). */
     @SerialName("AtomRevealFromHand")
     @Serializable

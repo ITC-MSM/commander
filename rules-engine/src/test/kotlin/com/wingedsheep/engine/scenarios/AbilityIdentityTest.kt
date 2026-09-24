@@ -10,6 +10,7 @@ import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.event.GrantedActivatedAbility
 import com.wingedsheep.engine.event.GrantedStaticAbility
 import com.wingedsheep.engine.handlers.DecisionHandler
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.stack.CopyTargetSpellOrAbilityExecutor
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.registry.CardRegistry
@@ -305,7 +306,7 @@ class AbilityIdentityTest : FunSpec({
 
         val result = CopyTargetSpellOrAbilityExecutor.cloneAndPush(
             state = state,
-            stackResolver = StackResolver(CardRegistry()),
+            stackResolver = CardRegistry().let { StackResolver(ZoneTransitionService(it), cardRegistry = it) },
             abilityEntityId = stackEntityId,
             controllerId = copyController,
         )

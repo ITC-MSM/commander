@@ -429,6 +429,23 @@ data class CardDefinition(
     /** Whether this card has any scripted behavior beyond being a vanilla permanent */
     val hasBehavior: Boolean get() = script.hasBehavior
 
+    /**
+     * Threshold: the smallest N for which one of this card's static abilities is gated on "you have
+     * N or more cards in your graveyard", or null when none is. Derived from [script]; never
+     * authored and never serialized (a getter has no backing field).
+     */
+    val graveyardThreshold: Int? get() = GraveyardThresholds.graveyardSize(this)
+
+    /**
+     * Delirium: the smallest N for which anything on this card — any ability, effect, cost or face —
+     * is gated on "N or more card types among cards in your graveyard", or null when nothing is.
+     *
+     * Derived from the whole typed tree, so it is computed once per definition and kept. Delegated
+     * properties are not serialized, so this never reaches a card's JSON; nor does it take part in
+     * `equals`/`copy`, being outside the primary constructor.
+     */
+    val deliriumThreshold: Int? by lazy { GraveyardThresholds.delirium(this) }
+
     /** The effect when this spell resolves (for instants/sorceries) */
     val spellEffect get() = script.spellEffect
 

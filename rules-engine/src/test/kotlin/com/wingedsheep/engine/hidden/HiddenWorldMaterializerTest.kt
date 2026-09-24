@@ -15,7 +15,6 @@ import com.wingedsheep.engine.core.PendingDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.SubmitDecision
 import com.wingedsheep.engine.core.PlayLand
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -352,7 +351,7 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
                 .withCardOnBattlefield(2, "Grizzly Bears")
                 .build()
             val bears = game.findPermanent("Grizzly Bears")!!
-            val source = ZoneTransitionService.moveToZone(
+            val source = zones.moveToZone(
                 game.state,
                 bears,
                 Zone.HAND,
@@ -372,7 +371,7 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
             result.reason.details shouldContain LastKnownPermanentComponent::class.simpleName
             source.getEntity(bears)?.get<CardComponent>()?.name shouldBe "Grizzly Bears"
 
-            val cleanAgain = ZoneTransitionService.moveToZone(source, bears, Zone.LIBRARY).state
+            val cleanAgain = zones.moveToZone(source, bears, Zone.LIBRARY).state
             cleanAgain.getEntity(bears)?.has<LastKnownPermanentComponent>() shouldBe false
             cleanAgain.getEntity(bears)?.has<ControllerComponent>() shouldBe false
             val cleanWorld = materializer.materialize(

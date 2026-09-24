@@ -3,12 +3,14 @@ package com.wingedsheep.engine.handlers.effects.stack
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.bend.BendEvents
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.BendType
+import com.wingedsheep.sdk.scripting.effects.CounterTargetSource
 import com.wingedsheep.sdk.scripting.effects.ExileTargetSpellEffect
 import kotlin.reflect.KClass
 import com.wingedsheep.engine.core.Outcome
@@ -28,6 +30,7 @@ import com.wingedsheep.engine.core.Outcome
  * silently rather than erroring.
  */
 class ExileTargetSpellExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry
 ) : EffectExecutor<ExileTargetSpellEffect> {
 
@@ -38,12 +41,13 @@ class ExileTargetSpellExecutor(
         effect: ExileTargetSpellEffect,
         context: EffectContext
     ): EffectResult {
-        val target = context.targets.firstOrNull() as? ChosenTarget.Spell
-            ?: return EffectResult.success(state)
-        val spellId = target.spellEntityId
+        val spellId = when (effect.spell) {
+            CounterTargetSource.Chosen -> (context.targets.firstOrNull() as? ChosenTarget.Spell)?.spellEntityId
+            CounterTargetSource.TriggeringEntity -> context.triggeringEntityId
+        } ?: return EffectResult.success(state)
         if (spellId !in state.stack) return EffectResult.success(state)
 
-        val resolver = StackResolver(cardRegistry = cardRegistry)
+        val resolver = StackResolver(zones, cardRegistry = cardRegistry)
         val exiled = EffectResult.from(
             resolver.exileSpell(
                 state,

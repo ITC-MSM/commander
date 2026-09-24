@@ -87,8 +87,7 @@ class VoidConditionTest : FunSpec({
         val land = driver.putLandOnBattlefield(player, "Forest")
         driver.state.nonlandPermanentLeftBattlefieldThisTurn shouldBe false
 
-        val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-            .moveToZone(
+        val transitionResult = driver.zones.moveToZone(
                 state = driver.state,
                 entityId = land,
                 destinationZone = com.wingedsheep.sdk.core.Zone.GRAVEYARD

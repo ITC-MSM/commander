@@ -275,6 +275,12 @@ data class EffectContext(
      * "...FromChosenColor" executors.
      */
     val chosenColor: Color? = null,
+    /**
+     * Every color picked by a multi-color [com.wingedsheep.sdk.scripting.effects.ChooseColorThenEffect]
+     * ("the color or colors of your choice" — Quickchange). Empty for a single-color choice, where
+     * [chosenColor] is the whole answer; when non-empty it contains [chosenColor].
+     */
+    val chosenColors: Set<Color> = emptySet(),
     /** Creature type chosen during casting (e.g., Aphetto Dredging) */
     val chosenCreatureType: String? = null,
     /**

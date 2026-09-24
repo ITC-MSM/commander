@@ -2,6 +2,7 @@ package com.wingedsheep.engine.mechanics.sba.player
 
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEndReason
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.sba.SbaOrder
 import com.wingedsheep.engine.mechanics.sba.StateBasedActionCheck
 import com.wingedsheep.engine.state.GameState
@@ -21,7 +22,7 @@ import com.wingedsheep.engine.state.components.player.PlayerLostComponent
  * Each invocation processes the first lost-but-unprocessed player; the SBA loop re-runs
  * until every one carries [PlayerLeftGameComponent].
  */
-class PlayerLeavesGameCheck : StateBasedActionCheck {
+class PlayerLeavesGameCheck(private val zones: ZoneTransitionService) : StateBasedActionCheck {
     override val name = "800.4 Leave the Game"
     override val order = SbaOrder.LEAVE_GAME
 
@@ -44,7 +45,7 @@ class PlayerLeavesGameCheck : StateBasedActionCheck {
             ?.get<PlayerLostComponent>()?.reason
             .toGameEndReason()
 
-        return PlayerLeavesGameProcessor.process(state, leaver, reason)
+        return PlayerLeavesGameProcessor.process(zones, state, leaver, reason)
     }
 }
 

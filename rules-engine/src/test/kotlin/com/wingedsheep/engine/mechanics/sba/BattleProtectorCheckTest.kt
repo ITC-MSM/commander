@@ -1,10 +1,12 @@
 package com.wingedsheep.engine.mechanics.sba
 
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.core.Suspension
 import com.wingedsheep.engine.core.BattleProtectorChoiceContinuation
 import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.mechanics.battle.Battles
 import com.wingedsheep.engine.mechanics.sba.permanent.BattleProtectorCheck
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -37,6 +39,7 @@ import com.wingedsheep.engine.core.Outcome
  * The two-player behaviour and the surrounding combat rules live in `BattleCardTypeScenarioTest`.
  */
 class BattleProtectorCheckTest : FunSpec({
+    val zones = ZoneTransitionService(CardRegistry())
 
     val p1 = EntityId.of("player-1")
     val p2 = EntityId.of("player-2")
@@ -75,7 +78,7 @@ class BattleProtectorCheckTest : FunSpec({
             .addToZone(ZoneKey(p1, Zone.BATTLEFIELD), battleId)
     }
 
-    val check = BattleProtectorCheck()
+    val check = BattleProtectorCheck(zones)
 
     test("CR 310.12a — a Siege's eligible protectors are exactly its controller's opponents") {
         val state = stateWith(listOf(p1, p2, p3), siege = true)

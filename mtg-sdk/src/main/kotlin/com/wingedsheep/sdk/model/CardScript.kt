@@ -171,6 +171,17 @@ data class CardScript(
     val auraTarget: TargetRequirement? = null,
 
     /**
+     * A narrower requirement an Aura *spell's* target must meet **as it is cast** — and only then.
+     * Dream Leash: "Enchant permanent / You can't choose an untapped permanent as this spell's
+     * target as you cast it." The printed restriction applies to the choice only (its 2005-10-01
+     * ruling), so it is not what the spell re-checks on resolution (CR 608.2b re-checks [auraTarget]),
+     * not what the enchant state-based action reads, and not what an Aura put onto the battlefield
+     * without being cast checks. Null for every Aura whose cast target is just its enchant
+     * restriction. Read through [castAuraTarget].
+     */
+    val auraCastTarget: TargetRequirement? = null,
+
+    /**
      * Timing and conditional restrictions on when this spell can be cast.
      * Used for cards like "Cast only during the declare attackers step."
      * The engine enforces these during legal action calculation.
@@ -428,6 +439,15 @@ data class CardScript(
      */
     val isAura: Boolean
         get() = auraTarget != null
+
+    /**
+     * The requirement an Aura spell's target is chosen against while casting: [auraCastTarget]
+     * when the card narrows the choice, otherwise its [auraTarget]. Legal-action enumeration and
+     * cast validation read this; the requirement captured on the stack for resolution stays
+     * [auraTarget].
+     */
+    val castAuraTarget: TargetRequirement?
+        get() = auraCastTarget ?: auraTarget
 
     /**
      * Whether this spell requires targets when cast.

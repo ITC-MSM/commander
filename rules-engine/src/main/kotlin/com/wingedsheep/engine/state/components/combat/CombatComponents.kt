@@ -63,6 +63,19 @@ data class BlockedComponent(
 data object BlockedOrWasBlockedByLegendaryThisTurnComponent : Component
 
 /**
+ * The creatures this creature blocked, or was blocked by, at any point during the current turn.
+ * Stamped on **both** creatures of each blocking pair at block-declaration time and cleared at
+ * end-of-turn cleanup, so the history survives the pairing ending (a partner dying, removal from
+ * combat, the combat phase ending) and a second combat in the same turn adds to it. Backs
+ * [com.wingedsheep.sdk.scripting.predicates.StatePredicate.BlockedOrWasBlockedByEntityThisTurn]
+ * (Gaze of the Gorgon).
+ */
+@Serializable
+data class CombatPartnersThisTurnComponent(
+    val partnerIds: Set<EntityId>
+) : Component
+
+/**
  * Marks a creature that was declared as an attacker at least once during the current combat
  * (CR 508.1). Stamped at attacker-declaration time and cleared when the combat phase ends
  * ([com.wingedsheep.engine.mechanics.combat.CombatManager.endCombat]). Unlike the turn-scoped,

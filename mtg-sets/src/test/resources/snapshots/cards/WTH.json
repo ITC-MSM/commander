@@ -117,7 +117,8 @@
                                     "Graveyard"
                                 ]
                             },
-                            "storeAs": "gathered0"
+                            "storeAs": "gathered0",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",

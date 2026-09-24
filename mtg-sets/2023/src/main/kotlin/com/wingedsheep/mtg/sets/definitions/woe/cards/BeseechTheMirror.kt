@@ -48,7 +48,8 @@ val BeseechTheMirror = card("Beseech the Mirror") {
         effect = Effects.Composite(
             GatherCardsEffect(
                 source = CardSource.FromZone(Zone.LIBRARY, Player.You),
-                storeAs = "beseechLibrary"
+                storeAs = "beseechLibrary",
+                search = true
             ),
             SelectFromCollectionEffect(
                 from = "beseechLibrary",

@@ -30,6 +30,7 @@ import kotlin.reflect.KClass
  * have valid permanents. If they don't have enough, nothing happens.
  */
 class SacrificeExecutor(
+    private val zones: ZoneTransitionService,
     private val decisionHandler: DecisionHandler = DecisionHandler()
 ) : EffectExecutor<SacrificeEffect> {
 
@@ -178,7 +179,7 @@ class SacrificeExecutor(
         }
 
         for (permanentId in permanentIds) {
-            val transitionResult = ZoneTransitionService.moveToZone(
+            val transitionResult = zones.moveToZone(
                 newState, permanentId, Zone.GRAVEYARD
             )
             newState = transitionResult.state

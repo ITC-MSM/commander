@@ -10,7 +10,7 @@ import com.wingedsheep.sdk.core.Zone
 
 /** Resolves zone-return one-shot effects before the next instruction or priority window. */
 object ZoneReturnService {
-    fun returnDepartedSources(state: GameState): ZoneTransitionResult {
+    fun returnDepartedSources(zones: ZoneTransitionService, state: GameState): ZoneTransitionResult {
         if (state.zoneReturns.isEmpty()) return ZoneTransitionResult(state, emptyList())
         val due = state.zoneReturns.filter { !state.isCurrentObject(it.source) }
         val remaining = state.zoneReturns.filter {
@@ -29,7 +29,7 @@ object ZoneReturnService {
             val container = newState.getEntity(id) ?: continue
             if (container.has<TokenComponent>()) continue
             val owner = container.get<CardComponent>()?.ownerId ?: continue
-            val result = ZoneTransitionService.moveToZone(
+            val result = zones.moveToZone(
                 newState, id, entry.previousZone, ZoneEntryOptions(controllerId = owner)
             )
             newState = result.state
@@ -39,7 +39,7 @@ object ZoneReturnService {
             transitions.addAll(result.transitions.map { it.copy(cause = ZoneTransitionCause.DURATION_RETURN) })
             if (result.actualDestination == Zone.BATTLEFIELD) {
                 val (entered, entryEvents) = EntersWithReplacements.applyOnEntry(
-                    newState, id, owner, ZoneTransitionService.cardRegistry
+                    newState, id, owner, zones.cardRegistry
                 )
                 newState = entered
                 events.addAll(entryEvents)

@@ -591,25 +591,31 @@ enum class DamageRecipient {
  *
  * @property filter Which permanents/cards qualify to be beheld
  * @property ifBeheld Effect that runs only if the player successfully beholds
+ * @property otherwise Effect that runs only if the player doesn't behold — declined, or had
+ *   nothing to behold ("you may behold a Jace. If you don't, this land enters tapped." —
+ *   Theorist's Sanctum, wrapped in `OnEnterRunEffect`)
  */
 @SerialName("Behold")
 @Serializable
 data class BeholdEffect(
     val filter: GameObjectFilter = GameObjectFilter.Any,
-    val ifBeheld: Effect? = null
+    val ifBeheld: Effect? = null,
+    val otherwise: Effect? = null
 ) : Effect {
     override val description: String = buildString {
         val filterDesc = filter.description
         val article = if (filterDesc.firstOrNull()?.lowercase() in listOf("a", "e", "i", "o", "u")) "an" else "a"
         append("You may behold $article $filterDesc")
         if (ifBeheld != null) append(". If you do, ${ifBeheld.description.replaceFirstChar { it.lowercase() }}")
+        if (otherwise != null) append(". If you don't, ${otherwise.description.replaceFirstChar { it.lowercase() }}")
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
         val newFilter = filter.applyTextReplacement(replacer)
         val newIfBeheld = ifBeheld?.applyTextReplacement(replacer)
-        return if (newFilter !== filter || newIfBeheld !== ifBeheld)
-            copy(filter = newFilter, ifBeheld = newIfBeheld) else this
+        val newOtherwise = otherwise?.applyTextReplacement(replacer)
+        return if (newFilter !== filter || newIfBeheld !== ifBeheld || newOtherwise !== otherwise)
+            copy(filter = newFilter, ifBeheld = newIfBeheld, otherwise = newOtherwise) else this
     }
 }
 
@@ -793,6 +799,13 @@ data class CreateDelayedTriggerEffect(
      * The trigger only fires for events sourced from this entity. Context
      * references (e.g. ContextTarget(0)) are baked into a concrete entity id
      * at creation time by CreateDelayedTriggerExecutor.
+     *
+     * For step-based delayed triggers (no [trigger]) there is no event to scope, so the baked
+     * entity instead becomes the fired trigger's *triggering entity* — reachable from the effect
+     * as `EffectTarget.TriggeringEntity` or, inside a filter, `EntityReference.Triggering`. That is
+     * how "at end of combat, destroy all creatures that blocked or were blocked by **it** this
+     * turn" (Gaze of the Gorgon) remembers which creature "it" was. Ignored when [fireOnPlayer]
+     * is set, which already names the triggering player.
      */
     val watchedTarget: EffectTarget? = null,
     /**
@@ -861,7 +874,16 @@ data class CreateDelayedTriggerEffect(
      *  - `PlayerRef(Player.TriggeringPlayer)` — on the triggering/damaged player's turn ("at
      *    the beginning of *their* next draw step"; Nafs Asp).
      */
-    val fireOnPlayer: EffectTarget? = null
+    val fireOnPlayer: EffectTarget? = null,
+    /**
+     * Names of the creating pipeline's stored collections the delayed ability remembers — "return
+     * **those cards**", "return **that card** … attached to **that creature**" (Flickerform). A
+     * delayed triggered ability still refers to the particular objects its creating effect named
+     * (CR 603.7c), but the creating pipeline is gone by the time it fires; each named collection's
+     * entity ids are copied onto the delayed trigger when it is created and seeded back into the
+     * pipeline its effect resolves in, under the same names. Empty by default: nothing is carried.
+     */
+    val carryCollections: List<String> = emptyList()
 ) : Effect {
     override val description: String = when {
         trigger != null -> "create a delayed trigger that fires on ${trigger.event::class.simpleName}"

@@ -1548,7 +1548,8 @@
                                         "type": "FromZone",
                                         "zone": "Library"
                                     },
-                                    "storeAs": "searchable"
+                                    "storeAs": "searchable",
+                                    "search": true
                                 },
                                 {
                                     "type": "SelectFromCollection",

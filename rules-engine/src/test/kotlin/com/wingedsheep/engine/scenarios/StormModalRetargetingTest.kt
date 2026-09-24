@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.StormCopyModalTargetContinuation
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.stack.StormCopyEffectExecutor
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -38,6 +39,7 @@ import com.wingedsheep.engine.core.Outcome
  * per-mode targets.
  */
 class StormModalRetargetingTest : FunSpec({
+    val zones = ZoneTransitionService(CardRegistry())
 
     fun buildState(
         p1: EntityId,
@@ -90,6 +92,7 @@ class StormModalRetargetingTest : FunSpec({
         )
 
         val executor = StormCopyEffectExecutor(
+            zones,
             cardRegistry = CardRegistry(),
             targetFinder = TargetFinder()
         )
@@ -131,6 +134,7 @@ class StormModalRetargetingTest : FunSpec({
         )
 
         val executor = StormCopyEffectExecutor(
+            zones,
             cardRegistry = CardRegistry(),
             targetFinder = TargetFinder()
         )

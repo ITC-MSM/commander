@@ -72,6 +72,13 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                 // ability activates from the battlefield, so this only guards future cards.
                 if (context.castPermissionUtils.isPowerUpActivationRestricted(state, ability)) continue
 
+                // An any-zone "players can't activate abilities" (Yuriko, Blade of the Mighty) —
+                // the same check `ActivateAbilityHandler.validate` makes off the battlefield.
+                if (context.castPermissionUtils.isActivationPreventedForPlayer(
+                        state, entityId, playerId, abilityIsManaAbility = ability.isManaAbility
+                    )
+                ) continue
+
                 // Check activation restrictions
                 if (!context.legality.activationRestrictionsMet(state, playerId, entityId, ability)) continue
 

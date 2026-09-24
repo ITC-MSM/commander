@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.damage.OptionalDamageRedirect
 import com.wingedsheep.engine.mechanics.battle.Battles
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
@@ -51,6 +52,7 @@ import com.wingedsheep.sdk.scripting.effects.RedirectScope
  * - Damage prevention choice (CR 615.7)
  */
 internal class CombatDamageManager(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val damageCalculator: DamageCalculator,
 ) {
@@ -276,6 +278,18 @@ internal class CombatDamageManager(
         // the whole simultaneous batch and drops the assignments whose damage it prevents, so the
         // downstream steps (redirect consumption, lifelink) never see prevented damage.
         val events = mutableListOf<GameEvent>()
+
+        // Phase 2a: source-side group shields ("prevent all damage that would be dealt by creatures
+        // this turn" — Ethereal Haze, Chant of Vitu-Ghazi). Every covered assignment is dropped; a
+        // life-gaining shield credits its controller with the total it prevented across the whole
+        // simultaneous step as one gain (CR 510.2 — one combat damage event). Runs after the
+        // optional-redirect pause above, which re-derives phases 1–2 on resume, so the life is
+        // gained exactly once.
+        val groupShieldResult = applyGroupPreventionShieldsToCombatDamage(newState, finalAssignments)
+        newState = groupShieldResult.first
+        finalAssignments = groupShieldResult.second
+        events.addAll(groupShieldResult.third)
+
         val shieldResult = applyShieldCountersToCombatDamage(newState, finalAssignments)
         newState = shieldResult.first
         finalAssignments = shieldResult.second
@@ -870,6 +884,7 @@ internal class CombatDamageManager(
         val isBattle = !isPlayer && !isPlaneswalker && projected.isBattle(assignment.targetId)
 
         val amplifiedAmount = DamageUtils.applyStaticDamageAmplification(
+            zones.cardRegistry,
             state, assignment.targetId, assignment.amount, assignment.sourceId, isCombatDamage = true
         )
 
@@ -890,6 +905,52 @@ internal class CombatDamageManager(
                 state, assignment.sourceId, assignment.targetId, amplifiedAmount, events, healProcessedTargets
             )
         }
+    }
+
+    /**
+     * Source-side group prevention shields ([SerializableModification.PreventAllDamageFromGroup]) over
+     * a whole combat damage step. Every assignment whose source a shield covers is dropped (unless
+     * damage can't be prevented for that source/recipient pair), and each life-gaining shield's
+     * controller gains the sum of what it prevented as a single gain — the step is one simultaneous
+     * damage event (CR 510.2), and the Chant of Vitu-Ghazi ruling gains life "each time that shield
+     * prevents 1 or more damage".
+     *
+     * @return the state after life gain, the surviving assignments, and the life-gain events.
+     */
+    private fun applyGroupPreventionShieldsToCombatDamage(
+        state: GameState,
+        assignments: List<CombatDamageAssignment>,
+    ): Triple<GameState, List<CombatDamageAssignment>, List<GameEvent>> {
+        if (state.floatingEffects.none { it.effect.modification is SerializableModification.PreventAllDamageFromGroup }) {
+            return Triple(state, assignments, emptyList())
+        }
+        val gainsByController = linkedMapOf<EntityId, Int>()
+        val surviving = assignments.filter { assignment ->
+            if (DamageUtils.isDamagePreventionDisabled(state, assignment.targetId, assignment.sourceId)) {
+                return@filter true
+            }
+            val (controllerId, gainsLife) = DamageUtils.groupPreventionShieldController(
+                state, assignment.sourceId, isCombatDamage = true
+            ) ?: return@filter true
+            // Credit what would actually have been dealt — after the same static amplification
+            // (Furnace of Rath and friends) the apply phase would have run — not the raw power.
+            val prevented = DamageUtils.applyStaticDamageAmplification(
+                zones.cardRegistry,
+                state, assignment.targetId, assignment.amount, assignment.sourceId, isCombatDamage = true
+            )
+            if (gainsLife && prevented > 0) {
+                gainsByController[controllerId] = (gainsByController[controllerId] ?: 0) + prevented
+            }
+            false
+        }
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+        for ((controllerId, amount) in gainsByController) {
+            val (gainedState, gainEvent) = DamageUtils.gainLife(newState, controllerId, amount)
+            newState = gainedState
+            gainEvent?.let { events.add(it) }
+        }
+        return Triple(newState, surviving, events)
     }
 
     /**
@@ -986,7 +1047,7 @@ internal class CombatDamageManager(
         var newState = state
 
         // Replace with counters (Force Bubble)
-        val counterResult = DamageUtils.applyReplaceDamageWithCounters(newState, targetId, amplifiedAmount, sourceId, isCombatDamage = true)
+        val counterResult = DamageUtils.applyReplaceDamageWithCounters(zones, newState, targetId, amplifiedAmount, sourceId, isCombatDamage = true)
         if (counterResult != null) {
             newState = counterResult.state
             events.addAll(counterResult.events)
@@ -995,7 +1056,7 @@ internal class CombatDamageManager(
 
         // Replace combat damage to an opponent → prevent + each opponent mills that many
         // (The Mindskinner: an unblockable attacker's combat damage routes through here).
-        val millResult = DamageUtils.applyReplaceDamageWithMill(newState, targetId, amplifiedAmount, sourceId)
+        val millResult = DamageUtils.applyReplaceDamageWithMill(zones, newState, targetId, amplifiedAmount, sourceId)
         if (millResult != null) {
             newState = millResult.state
             events.addAll(millResult.events)
@@ -1064,7 +1125,7 @@ internal class CombatDamageManager(
         newState = DamageUtils.trackDamageReceivedByPlayer(newState, targetId, effectiveAmount, sourceId)
 
         // Track combat damage: source dealt damage + dealt combat damage to player
-        newState = DamageUtils.trackDamageDealt(newState, sourceId, effectiveAmount)
+        newState = DamageUtils.trackDamageDealt(newState, sourceId, effectiveAmount, isCombatDamage = true)
         if (sourceId in newState.getBattlefield()) {
             newState = newState.updateEntity(sourceId) { container ->
                 val priorRecipients = container.get<DealtCombatDamageToPlayersThisTurnComponent>()
@@ -1179,7 +1240,7 @@ internal class CombatDamageManager(
             }
         }
 
-        newState = DamageUtils.trackDamageDealt(newState, sourceId, amount)
+        newState = DamageUtils.trackDamageDealt(newState, sourceId, amount, isCombatDamage = true)
         // Combat damage counts toward "sources you controlled dealt damage this turn" too.
         newState = DamageUtils.trackDamageSourceForController(newState, sourceId)
         // Planeswalkers (not battles) join the source's "dealt damage to this game" memory, the
@@ -1229,7 +1290,7 @@ internal class CombatDamageManager(
         // Damage-to-counters self-replacement (Anti-Venom): "if damage would be dealt to <this
         // creature>, prevent it and put that many +1/+1 counters on him." Replaces the damage
         // entirely (CR 615) — checked before redirection and final marking.
-        val counterResult = DamageUtils.applyReplaceDamageWithCounters(newState, targetId, effectiveAmount, sourceId, isCombatDamage = true)
+        val counterResult = DamageUtils.applyReplaceDamageWithCounters(zones, newState, targetId, effectiveAmount, sourceId, isCombatDamage = true)
         if (counterResult != null) {
             newState = counterResult.state
             events.addAll(counterResult.events)
@@ -1285,7 +1346,7 @@ internal class CombatDamageManager(
             newState = newState.withLifeTotal(targetId, newLife)
             newState = DamageUtils.trackDamageReceivedByPlayer(newState, targetId, amount, sourceId)
             // Track combat damage: source dealt damage + dealt combat damage to player
-            newState = DamageUtils.trackDamageDealt(newState, sourceId, amount)
+            newState = DamageUtils.trackDamageDealt(newState, sourceId, amount, isCombatDamage = true)
             if (sourceId in newState.getBattlefield()) {
                 newState = newState.updateEntity(sourceId) { container ->
                     val priorRecipients = container.get<DealtCombatDamageToPlayersThisTurnComponent>()
@@ -1407,7 +1468,7 @@ internal class CombatDamageManager(
                 container.with(WasDealtDamageThisTurnComponent)
             }
             // Track that source dealt damage
-            newState = DamageUtils.trackDamageDealt(newState, sourceId, amount)
+            newState = DamageUtils.trackDamageDealt(newState, sourceId, amount, isCombatDamage = true)
             // Combat damage counts toward "sources you controlled dealt damage this turn" too.
             newState = DamageUtils.trackDamageSourceForController(newState, sourceId)
             newState = DamageUtils.trackDamageDealtToCreature(newState, sourceId, targetId)
@@ -1479,7 +1540,7 @@ internal class CombatDamageManager(
         newState = DamageUtils.trackDamageReceivedByPlayer(newState, attackerController, originalAmount, sourceId)
         // Reflection is an additional damage event from the attacking creature, so it adds
         // its full amount to the same source's damage history.
-        newState = DamageUtils.trackDamageDealt(newState, sourceId, originalAmount)
+        newState = DamageUtils.trackDamageDealt(newState, sourceId, originalAmount, isCombatDamage = true)
         val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
         events.add(DamageDealtEvent(sourceId, attackerController, originalAmount, true,
             sourceName = sourceName, targetName = "Player", targetIsPlayer = true))
@@ -1571,7 +1632,7 @@ internal class CombatDamageManager(
                 val defenderId = attackingComponent.defenderId
                 if (!isProtectedFromAttackingCreatureDamage(state, defenderId) &&
                     !isCombatDamagePreventedByGroupFilter(state, attackerId, projected)) {
-                    val amplified = DamageUtils.applyStaticDamageAmplification(state, defenderId, attackerPower, attackerId, isCombatDamage = true)
+                    val amplified = DamageUtils.applyStaticDamageAmplification(zones.cardRegistry, state, defenderId, attackerPower, attackerId, isCombatDamage = true)
                     incomingDamage.getOrPut(defenderId) { mutableMapOf() }
                         .merge(attackerId, amplified) { a, b -> a + b }
                 }
@@ -1588,7 +1649,7 @@ internal class CombatDamageManager(
                     val targetContainer = state.getEntity(targetId)
                     val isPlayer = targetContainer?.get<LifeTotalComponent>() != null &&
                         targetContainer.get<CardComponent>() == null
-                    val amplified = DamageUtils.applyStaticDamageAmplification(state, targetId, damage, attackerId, isCombatDamage = true)
+                    val amplified = DamageUtils.applyStaticDamageAmplification(zones.cardRegistry, state, targetId, damage, attackerId, isCombatDamage = true)
                     if (isPlayer) {
                         incomingDamage.getOrPut(targetId) { mutableMapOf() }
                             .merge(attackerId, amplified) { a, b -> a + b }

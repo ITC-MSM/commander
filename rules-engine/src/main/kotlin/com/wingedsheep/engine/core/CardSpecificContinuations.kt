@@ -726,6 +726,19 @@ data class ActivateAbilityOpponentChooserContinuation(
  * @property distinctNames When true the chosen permanents must all have different names
  *   ("sacrifice three artifact tokens with different names" — Transmutation Font).
  */
+/**
+ * Resume after the player picks which hand card(s) pay a
+ * [com.wingedsheep.sdk.scripting.costs.CostAtom.PutFromHandOnTopOfLibrary] cost (Leashling). The
+ * resumer re-enters the handler with the choice in `costPayment.cardsPutOnLibrary`; the pause
+ * happens before any cost is paid, so nothing needs undoing on the way back in.
+ */
+@Serializable
+data class ActivateAbilityPutOnLibraryContinuation(
+    val action: ActivateAbility,
+    val candidates: List<EntityId>,
+    val count: Int
+) : AnswerContinuation
+
 @Serializable
 data class ActivateAbilitySacrificeContinuation(
     val action: ActivateAbility,

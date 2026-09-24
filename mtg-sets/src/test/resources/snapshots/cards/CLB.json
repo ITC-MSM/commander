@@ -369,7 +369,8 @@
                                     "zone": "Library",
                                     "filter": "Dragon"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

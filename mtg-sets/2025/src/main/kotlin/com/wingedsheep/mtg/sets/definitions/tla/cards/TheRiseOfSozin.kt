@@ -162,7 +162,8 @@ private val TheRiseOfSozinFront = card("The Rise of Sozin") {
                         player = Player.ContextPlayer(0),
                         filter = GameObjectFilter.Any.namedFromVariable("sozinChosenName")
                     ),
-                    storeAs = "sozinMatches"
+                    storeAs = "sozinMatches",
+                    search = true
                 ),
                 // Up to four of them.
                 SelectFromCollectionEffect(

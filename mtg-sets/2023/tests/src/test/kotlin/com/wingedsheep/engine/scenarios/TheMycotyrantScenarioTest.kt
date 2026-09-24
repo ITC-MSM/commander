@@ -45,7 +45,7 @@ class TheMycotyrantScenarioTest : FunSpec({
      * event and increment the descend counter (CR 700.11).
      */
     fun GameTestDriver.descend(entityId: EntityId) {
-        val result = ZoneTransitionService.moveToZone(
+        val result = zones.moveToZone(
             state = state,
             entityId = entityId,
             destinationZone = Zone.GRAVEYARD

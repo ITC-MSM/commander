@@ -102,7 +102,7 @@ class FilteredAnyTargetScenarioTest : ScenarioTestBase() {
         test("noncombat damage to a battle is recorded and its defense is removed") {
             val game = scenario().withPlayers("Caster", "Opponent").withCardOnBattlefield(1, "Damage History Siege").build()
             val battle = game.findPermanent("Damage History Siege")!!
-            game.state = DamageUtils.dealDamageToTarget(game.state, battle, 1, null).state
+            game.state = DamageUtils.dealDamageToTarget(zones, game.state, battle, 1, null).state
             game.checkEligible(battle)
             game.state.getEntity(battle)!!.get<CountersComponent>()!!.getCount(CounterType.DEFENSE) shouldBe 7
         }
@@ -132,7 +132,7 @@ class FilteredAnyTargetScenarioTest : ScenarioTestBase() {
                 .withLandsOnBattlefield(1, "Mountain", 1)
                 .build()
             val bogle = game.findPermanent("History Hexproof Creature")!!
-            game.state = DamageUtils.dealDamageToTarget(game.state, bogle, 1, null).state
+            game.state = DamageUtils.dealDamageToTarget(zones, game.state, bogle, 1, null).state
             TargetFinder().findLegalTargets(game.state, Targets.Any(filter), game.player1Id) shouldNotContain bogle
             game.castSpell(1, "Filtered Test Bolt", bogle).error shouldNotBe null
         }
@@ -160,8 +160,8 @@ class FilteredAnyTargetScenarioTest : ScenarioTestBase() {
                 .withCardOnBattlefield(2, "Grizzly Bears")
                 .build()
             val giant = game.findPermanent("Hill Giant")!!
-            game.state = DamageUtils.dealDamageToTarget(game.state, giant, 1, null).state
-            game.state = DamageUtils.dealDamageToTarget(game.state, game.player2Id, 1, null).state
+            game.state = DamageUtils.dealDamageToTarget(zones, game.state, giant, 1, null).state
+            game.state = DamageUtils.dealDamageToTarget(zones, game.state, game.player2Id, 1, null).state
             val spell = game.findCardsInHand(1, "Filtered Test Bolt").single()
             game.castSpell(1, "Filtered Test Bolt", giant).error shouldBe null
             val context = com.wingedsheep.engine.handlers.EffectContext(

@@ -59,6 +59,7 @@ val PriceOfFreedom = card("Price of Freedom") {
                                     filter = GameObjectFilter.BasicLand,
                                 ),
                                 storeAs = "searchable",
+                                search = true,
                             ),
                             SelectFromCollectionEffect(
                                 from = "searchable",

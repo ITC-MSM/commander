@@ -2,7 +2,6 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.PaymentStrategy
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -49,7 +48,7 @@ class StalactiteStalkerScenarioTest : FunSpec({
     }
 
     fun GameTestDriver.descend(entityId: EntityId) {
-        val result = ZoneTransitionService.moveToZone(
+        val result = zones.moveToZone(
             state = state,
             entityId = entityId,
             destinationZone = Zone.GRAVEYARD

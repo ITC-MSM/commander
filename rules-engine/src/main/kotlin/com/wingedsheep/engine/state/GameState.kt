@@ -424,6 +424,17 @@ data class GameState(
     val activeReplacementChain: Set<ReplacementEffectIdentity>? = null,
 
     /**
+     * Results of prevention effects that are still owed — Purity's "You gain life equal to the
+     * damage prevented this way", Vigor's counters, Hostility's tokens. The prevention itself
+     * happens inside the damage arithmetic, which can't run an [com.wingedsheep.sdk.scripting.effects.Effect];
+     * it queues the result here instead, and
+     * [com.wingedsheep.engine.replacement.ReplacementRiders.drain] runs it as soon as the effect that
+     * dealt the damage finishes, or at the settle boundary for combat damage. Either way it runs
+     * before state-based actions and before trigger detection, and it never uses the stack.
+     */
+    val pendingReplacementRiders: List<com.wingedsheep.engine.replacement.PendingReplacementRider> = emptyList(),
+
+    /**
      * Answers to the "**you may** have that damage dealt to you instead" prompts of an optional
      * damage-redirection shield (Blood of the Martyr), for the damage event currently being applied.
      *

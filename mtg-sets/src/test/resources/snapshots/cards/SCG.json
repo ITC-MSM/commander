@@ -3042,7 +3042,8 @@
                         "zone": "Library",
                         "filter": "permanent Dragon"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -3527,7 +3528,8 @@
                                     "zone": "Library",
                                     "filter": "creature mv>=6"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -4652,7 +4654,8 @@
                         "type": "FromZone",
                         "zone": "Library"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -5204,7 +5207,8 @@
                                     "zone": "Library",
                                     "filter": "basicland"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -5275,7 +5279,8 @@
                                 "type": "FromZone",
                                 "zone": "Library"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -6490,7 +6495,8 @@
                                 "zone": "Library",
                                 "filter": "Sliver"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -6680,7 +6686,8 @@
                         "zone": "Library",
                         "filter": "basicland"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",

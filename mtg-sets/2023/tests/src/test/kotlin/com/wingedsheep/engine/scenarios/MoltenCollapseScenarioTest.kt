@@ -1,7 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -59,7 +58,7 @@ class MoltenCollapseScenarioTest : FunSpec({
 
     /** Move a permanent card to the graveyard to trigger descend (CR 700.11). */
     fun GameTestDriver.descend(entityId: EntityId) {
-        val result = ZoneTransitionService.moveToZone(
+        val result = zones.moveToZone(
             state = state,
             entityId = entityId,
             destinationZone = Zone.GRAVEYARD

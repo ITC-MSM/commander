@@ -83,7 +83,7 @@ class LeylineContinuationResumer(
             // Route the card to the battlefield through the standard zone-change pipeline.
             // Owner == controller for leyline starts; the card must already exist with its
             // CardComponent + OwnerComponent set (it does — it was instantiated at init).
-            val transition = ZoneTransitionService.moveToZone(
+            val transition = services.zones.moveToZone(
                 state = newState,
                 entityId = continuation.leylineCardId,
                 destinationZone = Zone.BATTLEFIELD,

@@ -73,7 +73,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
 
             // PlayersCantActivateAbilities (Grand Abolisher) likewise blocks mana abilities of
             // matching permanents for the affected player — "can't activate abilities of …".
-            if (context.castPermissionUtils.isActivationPreventedForPlayer(state, entityId, playerId)) continue
+            if (context.castPermissionUtils.isActivationPreventedForPlayer(state, entityId, playerId, abilityIsManaAbility = true)) continue
 
             val entityLostAllAbilities = projected.hasLostAllAbilities(entityId)
 
@@ -373,12 +373,16 @@ class ManaAbilityEnumerator : ActionEnumerator {
                         maxAffordableX = manaAbilityMaxX,
                         minX = if (hasNonManaX) ability.minimumXValue else 0,
                         additionalCostInfo = costInfo,
-                        requiresManaColorChoice = ability.effect is AddManaOfChoiceEffect ||
+                        requiresManaColorChoice = (ability.effect is AddManaOfChoiceEffect ||
                             ability.effect is AddAnyColorManaSpendOnChosenTypeEffect ||
                             (ability.effect is CompositeEffect &&
                                 (ability.effect as CompositeEffect).effects.any {
                                     it is AddManaOfChoiceEffect || it is AddAnyColorManaSpendOnChosenTypeEffect
-                                }),
+                                })) &&
+                            // Spectral Searchlight: the chosen player picks the color as the
+                            // ability resolves, so the activator isn't asked up front.
+                            !com.wingedsheep.engine.mechanics.mana.ManaColorChoiceTiming
+                                .chosenByAnotherPlayerAtResolution(ability.effect),
                         availableManaColors = availableManaColors,
                         manaCostString = manaAbilityManaCostString
                     )

@@ -255,7 +255,8 @@
                                     "zone": "Library",
                                     "filter": "enchantment mv<=3"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

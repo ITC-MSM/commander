@@ -3288,7 +3288,8 @@
                         "zone": "Library",
                         "filter": "artifact"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -4924,7 +4925,8 @@
                         "zone": "Library",
                         "filter": "nonland"
                     },
-                    "storeAs": "gathered0"
+                    "storeAs": "gathered0",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -5731,7 +5733,8 @@
                                     "zone": "Library",
                                     "filter": "basicland"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -8321,7 +8324,8 @@
                                 "zone": "Library",
                                 "filter": "artifact"
                             },
-                            "storeAs": "myrIncubatorSearchable"
+                            "storeAs": "myrIncubatorSearchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -12417,7 +12421,8 @@
                                     "zone": "Library",
                                     "filter": "basicland"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -13348,7 +13353,8 @@
                         "zone": "Library",
                         "filter": "land"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -13517,7 +13523,8 @@
                                         ]
                                     }
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -14720,7 +14727,8 @@
                                     "zone": "Library",
                                     "filter": "creature"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

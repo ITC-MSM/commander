@@ -3,7 +3,8 @@ package com.wingedsheep.engine.mechanics
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.legalactions.AdditionalCostData
 import com.wingedsheep.engine.legalactions.utils.CostEnumerationUtils
-import com.wingedsheep.engine.legalactions.utils.SelectionCostPresentation
+import com.wingedsheep.engine.mechanics.cost.spell.SpellCostEnumeration
+import com.wingedsheep.engine.mechanics.cost.spell.SpellCosts
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCost
@@ -57,13 +58,10 @@ object EscalateCosts {
     ): Payability? {
         val atom = modalEffect.additionalCostPerExtraMode ?: return null
         val cost = AdditionalCost.Atom(atom)
-        val candidates = SelectionCostPresentation.candidates(
-            state, playerId, castCardId, cost, costUtils, predicateEvaluator
-        )
-        val costData = SelectionCostPresentation.costData(
-            state, playerId, castCardId, cost, candidates
-        )?.second
-        val perModeSelection = SelectionCostPresentation.selectionCount(cost)
+        val env = SpellCostEnumeration(state, playerId, castCardId, costUtils, predicateEvaluator)
+        val candidates = SpellCosts.candidates(env, cost)
+        val costData = SpellCosts.present(env, cost, candidates)?.second
+        val perModeSelection = SpellCosts.selectionCount(cost)
         val maxExtraModes = when {
             costData == null -> 0
             perModeSelection <= 0 -> 0

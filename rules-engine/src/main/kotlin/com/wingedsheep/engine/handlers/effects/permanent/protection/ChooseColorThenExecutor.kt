@@ -47,7 +47,8 @@ class ChooseColorThenExecutor(
             sourceName = sourceName,
             prompt = effect.prompt,
             phase = DecisionPhase.RESOLUTION,
-            answer = continuation
+            answer = continuation,
+            maxColors = effect.maxColors
         )
 
         return EffectResult.propagatePause(

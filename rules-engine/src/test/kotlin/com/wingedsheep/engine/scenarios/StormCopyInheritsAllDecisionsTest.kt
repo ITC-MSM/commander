@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.core.SpellCastEvent
@@ -43,6 +44,7 @@ import com.wingedsheep.engine.core.Outcome
  * trigger flow is not needed to verify propagation.
  */
 class StormCopyInheritsAllDecisionsTest : FunSpec({
+    val zones = ZoneTransitionService(CardRegistry())
 
     fun buildState(
         p1: EntityId,
@@ -74,6 +76,7 @@ class StormCopyInheritsAllDecisionsTest : FunSpec({
 
     fun runStorm(state: GameState, spellEntity: EntityId, p1: EntityId) =
         StormCopyEffectExecutor(
+            zones,
             cardRegistry = CardRegistry(),
             targetFinder = TargetFinder()
         ).execute(

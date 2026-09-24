@@ -36,10 +36,10 @@ class RingBearerAndEquipmentZoneChangeScenarioTest : FunSpec({
     }
 
     fun GameTestDriver.blink(entityId: EntityId): EntityId? {
-        val exiled = ZoneTransitionService.moveToZone(state, entityId, Zone.EXILE)
+        val exiled = zones.moveToZone(state, entityId, Zone.EXILE)
         replaceState(exiled.state)
         val newId = getExile(activePlayer!!).firstOrNull() ?: return null
-        val back = ZoneTransitionService.moveToZone(state, newId, Zone.BATTLEFIELD)
+        val back = zones.moveToZone(state, newId, Zone.BATTLEFIELD)
         replaceState(back.state)
         return findPermanent(activePlayer!!, getCardName(newId) ?: "")
     }

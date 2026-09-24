@@ -148,7 +148,8 @@
                         "zone": "Library",
                         "filter": "creature"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -2333,7 +2334,8 @@
                         "zone": "Library",
                         "filter": "land Forest"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",

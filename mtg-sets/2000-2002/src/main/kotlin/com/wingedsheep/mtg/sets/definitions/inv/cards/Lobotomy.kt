@@ -64,7 +64,8 @@ val Lobotomy = card("Lobotomy") {
                     player = Player.ContextPlayer(0),
                     filter = GameObjectFilter.Any.namedFromVariable(chosenName)
                 ),
-                name = "toExile"
+                name = "toExile",
+                search = true
             )
             // 6. Exile them.
             exile(toExile, owner = Player.ContextPlayer(0))

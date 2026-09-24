@@ -56,6 +56,7 @@ val RoadsGoEverEverOn = card("Roads Go Ever, Ever On") {
                         GameObjectFilter.BasicLand.withSubtype("Plains"),
                     ),
                     storeAs = "roadsSearchable",
+                    search = true,
                 ),
                 SelectFromCollectionEffect(
                     from = "roadsSearchable",

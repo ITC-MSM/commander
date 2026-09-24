@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers
 
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.Effect
 
@@ -15,6 +16,7 @@ import com.wingedsheep.sdk.scripting.effects.Effect
  * backward compatibility while delegating execution to individual executors.
  */
 class EffectHandler(
+    private val zones: ZoneTransitionService,
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator(),
     private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
     /**
@@ -25,7 +27,7 @@ class EffectHandler(
      */
     registry: EffectExecutorRegistry? = null,
 ) {
-    private val registry = registry ?: EffectExecutorRegistry(amountEvaluator, cardRegistry = cardRegistry)
+    private val registry = registry ?: EffectExecutorRegistry(zones, amountEvaluator, cardRegistry = cardRegistry)
 
     /**
      * Execute an effect and return the result.

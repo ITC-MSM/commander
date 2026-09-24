@@ -4177,7 +4177,8 @@
                                     "zone": "Library",
                                     "filter": "artifact"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

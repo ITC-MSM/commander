@@ -314,7 +314,7 @@ class EmptyLibraryLossTest : FunSpec({
         driver.state.getLibrary(player1).size shouldBe 0
 
         // Use TurnManager.drawCards directly (this is what performDrawStep calls)
-        val turnManager = com.wingedsheep.engine.core.TurnManager(cardRegistry = com.wingedsheep.engine.registry.CardRegistry())
+        val turnManager = com.wingedsheep.engine.core.TurnManager(driver.zones, cardRegistry = com.wingedsheep.engine.registry.CardRegistry())
         val result = turnManager.drawCards(driver.state, player1, 1)
 
         // The draw should succeed (return success) but mark the player as lost

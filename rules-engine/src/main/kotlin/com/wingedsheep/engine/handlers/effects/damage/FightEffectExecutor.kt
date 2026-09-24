@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.DamageUtils.dealDamageToTarget
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.FightEffect
 import kotlin.reflect.KClass
@@ -14,7 +15,7 @@ import kotlin.reflect.KClass
  * Executor for FightEffect.
  * Each creature deals damage equal to its power to the other creature.
  */
-class FightEffectExecutor : EffectExecutor<FightEffect> {
+class FightEffectExecutor(private val zones: ZoneTransitionService) : EffectExecutor<FightEffect> {
 
     override val effectType: KClass<FightEffect> = FightEffect::class
 
@@ -72,7 +73,7 @@ class FightEffectExecutor : EffectExecutor<FightEffect> {
         var excessToTarget2 = 0
 
         if (power1 > 0) {
-            val result1 = dealDamageToTarget(currentState, target2Id, power1, target1Id)
+            val result1 = dealDamageToTarget(zones, currentState, target2Id, power1, target1Id)
             currentState = result1.newState
             allEvents.addAll(result1.events)
             excessToTarget2 = result1.events
@@ -83,7 +84,7 @@ class FightEffectExecutor : EffectExecutor<FightEffect> {
 
         // Creature 2 deals damage equal to its power to creature 1
         if (power2 > 0) {
-            val result2 = dealDamageToTarget(currentState, target1Id, power2, target2Id)
+            val result2 = dealDamageToTarget(zones, currentState, target1Id, power2, target2Id)
             currentState = result2.newState
             allEvents.addAll(result2.events)
         }

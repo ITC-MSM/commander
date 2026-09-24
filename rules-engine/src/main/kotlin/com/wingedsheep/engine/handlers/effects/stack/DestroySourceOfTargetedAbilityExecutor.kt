@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.destroyPermanent
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -21,7 +22,7 @@ import kotlin.reflect.KClass
  * targeted entity is a spell, or its source is no longer on the battlefield, this
  * effect is a no-op.
  */
-class DestroySourceOfTargetedAbilityExecutor : EffectExecutor<DestroySourceOfTargetedAbilityEffect> {
+class DestroySourceOfTargetedAbilityExecutor(private val zones: ZoneTransitionService) : EffectExecutor<DestroySourceOfTargetedAbilityEffect> {
 
     override val effectType: KClass<DestroySourceOfTargetedAbilityEffect> =
         DestroySourceOfTargetedAbilityEffect::class
@@ -45,6 +46,6 @@ class DestroySourceOfTargetedAbilityExecutor : EffectExecutor<DestroySourceOfTar
             return EffectResult.success(state)
         }
 
-        return destroyPermanent(state, sourceId)
+        return destroyPermanent(zones, state, sourceId)
     }
 }

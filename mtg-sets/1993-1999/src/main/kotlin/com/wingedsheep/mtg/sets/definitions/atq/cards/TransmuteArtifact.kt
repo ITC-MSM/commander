@@ -77,7 +77,8 @@ val TransmuteArtifact = card("Transmute Artifact") {
                 then = Effects.Composite(listOf(
                     GatherCardsEffect(
                         source = CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Artifact),
-                        storeAs = "searchable"
+                        storeAs = "searchable",
+                        search = true
                     ),
                     SelectFromCollectionEffect(
                         from = "searchable",

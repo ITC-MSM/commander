@@ -86,7 +86,8 @@ val MagmaticHellkite = card("Magmatic Hellkite") {
                     listOf(
                         GatherCardsEffect(
                             source = CardSource.FromZone(Zone.LIBRARY, landController, GameObjectFilter.BasicLand),
-                            storeAs = "rampLands"
+                            storeAs = "rampLands",
+                            search = true
                         ),
                         SelectFromCollectionEffect(
                             from = "rampLands",

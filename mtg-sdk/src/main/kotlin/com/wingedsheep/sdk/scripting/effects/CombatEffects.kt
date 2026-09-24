@@ -156,7 +156,21 @@ data class PreventDamageEffect(
      * it — Dark Sphere's "prevent half that damage, rounded down". The rest is dealt and the shield
      * is consumed either way, so a 1-damage instance halves to 0 prevented and still spends it.
      */
-    val halvePreventedDamage: Boolean = false
+    val halvePreventedDamage: Boolean = false,
+    /**
+     * "You gain life equal to the damage prevented this way" (Chant of Vitu-Ghazi). Each time the
+     * shield prevents damage, the shield's controller gains that much life — once per damage
+     * event, so a combat damage step's simultaneous instances give one combined gain (the 2005
+     * ruling: "you gain life each time that shield prevents 1 or more damage"). The amount is what
+     * the shield *actually* prevented, never a precomputed total, so damage some other effect
+     * prevented or replaced first gains nothing.
+     *
+     * Currently honoured by the source-side group shield — [PreventionSourceFilter.FromGroup] with
+     * [PreventionDirection.FromTarget] and no [recipientGroup] ("prevent all damage that would be
+     * dealt by creatures this turn"). The Samite Ministration colour-scoped cousin is
+     * [gainLifeFromColors].
+     */
+    val gainLifeFromPrevented: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         append("Prevent ")
@@ -196,6 +210,7 @@ data class PreventDamageEffect(
         }
         append(" this turn")
         onPrevented?.let { append(". When damage is prevented this way, ${it.description}") }
+        if (gainLifeFromPrevented) append(". You gain life equal to the damage prevented this way")
         if (gainLifeFromColors.isNotEmpty()) {
             val colorList = gainLifeFromColors.joinToString(" or ") { it.displayName.lowercase() }
             append(". Whenever damage from a $colorList source is prevented this way this turn, you gain that much life")

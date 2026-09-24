@@ -94,7 +94,7 @@ class LethalDamageSbaSimultaneityTest : FunSpec({
         driver.markDamage(lord, 2)
         driver.markDamage(small, 1)
 
-        val result = LethalDamageCheck().check(driver.state)
+        val result = LethalDamageCheck(driver.zones).check(driver.state)
         driver.replaceState(result.newState)
 
         // CR 704.3: both are determined lethal against the same (pre-event) board, so both die.
@@ -120,7 +120,7 @@ class LethalDamageSbaSimultaneityTest : FunSpec({
         driver.markDamage(lord, 2)
         driver.markDamage(small, 1)
 
-        val result = LethalDamageCheck().check(driver.state)
+        val result = LethalDamageCheck(driver.zones).check(driver.state)
         driver.replaceState(result.newState)
 
         driver.inGraveyard(active, lord) shouldBe true

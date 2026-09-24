@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.stack.StormCopyEffectExecutor
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -221,7 +222,7 @@ class ModalCopyPreservationTest : FunSpec({
             controllerId = p1,
         )
 
-        val executor = StormCopyEffectExecutor(cardRegistry = CardRegistry(), targetFinder = TargetFinder())
+        val executor = CardRegistry().let { StormCopyEffectExecutor(ZoneTransitionService(it), cardRegistry = it, targetFinder = TargetFinder()) }
         val result = executor.execute(state, stormEffect, context)
         result.outcome shouldBe Outcome.Done
 

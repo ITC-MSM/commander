@@ -1190,7 +1190,8 @@
                                 "zone": "Library",
                                 "filter": "Zombie"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -1224,7 +1225,8 @@
                                         "zone": "Library",
                                         "filter": "land Swamp"
                                     },
-                                    "storeAs": "searchable"
+                                    "storeAs": "searchable",
+                                    "search": true
                                 },
                                 {
                                     "type": "SelectFromCollection",
@@ -1513,7 +1515,8 @@
                                     ]
                                 }
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -3937,7 +3940,8 @@
                                     "zone": "Library",
                                     "filter": "Dragon"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

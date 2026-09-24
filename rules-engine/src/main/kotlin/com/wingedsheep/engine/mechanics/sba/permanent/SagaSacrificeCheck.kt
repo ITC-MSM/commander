@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.mechanics.sba.permanent
 
 import com.wingedsheep.engine.core.ExecutionResult
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.sba.SbaOrder
 import com.wingedsheep.engine.mechanics.sba.SbaZoneMovementHelper
 import com.wingedsheep.engine.mechanics.sba.StateBasedActionCheck
@@ -17,6 +18,7 @@ import com.wingedsheep.sdk.core.CounterType
  * triggered but not yet left the stack, the Saga's controller sacrifices it.
  */
 class SagaSacrificeCheck(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry
 ) : StateBasedActionCheck {
     override val name = "714.4 Saga Sacrifice"
@@ -50,6 +52,7 @@ class SagaSacrificeCheck(
             if (hasChapterOnStack || hasChapterWaiting) continue
 
             val result = SbaZoneMovementHelper.putPermanentInGraveyard(
+                zones,
                 newState, entityId, cardComponent
             )
             newState = result.newState

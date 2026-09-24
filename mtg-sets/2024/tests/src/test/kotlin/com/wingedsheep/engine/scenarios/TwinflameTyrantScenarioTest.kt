@@ -159,31 +159,37 @@ class TwinflameTyrantScenarioTest : FunSpec({
 
         withClue("your source dealing 3 to an opponent → 6") {
             DamageUtils.applyStaticDamageAmplification(
+                driver.zones.cardRegistry,
                 driver.state, targetId = opponent, amount = 3, sourceId = myCreature
             ) shouldBe 6
         }
         withClue("your source dealing 3 to a permanent an opponent controls → 6") {
             DamageUtils.applyStaticDamageAmplification(
+                driver.zones.cardRegistry,
                 driver.state, targetId = theirCreature, amount = 3, sourceId = myCreature
             ) shouldBe 6
         }
         withClue("your source dealing 3 to your own creature is NOT doubled") {
             DamageUtils.applyStaticDamageAmplification(
+                driver.zones.cardRegistry,
                 driver.state, targetId = myOtherCreature, amount = 3, sourceId = myCreature
             ) shouldBe 3
         }
         withClue("your source dealing 3 to you is NOT doubled") {
             DamageUtils.applyStaticDamageAmplification(
+                driver.zones.cardRegistry,
                 driver.state, targetId = active, amount = 3, sourceId = myCreature
             ) shouldBe 3
         }
         withClue("an opponent's source dealing 3 to you is NOT doubled") {
             DamageUtils.applyStaticDamageAmplification(
+                driver.zones.cardRegistry,
                 driver.state, targetId = active, amount = 3, sourceId = theirCreature
             ) shouldBe 3
         }
         withClue("an opponent's source dealing 3 to their own creature is NOT doubled") {
             DamageUtils.applyStaticDamageAmplification(
+                driver.zones.cardRegistry,
                 driver.state, targetId = theirCreature, amount = 3, sourceId = theirCreature
             ) shouldBe 3
         }
@@ -202,16 +208,19 @@ class TwinflameTyrantScenarioTest : FunSpec({
 
         withClue("their source dealing 3 to you → 6") {
             DamageUtils.applyStaticDamageAmplification(
+                driver.zones.cardRegistry,
                 driver.state, targetId = active, amount = 3, sourceId = theirCreature
             ) shouldBe 6
         }
         withClue("their source dealing 3 to your creature → 6") {
             DamageUtils.applyStaticDamageAmplification(
+                driver.zones.cardRegistry,
                 driver.state, targetId = myCreature, amount = 3, sourceId = theirCreature
             ) shouldBe 6
         }
         withClue("your source dealing 3 to them is NOT doubled by their Tyrant") {
             DamageUtils.applyStaticDamageAmplification(
+                driver.zones.cardRegistry,
                 driver.state, targetId = opponent, amount = 3, sourceId = myCreature
             ) shouldBe 3
         }

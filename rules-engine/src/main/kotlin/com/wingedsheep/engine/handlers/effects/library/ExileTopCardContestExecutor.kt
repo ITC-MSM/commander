@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -32,7 +33,7 @@ import com.wingedsheep.engine.core.Outcome
  * Termination: a round either exiles at least one card — shrinking a library — or ends the contest,
  * so the loop is bounded by the total number of cards in the contenders' libraries.
  */
-class ExileTopCardContestExecutor : EffectExecutor<ExileTopCardContestEffect> {
+class ExileTopCardContestExecutor(private val zones: ZoneTransitionService) : EffectExecutor<ExileTopCardContestEffect> {
 
     override val effectType: KClass<ExileTopCardContestEffect> = ExileTopCardContestEffect::class
 
@@ -60,7 +61,7 @@ class ExileTopCardContestExecutor : EffectExecutor<ExileTopCardContestEffect> {
                 val topCardId = currentState.getZone(ZoneKey(playerId, Zone.LIBRARY)).firstOrNull() ?: continue
                 val card = currentState.getEntity(topCardId)?.get<CardComponent>()
                 val moveResult = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-                    .moveCardToZone(currentState, topCardId, Zone.EXILE)
+                    .moveCardToZone(zones, currentState, topCardId, Zone.EXILE)
                 if (moveResult.outcome !is Outcome.Done) continue
                 currentState = moveResult.state
                 events.addAll(moveResult.events)

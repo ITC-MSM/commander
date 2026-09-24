@@ -9,6 +9,7 @@ import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.actions.special.ConcedeHandler
 import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.player.WinGameExecutor
 import com.wingedsheep.engine.mechanics.StateBasedActionChecker
 import com.wingedsheep.engine.registry.CardRegistry
@@ -43,8 +44,9 @@ import io.kotest.matchers.shouldBe
 class TwoHeadedGiantTeamLossTest : FunSpec({
 
     fun registry(): CardRegistry = CardRegistry().also { it.register(TestCards.all) }
+    val zones = ZoneTransitionService(registry())
 
-    fun checker() = StateBasedActionChecker(cardRegistry = registry())
+    fun checker() = StateBasedActionChecker(zones, cardRegistry = registry())
 
     fun boot(format: Format = Format.TwoHeadedGiant(), playerCount: Int = 4): Pair<GameState, List<EntityId>> {
         val result = GameInitializer(registry()).initializeGame(

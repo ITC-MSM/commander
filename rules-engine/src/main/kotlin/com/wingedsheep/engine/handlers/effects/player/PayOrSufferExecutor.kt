@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.cost.CostPaymentContext
 import com.wingedsheep.engine.mechanics.cost.CostPaymentService
 import com.wingedsheep.engine.mechanics.cost.PaymentResult
@@ -41,6 +42,7 @@ import kotlin.reflect.KClass
  * If they select 0 (or don't have enough), the suffer effect is executed.
  */
 class PayOrSufferExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
     private val decisionHandler: DecisionHandler = DecisionHandler(),
     private val executeEffect: ((GameState, Effect, EffectContext) -> EffectResult)? = null
@@ -112,6 +114,8 @@ class PayOrSufferExecutor(
                 is CostAtom.ReturnToHand ->
                     handleReturnToHandCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
                 is CostAtom.RevealFromHand -> EffectResult.error(state, "RevealCard payment for PayOrSuffer not yet implemented")
+                // No printed punisher asks for it; fails closed (and canPay below reports it unpayable).
+                is CostAtom.PutFromHandOnTopOfLibrary -> EffectResult.error(state, "PutFromHandOnTopOfLibrary payment for PayOrSuffer not yet implemented")
                 is CostAtom.PutCountersOnSelf -> EffectResult.error(state, "PutCountersOnSelf is an activated-ability cost, not a PayOrSuffer cost")
                 // Tourach's Chant / Thelon's Chant — "unless they put a -1/-1 counter on a creature
                 // they control". The payer picks which of their permanents takes it.
@@ -1010,6 +1014,7 @@ class PayOrSufferExecutor(
                 is CostAtom.ReturnToHand ->
                     findBounceCandidates(state, playerId, atom, sourceId).size >= atom.count
                 is CostAtom.RevealFromHand -> false
+                is CostAtom.PutFromHandOnTopOfLibrary -> false
                 is CostAtom.PutCountersOnSelf -> false
                 // Unpayable with nothing to put the counter on — which is exactly the punisher
                 // clause's teeth: a player with no creatures takes the damage.
@@ -1311,6 +1316,7 @@ class PayOrSufferExecutor(
          * Execute the random discard after player confirmed.
          */
         fun executeRandomDiscard(
+            zones: ZoneTransitionService,
             state: GameState,
             playerId: EntityId,
             filter: GameObjectFilter,
@@ -1336,8 +1342,7 @@ class PayOrSufferExecutor(
 
             // Shared discard path so a card-intrinsic discard replacement (madness, CR 702.35a)
             // applies to a randomly discarded card too.
-            val result = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                .discardCards(stateAfterShuffle, playerId, cardsToDiscard)
+            val result = zones.discardCards(stateAfterShuffle, playerId, cardsToDiscard)
 
             return EffectResult.success(result.state, result.events)
         }
@@ -1347,12 +1352,11 @@ class PayOrSufferExecutor(
          * shared discard path so a card-intrinsic discard replacement (madness, CR 702.35a) still
          * applies. An empty hand is a no-op payment, not a failure.
          */
-        fun executeDiscardHand(state: GameState, playerId: EntityId): EffectResult {
+        fun executeDiscardHand(zones: ZoneTransitionService, state: GameState, playerId: EntityId): EffectResult {
             val hand = state.getZone(ZoneKey(playerId, Zone.HAND))
             if (hand.isEmpty()) return EffectResult.success(state)
 
-            val result = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                .discardCards(state, playerId, hand.toList())
+            val result = zones.discardCards(state, playerId, hand.toList())
 
             return EffectResult.success(result.state, result.events)
         }

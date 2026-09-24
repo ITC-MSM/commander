@@ -88,7 +88,8 @@ val CelestialReunion = card("Celestial Reunion") {
                 // Search library for a creature card with mana value X or less.
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Creature),
-                    storeAs = "searchable"
+                    storeAs = "searchable",
+                    search = true
                 ),
                 FilterCollectionEffect(
                     from = "searchable",

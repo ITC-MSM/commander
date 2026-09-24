@@ -91,6 +91,14 @@ data class CastSpell(
      */
     val wasWaterbendPaid: Boolean = false,
     /**
+     * The optional "pay any amount of mana" additional cost granted by an
+     * [com.wingedsheep.sdk.scripting.AdditionalManaForEntryCounters] static the caster controls
+     * (Chorus of the Conclave), announced while casting (CR 601.2b). `0` declines it. The handler
+     * adds `{N}` generic to the total cost and rejects a non-zero amount when no such static applies
+     * to this spell; the permanent the spell becomes enters with N extra counters.
+     */
+    val additionalManaForCounters: Int = 0,
+    /**
      * The opponent promised this spell's **gift** (CR 702.174a, Bloomburrow — "as an additional
      * cost to cast this spell, you may choose an opponent"), or `null` when the gift wasn't
      * promised. Only meaningful for a card carrying [com.wingedsheep.sdk.scripting.KeywordAbility.Gift].

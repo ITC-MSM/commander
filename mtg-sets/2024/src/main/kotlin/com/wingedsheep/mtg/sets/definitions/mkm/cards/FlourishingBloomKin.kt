@@ -92,7 +92,8 @@ val FlourishingBloomKin = card("Flourishing Bloom-Kin") {
                         Player.You,
                         GameObjectFilter.Land.withSubtype(Subtype.FOREST)
                     ),
-                    storeAs = "searchable"
+                    storeAs = "searchable",
+                    search = true
                 ),
                 SelectFromCollectionEffect(
                     from = "searchable",

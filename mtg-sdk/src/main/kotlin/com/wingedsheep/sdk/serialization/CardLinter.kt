@@ -609,6 +609,7 @@ object CardLinter {
         put("ForEachCapturedController" to "countVariable", write(Space.NUMBER))
         put("DrawUpTo" to "storeNotDrawnAs", write(Space.NUMBER))
         put("Fight" to "excessDamageVariable", write(Space.NUMBER))
+        put("DealDamage" to "excessDamageVariable", write(Space.NUMBER))
         put("PayCounters" to "storeAmountAs", write(Space.NUMBER))
         put("CollectEvidenceChosenAmount" to "storeAmountAs", write(Space.NUMBER))
         put("PayManaCostRepeatedly" to "storeCountAs", write(Space.NUMBER))
@@ -704,6 +705,14 @@ object CardLinter {
             type == "SelectFromCollection" &&
                 (obj["matchChosenCreatureType"] as? JsonPrimitive)?.contentOrNull == "true" ->
                 listOf(Kind.READ to (Space.CHOSEN to "chosenCreatureType"))
+            // Guile's counter replacement hands the card it exiled to its `then` rider under this
+            // well-known name (the engine seeds it when the rider runs).
+            type == "ExileCounteredSpellInstead" ->
+                listOf(
+                    Kind.WRITE to (
+                        Space.COLLECTION to com.wingedsheep.sdk.scripting.ExileCounteredSpellInstead.EXILED_CARD
+                        )
+                )
             // Token executors publish the created tokens' ids under this well-known name so
             // sibling steps can address them via PipelineTarget(CREATED_TOKENS, i).
             type == "CreateToken" || type == "CreatePredefinedToken" ||

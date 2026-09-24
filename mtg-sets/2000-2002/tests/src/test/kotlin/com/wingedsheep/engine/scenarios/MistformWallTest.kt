@@ -219,7 +219,9 @@ class MistformWallTest : FunSpec({
         projected.getSubtypes(wall) shouldBe setOf("Goblin")
     }
 
-    val turnManager = TurnManager(cardRegistry = com.wingedsheep.engine.registry.CardRegistry())
+    val turnManager = com.wingedsheep.engine.registry.CardRegistry().let {
+        TurnManager(com.wingedsheep.engine.handlers.effects.ZoneTransitionService(it), cardRegistry = it)
+    }
 
     test("not a valid attacker while still a Wall (has defender)") {
         val driver = createDriver()

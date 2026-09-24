@@ -2916,7 +2916,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -4119,7 +4120,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "passage_searchable"
+                            "storeAs": "passage_searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -6613,7 +6615,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -7563,7 +7566,8 @@
                                                     ],
                                                     "filter": "Dragon"
                                                 },
-                                                "storeAs": "searchable"
+                                                "storeAs": "searchable",
+                                                "search": true
                                             },
                                             {
                                                 "type": "SelectFromCollection",
@@ -8892,7 +8896,8 @@
                                             "zone": "Library",
                                             "filter": "basicland"
                                         },
-                                        "storeAs": "searchable"
+                                        "storeAs": "searchable",
+                                        "search": true
                                     },
                                     {
                                         "type": "SelectFromCollection",
@@ -10108,7 +10113,8 @@
                                 "zone": "Library",
                                 "filter": "basicland Plains"
                             },
-                            "storeAs": "roadsSearchable"
+                            "storeAs": "roadsSearchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -11575,7 +11581,8 @@
                                     ]
                                 }
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -13529,7 +13536,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",

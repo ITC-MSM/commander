@@ -219,7 +219,7 @@ class PlaneswalkerEntryLoyaltyScenarioTest : ScenarioTestBase() {
                     game.state.getEntity(id)?.get<CardComponent>()?.name == "Ajani, Outland Chaperone"
                 }
 
-                val faceUp = ZoneTransitionService.moveToZone(
+                val faceUp = zones.moveToZone(
                     game.state, ajani, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = game.player1Id)
                 )
@@ -227,7 +227,7 @@ class PlaneswalkerEntryLoyaltyScenarioTest : ScenarioTestBase() {
                     loyaltyOf(ajani, faceUp.state) shouldBe 3
                 }
 
-                val faceDown = ZoneTransitionService.moveToZone(
+                val faceDown = zones.moveToZone(
                     game.state, ajani, Zone.BATTLEFIELD,
                     ZoneEntryOptions(
                         controllerId = game.player1Id,
@@ -252,7 +252,7 @@ class PlaneswalkerEntryLoyaltyScenarioTest : ScenarioTestBase() {
                     game.state.getEntity(id)?.get<CardComponent>()?.name == "Grizzly Bears"
                 }
 
-                val result = ZoneTransitionService.moveToZone(
+                val result = zones.moveToZone(
                     game.state, bears, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = game.player1Id)
                 )

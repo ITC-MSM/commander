@@ -4486,7 +4486,8 @@
                         "zone": "Library",
                         "filter": "enchantment Aura"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -5865,7 +5866,8 @@
                                 "type": "FromZone",
                                 "zone": "Library"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -6432,7 +6434,8 @@
                             "zone": "Library",
                             "filter": "creature|land"
                         },
-                        "storeAs": "searchable"
+                        "storeAs": "searchable",
+                        "search": true
                     },
                     {
                         "type": "SelectFromCollection",
@@ -6469,7 +6472,8 @@
                             "zone": "Library",
                             "filter": "basicland"
                         },
-                        "storeAs": "searchable"
+                        "storeAs": "searchable",
+                        "search": true
                     },
                     {
                         "type": "SelectFromCollection",
@@ -7547,7 +7551,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",

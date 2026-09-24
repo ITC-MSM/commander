@@ -246,7 +246,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Mercenary mv<=2"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",

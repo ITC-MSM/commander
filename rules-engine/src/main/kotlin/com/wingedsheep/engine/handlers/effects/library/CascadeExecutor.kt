@@ -43,6 +43,7 @@ import com.wingedsheep.engine.core.Outcome
  *    here and no spell is offered.
  */
 class CascadeExecutor(
+    private val zones: ZoneTransitionService,
     private val decisionHandler: DecisionHandler = DecisionHandler()
 ) : EffectExecutor<CascadeEffect> {
 
@@ -98,7 +99,7 @@ class CascadeExecutor(
         )
 
         for (cardId in exiledCards) {
-            val result = ZoneMovementUtils.moveCardToZone(currentState, cardId, Zone.EXILE)
+            val result = ZoneMovementUtils.moveCardToZone(zones, currentState, cardId, Zone.EXILE)
             if (result.outcome is Outcome.Done) {
                 currentState = result.state
                 allEvents.addAll(result.events)
@@ -108,7 +109,7 @@ class CascadeExecutor(
         if (cascadeCard == null) {
             // Library exhausted without a qualifying card — bottom-randomize everything
             // exiled this way and finish, no may-cast offered.
-            val bottomEvents = bottomRandomize(currentState, controllerId, exiledCards) { newState ->
+            val bottomEvents = bottomRandomize(zones, currentState, controllerId, exiledCards) { newState ->
                 currentState = newState
             }
             allEvents.addAll(bottomEvents)
@@ -153,6 +154,7 @@ class CascadeExecutor(
          * outside the helper.
          */
         fun bottomRandomize(
+            zones: ZoneTransitionService,
             state: GameState,
             playerId: EntityId,
             cards: List<EntityId>,
@@ -163,7 +165,7 @@ class CascadeExecutor(
             val (shuffledCards, advanced) = current.nextRandom { shuffle(cards) }
             current = advanced
             for (cardId in shuffledCards) {
-                val result = ZoneTransitionService.moveToZone(
+                val result = zones.moveToZone(
                     state = current,
                     entityId = cardId,
                     destinationZone = Zone.LIBRARY,

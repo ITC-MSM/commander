@@ -993,6 +993,46 @@ object PredefinedTokens {
     }
 
     /**
+     * Lotus — the colorless artifact token of Reality Fracture (Kwia Vigorbloom):
+     * "{T}, Sacrifice this token: Add three mana of any one color." A token Black Lotus; it has
+     * no subtype, only the name.
+     */
+    val Lotus = card("Lotus") {
+        typeLine = "Artifact"
+        oracleText = "{T}, Sacrifice this token: Add three mana of any one color."
+
+        activatedAbility {
+            cost = Costs.Composite(Costs.Tap, Costs.SacrificeSelf)
+            effect = Effects.AddAnyColorMana(3)
+            manaAbility = true
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/c/5/c59b7223-00a9-4c0d-896d-1cd463860c40.jpg?1789734772"
+            artist = "Alex V. Ngo"
+        }
+    }
+
+    /**
+     * Forest Tentacle — the 3/3 green land creature token of Reality Fracture (Verdant Kraken).
+     * Its "{T}: Add {G}." is the intrinsic mana ability of the Forest land type (CR 305.6), which
+     * the engine derives from the subtype, so the definition declares no ability of its own. Being
+     * a creature, it can't tap for mana until it has been under its controller's control since
+     * their most recent turn began (CR 302.6).
+     */
+    val ForestTentacle = card("Forest Tentacle") {
+        typeLine = "Land Creature — Forest Tentacle"
+        colorIdentity = "G"
+        power = 3
+        toughness = 3
+        oracleText = "{T}: Add {G}."
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/f/c/fc924972-5014-45d1-9676-6a76d862b205.jpg"
+        }
+    }
+
+    /**
      * All predefined token definitions.
      * Register these in the CardRegistry so token abilities are resolved.
      */
@@ -1033,6 +1073,8 @@ object PredefinedTokens {
         SturdyShield,
         Axe,
         Jace,
-        Heartwood
+        Heartwood,
+        Lotus,
+        ForestTentacle
     )
 }

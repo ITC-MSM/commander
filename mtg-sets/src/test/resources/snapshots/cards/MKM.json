@@ -486,7 +486,8 @@
                                 ],
                                 "filter": "name:Magnifying Glass"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -524,7 +525,8 @@
                                         ],
                                         "filter": "name:Thinking Cap"
                                     },
-                                    "storeAs": "searchable"
+                                    "storeAs": "searchable",
+                                    "search": true
                                 },
                                 {
                                     "type": "SelectFromCollection",
@@ -1026,7 +1028,8 @@
                             "zone": "Library",
                             "filter": "creature|land"
                         },
-                        "storeAs": "searchable"
+                        "storeAs": "searchable",
+                        "search": true
                     },
                     {
                         "type": "SelectFromCollection",
@@ -1063,7 +1066,8 @@
                             "zone": "Library",
                             "filter": "basicland"
                         },
-                        "storeAs": "searchable"
+                        "storeAs": "searchable",
+                        "search": true
                     },
                     {
                         "type": "SelectFromCollection",
@@ -4458,7 +4462,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -4703,7 +4708,8 @@
                                 "type": "FromZone",
                                 "zone": "Library"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -7045,7 +7051,8 @@
                                                 ]
                                             }
                                         },
-                                        "storeAs": "matches"
+                                        "storeAs": "matches",
+                                        "search": true
                                     },
                                     {
                                         "type": "SelectFromCollection",
@@ -7946,7 +7953,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -9364,7 +9372,8 @@
                                 "zone": "Library",
                                 "filter": "land Forest"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -13276,7 +13285,8 @@
                                                     "zone": "Library",
                                                     "filter": "basicland"
                                                 },
-                                                "storeAs": "searchable"
+                                                "storeAs": "searchable",
+                                                "search": true
                                             },
                                             {
                                                 "type": "SelectFromCollection",
@@ -15473,7 +15483,8 @@
                                     ]
                                 }
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -20555,7 +20566,8 @@
                         "zone": "Library",
                         "filter": "basicland"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",

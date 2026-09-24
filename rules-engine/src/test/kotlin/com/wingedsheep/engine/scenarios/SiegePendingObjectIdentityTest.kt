@@ -107,7 +107,7 @@ class SiegePendingObjectIdentityTest : FunSpec({
                 if (stale) state = state.moveToZone(siege, ZoneKey(d.player1, Zone.BATTLEFIELD), ZoneKey(d.player1, Zone.EXILE))
                     .moveToZone(siege, ZoneKey(d.player1, Zone.EXILE), ZoneKey(d.player1, Zone.BATTLEFIELD))
                 state = json.decodeFromString(GameState.serializer(), json.encodeToString(GameState.serializer(), state))
-                val check = BattleDefenseCheck()
+                val check = BattleDefenseCheck(d.zones)
                 val result = check.check(state, state, if (storage == "staged") setOf(original) else emptySet())
                 (siege in result.state.getZone(ZoneKey(d.player1, Zone.BATTLEFIELD))) shouldBe !stale
                 // Once the trigger has left the stack (or a pending trigger is declined), its

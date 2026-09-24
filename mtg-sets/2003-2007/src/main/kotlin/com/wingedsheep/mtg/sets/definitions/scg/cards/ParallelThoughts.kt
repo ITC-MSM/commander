@@ -37,7 +37,8 @@ val ParallelThoughts = card("Parallel Thoughts") {
         effect = Effects.Composite(listOf(
             GatherCardsEffect(
                 source = CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Any),
-                storeAs = "searchable"
+                storeAs = "searchable",
+                search = true
             ),
             SelectFromCollectionEffect(
                 from = "searchable",

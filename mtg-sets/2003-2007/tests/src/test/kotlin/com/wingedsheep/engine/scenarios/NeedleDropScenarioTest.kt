@@ -37,7 +37,7 @@ class NeedleDropScenarioTest : ScenarioTestBase() {
         .build()
 
     private fun TestGame.damage(id: EntityId, amount: Int = 1) {
-        state = DamageUtils.dealDamageToTarget(state, id, amount, null).state
+        state = DamageUtils.dealDamageToTarget(zones, state, id, amount, null).state
     }
 
     private fun TestGame.checkTargets(expected: List<EntityId> = emptyList()) {

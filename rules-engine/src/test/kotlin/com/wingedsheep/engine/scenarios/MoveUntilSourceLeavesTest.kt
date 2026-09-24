@@ -3,7 +3,6 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.ZoneTransitionCause
 import com.wingedsheep.engine.handlers.EffectContext
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.linkedexile.MoveUntilSourceLeavesExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -23,7 +22,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 
 class MoveUntilSourceLeavesTest : ScenarioTestBase() {
-    private val executor = MoveUntilSourceLeavesExecutor()
+    private val executor = MoveUntilSourceLeavesExecutor(zones)
 
     init {
         for (origin in listOf(Zone.BATTLEFIELD, Zone.GRAVEYARD, Zone.HAND)) {
@@ -32,7 +31,7 @@ class MoveUntilSourceLeavesTest : ScenarioTestBase() {
                 val source = game.findPermanent("Sol Ring")!!
                 val victim = game.findPermanent("Grizzly Bears")!!
                 val start = if (origin == Zone.BATTLEFIELD) game.state else
-                    ZoneTransitionService.moveToZone(game.state, victim, origin).state
+                    zones.moveToZone(game.state, victim, origin).state
                 val context = context(start, source)
                 val moved = executor.execute(start, MoveUntilSourceLeavesEffect(EffectTarget.SpecificEntity(victim), Zone.EXILE), context)
                 val json = Json {
@@ -40,7 +39,7 @@ class MoveUntilSourceLeavesTest : ScenarioTestBase() {
                     allowStructuredMapKeys = true
                 }
                 val restored = json.decodeFromString<GameState>(json.encodeToString(moved.state))
-                val result = ZoneTransitionService.moveToZone(restored, source, Zone.GRAVEYARD)
+                val result = zones.moveToZone(restored, source, Zone.GRAVEYARD)
                 result.state.getZone(ZoneKey(game.player2Id, origin)) shouldContain victim
                 result.state.zoneReturns.size shouldBe 0
                 result.state.stack.size shouldBe 0
@@ -58,7 +57,7 @@ class MoveUntilSourceLeavesTest : ScenarioTestBase() {
                     .with(CountersComponent(mapOf(CounterType.PLUS_ONE_PLUS_ONE to 3)))
             }
             val moved = executor.execute(start, MoveUntilSourceLeavesEffect(EffectTarget.SpecificEntity(victim), Zone.EXILE), context(start, source))
-            val result = ZoneTransitionService.moveToZone(moved.state, source, Zone.HAND)
+            val result = zones.moveToZone(moved.state, source, Zone.HAND)
             result.state.projectedState.getController(victim) shouldBe game.player1Id
             result.state.getEntity(victim)?.get<CountersComponent>()?.getCount(CounterType.PLUS_ONE_PLUS_ONE).let { it ?: 0 } shouldBe 0
             result.state.isCurrentObject(start.objectRef(victim)!!) shouldBe false
@@ -69,8 +68,8 @@ class MoveUntilSourceLeavesTest : ScenarioTestBase() {
             val source = game.findPermanent("Sol Ring")!!
             val victim = game.findPermanent("Grizzly Bears")!!
             val oldContext = context(game.state, source)
-            val gone = ZoneTransitionService.moveToZone(game.state, source, Zone.EXILE).state
-            val back = ZoneTransitionService.moveToZone(gone, source, Zone.BATTLEFIELD).state
+            val gone = zones.moveToZone(game.state, source, Zone.EXILE).state
+            val back = zones.moveToZone(gone, source, Zone.BATTLEFIELD).state
             val result = executor.execute(back, MoveUntilSourceLeavesEffect(EffectTarget.SpecificEntity(victim), Zone.EXILE), oldContext)
             result.state.getBattlefield() shouldContain victim
             result.state.zoneReturns.size shouldBe 0
@@ -82,9 +81,9 @@ class MoveUntilSourceLeavesTest : ScenarioTestBase() {
             val source = game.findPermanent("Sol Ring")!!
             val victim = game.findPermanent("Grizzly Bears")!!
             val moved = executor.execute(game.state, MoveUntilSourceLeavesEffect(EffectTarget.SpecificEntity(victim), Zone.EXILE), context(game.state, source))
-            val gone = ZoneTransitionService.moveToZone(moved.state, victim, Zone.HAND).state
-            val reexiled = ZoneTransitionService.moveToZone(gone, victim, Zone.EXILE).state
-            val result = ZoneTransitionService.moveToZone(reexiled, source, Zone.GRAVEYARD)
+            val gone = zones.moveToZone(moved.state, victim, Zone.HAND).state
+            val reexiled = zones.moveToZone(gone, victim, Zone.EXILE).state
+            val result = zones.moveToZone(reexiled, source, Zone.GRAVEYARD)
             result.state.getExile(game.player2Id) shouldContain victim
             result.state.zoneReturns.size shouldBe 0
         }
@@ -103,7 +102,7 @@ class MoveUntilSourceLeavesTest : ScenarioTestBase() {
             val phasedIn = moved.state.updateEntity(source) {
                 it.without<com.wingedsheep.engine.state.components.battlefield.PhasedOutComponent>()
             }
-            val result = ZoneTransitionService.moveToZone(phasedIn, source, Zone.HAND)
+            val result = zones.moveToZone(phasedIn, source, Zone.HAND)
             result.state.getBattlefield() shouldContain victim
         }
 
@@ -113,6 +112,7 @@ class MoveUntilSourceLeavesTest : ScenarioTestBase() {
             val victim = game.findPermanent("Grizzly Bears")!!
             val moved = executor.execute(game.state, MoveUntilSourceLeavesEffect(EffectTarget.SpecificEntity(victim), Zone.EXILE), context(game.state, source))
             val result = com.wingedsheep.engine.mechanics.sba.player.PlayerLeavesGameProcessor.process(
+                zones,
                 moved.state, game.player1Id, com.wingedsheep.engine.core.GameEndReason.CONCESSION
             )
             result.state.getBattlefield() shouldContain victim
@@ -125,7 +125,7 @@ class MoveUntilSourceLeavesTest : ScenarioTestBase() {
             val victim = game.findPermanent("Grizzly Bears")!!
             val moved = executor.execute(game.state, MoveUntilSourceLeavesEffect(EffectTarget.SpecificEntity(victim), Zone.HAND), context(game.state, source))
             moved.state.getHand(game.player2Id) shouldContain victim
-            ZoneTransitionService.moveToZone(moved.state, source, Zone.GRAVEYARD).state.getBattlefield() shouldContain victim
+            zones.moveToZone(moved.state, source, Zone.GRAVEYARD).state.getBattlefield() shouldContain victim
         }
 
         test("return applies the creature's enters-with-counters replacement") {
@@ -133,7 +133,7 @@ class MoveUntilSourceLeavesTest : ScenarioTestBase() {
             val source = game.findPermanent("Sol Ring")!!
             val victim = game.findPermanent("Triskelion")!!
             val moved = executor.execute(game.state, MoveUntilSourceLeavesEffect(EffectTarget.SpecificEntity(victim), Zone.EXILE), context(game.state, source))
-            val result = ZoneTransitionService.moveToZone(moved.state, source, Zone.GRAVEYARD)
+            val result = zones.moveToZone(moved.state, source, Zone.GRAVEYARD)
             result.state.getEntity(victim)!!.get<CountersComponent>()!!.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 3
         }
 
@@ -154,7 +154,7 @@ class MoveUntilSourceLeavesTest : ScenarioTestBase() {
                 val victim = game.findPermanent(name)!!
                 state = executor.execute(state, MoveUntilSourceLeavesEffect(EffectTarget.SpecificEntity(victim), Zone.EXILE), context(state, source)).state
             }
-            val result = ZoneTransitionService.moveToZone(state, source, Zone.GRAVEYARD)
+            val result = zones.moveToZone(state, source, Zone.GRAVEYARD)
             for (name in listOf("Grizzly Bears", "Hill Giant")) result.state.getBattlefield() shouldContain game.findPermanent(name)!!
             result.state.zoneReturns.size shouldBe 0
         }

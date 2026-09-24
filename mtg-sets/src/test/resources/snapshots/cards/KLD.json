@@ -772,6 +772,220 @@
     ]
 }
 
+// Chandra, Torch of Defiance
+{
+    "name": "Chandra, Torch of Defiance",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Legendary Planeswalker — Chandra",
+    "oracleText": "+1: Exile the top card of your library. You may cast that card. If you don't, Chandra deals 2 damage to each opponent.\n+1: Add {R}{R}.\n−3: Chandra deals 4 damage to target creature.\n−7: You get an emblem with \"Whenever you cast a spell, this emblem deals 5 damage to any target.\"",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "chandraExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "chandraExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "chandraExiled",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "nonland"
+                            },
+                            "storeMatching": "chandraCastable"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.DoAction",
+                                "action": {
+                                    "type": "ConditionalOnCollection",
+                                    "collection": "chandraCastable",
+                                    "ifNotEmpty": {
+                                        "type": "Gated",
+                                        "gate": "Gate.MayDecide",
+                                        "then": {
+                                            "type": "CastFromCollectionWithoutPayingCost",
+                                            "from": "chandraCastable",
+                                            "payManaCost": true,
+                                            "storeCastTo": "chandraCast"
+                                        },
+                                        "descriptionOverride": "You may cast that card."
+                                    }
+                                },
+                                "successCriterion": {
+                                    "type": "SuccessCriterion.CollectionNonEmpty",
+                                    "name": "chandraCast"
+                                }
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": []
+                            },
+                            "otherwise": {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "EachOpponent"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Exile the top card of your library. You may cast that card. If you don't, Chandra deals 2 damage to each opponent."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Add {R}{R}."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -3
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -7
+                },
+                "effect": {
+                    "type": "CreateGlobalTriggeredAbility",
+                    "ability": {
+                        "id": "ability_5",
+                        "trigger": "SpellCastEvent",
+                        "binding": "ANY",
+                        "effect": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 5
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        "targetRequirement": "AnyTarget",
+                        "descriptionOverride": "Whenever you cast a spell, this emblem deals 5 damage to any target."
+                    },
+                    "descriptionOverride": "Whenever you cast a spell, this emblem deals 5 damage to any target."
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "You get an emblem with \"Whenever you cast a spell, this emblem deals 5 damage to any target.\""
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "110",
+        "rarity": "MYTHIC",
+        "artist": "Magali Villeneuve",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff8086cd-b868-4f4e-823e-2635ad7ebc07.jpg?1783937196",
+        "rulings": [
+            {
+                "date": "2016-09-20",
+                "text": "An effect that instructs you to \"cast\" a card doesn't allow you to play lands. If the card exiled with Chandra's first ability is a land card, you can't play it and Chandra deals 2 damage to each opponent."
+            },
+            {
+                "date": "2016-09-20",
+                "text": "If you cast the exiled card, you do so as part of the resolution of Chandra's ability. You can't wait to cast it later in the turn. Timing permissions based on the card's type are ignored, but other restrictions (such as \"Cast [this card] only during combat\") are not."
+            },
+            {
+                "date": "2016-09-20",
+                "text": "You pay the costs for the exiled card if you cast it. You may pay alternative costs such as emerge rather than the card's mana cost."
+            },
+            {
+                "date": "2016-09-20",
+                "text": "Loyalty abilities can't be mana abilities. Chandra's second ability uses the stack and can be countered or otherwise responded to. Like all loyalty abilities, it can be activated only once per turn, during your main phase, when the stack is empty, and only if no other loyalty abilities of the planeswalker have been activated this turn."
+            },
+            {
+                "date": "2016-09-20",
+                "text": "The emblem created by Chandra's last ability is colorless. The damage it deals is from a colorless source."
+            },
+            {
+                "date": "2016-09-20",
+                "text": "Chandra's emblem's ability resolves before the spell that caused it to trigger."
+            },
+            {
+                "date": "2016-09-20",
+                "text": "In a Two-Headed Giant game, Chandra's first ability causes 4 damage total to be dealt to the opposing team."
+            }
+        ]
+    },
+    "startingLoyalty": 4,
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Cloudblazer
 {
     "name": "Cloudblazer",
@@ -2691,7 +2905,8 @@
                                 "zone": "Library",
                                 "filter": "artifact"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -3807,7 +4022,8 @@
                                     "zone": "Library",
                                     "filter": "creature Assembly-Worker"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

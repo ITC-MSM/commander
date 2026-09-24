@@ -328,7 +328,8 @@
                                 "zone": "Library",
                                 "filter": "land Island|Swamp"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -1636,7 +1637,8 @@
                         "zone": "Library",
                         "filter": "artifact|enchantment"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -2029,7 +2031,8 @@
                                 "zone": "Library",
                                 "filter": "land Plains|Island"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -2308,7 +2311,8 @@
                                 "zone": "Library",
                                 "filter": "land Forest|Plains"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -2842,7 +2846,8 @@
                                 "zone": "Library",
                                 "filter": "land Mountain|Forest"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -2924,7 +2929,8 @@
                         "zone": "Library",
                         "filter": "instant|sorcery"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -3383,7 +3389,8 @@
                         "zone": "Library",
                         "filter": "basicland"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -3488,7 +3495,8 @@
                                 "zone": "Library",
                                 "filter": "land Swamp|Mountain"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -5211,7 +5219,8 @@
                         "zone": "Library",
                         "filter": "creature"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",

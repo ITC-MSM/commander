@@ -3668,7 +3668,8 @@
                                             "zone": "Library",
                                             "filter": "land Plains"
                                         },
-                                        "storeAs": "searchable"
+                                        "storeAs": "searchable",
+                                        "search": true
                                     },
                                     {
                                         "type": "SelectFromCollection",
@@ -3728,7 +3729,8 @@
                                                 "zone": "Library",
                                                 "filter": "land Plains"
                                             },
-                                            "storeAs": "searchable"
+                                            "storeAs": "searchable",
+                                            "search": true
                                         },
                                         {
                                             "type": "SelectFromCollection",
@@ -3838,7 +3840,8 @@
                                 "zone": "Library",
                                 "filter": "land Desert"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -4275,7 +4278,8 @@
                                         ]
                                     }
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -8598,7 +8602,8 @@
                                     "type": "FromZone",
                                     "zone": "Library"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -10594,7 +10599,8 @@
                                     "type": "FromZone",
                                     "zone": "Library"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -11296,7 +11302,8 @@
                             ]
                         }
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -12892,7 +12899,8 @@
                                     ]
                                 }
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -16576,7 +16584,8 @@
                                     "type": "FromZone",
                                     "zone": "Library"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -17036,7 +17045,8 @@
                                         ]
                                     }
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -17626,7 +17636,8 @@
                                             ]
                                         }
                                     },
-                                    "storeAs": "searchable"
+                                    "storeAs": "searchable",
+                                    "search": true
                                 },
                                 {
                                     "type": "SelectFromCollection",

@@ -25,7 +25,7 @@ import io.kotest.matchers.shouldBe
 
 /**
  * The client's "how close is this?" badge on a permanent whose triggered ability has an
- * intervening-if (`ClientStateTransformer.buildTriggerConditionBadges`).
+ * intervening-if (`ConditionBadgeProjector.triggerConditionBadges`).
  *
  * A Case is the motivating shape: its "to solve" line is the printed criterion ANDed with "and this
  * Case is not solved" (CR 719.3a), so the condition the engine holds is a composite and the badge

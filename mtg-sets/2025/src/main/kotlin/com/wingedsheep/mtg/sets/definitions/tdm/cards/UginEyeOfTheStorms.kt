@@ -101,7 +101,8 @@ val UginEyeOfTheStorms = card("Ugin, Eye of the Storms") {
                         Player.You,
                         GameObjectFilter(cardPredicates = listOf(CardPredicate.IsColorless, CardPredicate.IsNonland))
                     ),
-                    storeAs = "searchable"
+                    storeAs = "searchable",
+                    search = true
                 ),
                 SelectFromCollectionEffect(
                     from = "searchable",

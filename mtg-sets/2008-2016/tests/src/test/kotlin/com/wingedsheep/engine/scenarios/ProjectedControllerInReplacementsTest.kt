@@ -151,6 +151,7 @@ class ProjectedControllerInReplacementsTest : FunSpec({
 
         // 3 damage to the stolen creature should be doubled to 6 under projection.
         val amplified = DamageUtils.applyStaticDamageAmplification(
+            driver.zones.cardRegistry,
             state = driver.state,
             targetId = theirCreature,
             amount = 3,
@@ -178,6 +179,7 @@ class ProjectedControllerInReplacementsTest : FunSpec({
 
         // 3 damage to stolen creature gets +1 → 4 under projection.
         val amplified = DamageUtils.applyStaticDamageAmplification(
+            driver.zones.cardRegistry,
             state = driver.state,
             targetId = theirCreature,
             amount = 3,
@@ -209,6 +211,7 @@ class ProjectedControllerInReplacementsTest : FunSpec({
         // — by code equivalence with DamageCalculator.estimateDamagePrevention — that
         // sibling fix as well.
         val result = DamageUtils.dealDamageToTarget(
+            driver.zones,
             state = driver.state,
             targetId = theirCreature,
             amount = 3,

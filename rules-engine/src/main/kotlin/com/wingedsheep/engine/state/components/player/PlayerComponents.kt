@@ -869,6 +869,20 @@ data class CantCastSpellsComponent(
 ) : Component
 
 /**
+ * Component indicating that a player can't search libraries — applied by
+ * [com.wingedsheep.sdk.scripting.effects.CantSearchLibrariesEffect] (Shadow of Doubt: "Players
+ * can't search libraries this turn"). Sibling of [CantCastSpellsComponent].
+ *
+ * Read by `GatherCardsExecutor` for a gather marked `search = true` (the searcher finds no
+ * library cards) and by `EmitLibrarySearchedEventExecutor` (no search took place, so no
+ * "whenever a player searches their library" event).
+ */
+@Serializable
+data class CantSearchLibrariesComponent(
+    val removeOn: PlayerEffectRemoval = PlayerEffectRemoval.EndOfTurn
+) : Component
+
+/**
  * Component indicating that a player can't gain life. Conferred directly on the player by
  * [com.wingedsheep.sdk.scripting.effects.LockLifeGainEffect] (Screaming Nemesis), so the lock is
  * independent of any source permanent — distinct from the
@@ -1379,6 +1393,21 @@ data class PlayerDescendedThisTurnComponent(val count: Int = 0) : Component
 data class CreatureCardsPutIntoGraveyardThisTurnComponent(val count: Int = 0) : Component
 
 /**
+ * Tracks the number of cards put into this player's graveyard **from their library** during the
+ * current turn — milled, surveilled, or any other library → graveyard move. Cleared at end of turn
+ * by CleanupPhaseManager.
+ *
+ * Recorded by the same `moveToZone` hook as [CreatureCardsPutIntoGraveyardThisTurnComponent] and
+ * keyed on the card's owner (a library card only ever goes to its owner's graveyard). Turn history,
+ * not a graveyard scan: a card that later leaves the graveyard still counts.
+ *
+ * Backs Cruel Calculations' "the number of cards that were put into target player's graveyard
+ * from their library this turn".
+ */
+@Serializable
+data class CardsPutIntoGraveyardFromLibraryThisTurnComponent(val count: Int = 0) : Component
+
+/**
  * Marks that this player has flipped one or more coins already this turn. Presence alone is the
  * signal — it is set the first time the player flips (regardless of who controls any coin-flip
  * replacement) so that a "the first time you flip one or more coins each turn" effect
@@ -1526,6 +1555,25 @@ data class SkipNextTurnComponent(val turns: Int = 1) : Component
  */
 @Serializable
 data class EndTheTurnRequestedComponent(val sourceId: EntityId? = null) : Component
+
+/**
+ * "You choose which creatures attack this turn. You choose which creatures block this turn and how
+ * those creatures block." (Master Warcraft.) Placed on the player who makes every attack and block
+ * declaration during turn [turnNumber].
+ *
+ * Moves only the *declaration*: the declared attackers and blockers still belong to — and must be
+ * legal for — the players who control them (the engine validates the declaration exactly as it
+ * would theirs), and every other decision, priority and hidden zone stays with its owner. Read
+ * through [com.wingedsheep.engine.mechanics.combat.CombatDeclarationControl]; expires on its own
+ * once the turn number moves on.
+ */
+@Serializable
+data class CombatDeclarationControlComponent(
+    /** The turn during which this player makes every attack and block declaration. */
+    val turnNumber: Int,
+    /** When the effect was created; the latest one wins when two players cast it the same turn. */
+    val timestamp: Long
+) : Component
 
 /**
  * Tracks a Mindslaver-style "you control target opponent" effect, scoped to either the

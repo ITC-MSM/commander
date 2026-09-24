@@ -43,7 +43,7 @@ import kotlin.reflect.KClass
  * return; the other finds nothing). Clears the noted/linked bookkeeping on the source after a
  * successful return.
  */
-class ReturnNotedExileTappedWithAurasExecutor : EffectExecutor<ReturnNotedExileTappedWithAurasEffect> {
+class ReturnNotedExileTappedWithAurasExecutor(private val zones: ZoneTransitionService) : EffectExecutor<ReturnNotedExileTappedWithAurasEffect> {
 
     override val effectType: KClass<ReturnNotedExileTappedWithAurasEffect> =
         ReturnNotedExileTappedWithAurasEffect::class
@@ -77,7 +77,7 @@ class ReturnNotedExileTappedWithAurasExecutor : EffectExecutor<ReturnNotedExileT
         var newState = state
 
         // 1. Return the creature tapped, under its owner's control, via the canonical pipeline.
-        val creatureReturn = ZoneTransitionService.moveToZone(
+        val creatureReturn = zones.moveToZone(
             newState, creatureId, Zone.BATTLEFIELD,
             options = ZoneEntryOptions(controllerId = creatureOwner, tapped = true)
         )
@@ -100,7 +100,7 @@ class ReturnNotedExileTappedWithAurasExecutor : EffectExecutor<ReturnNotedExileT
                 val auraOwner = ownerOf(newState, auraId) ?: continue
                 val auraName = newState.getEntity(auraId)?.get<CardComponent>()?.name ?: "Aura"
 
-                val auraReturn = ZoneTransitionService.moveToZone(
+                val auraReturn = zones.moveToZone(
                     newState, auraId, Zone.BATTLEFIELD,
                     options = ZoneEntryOptions(controllerId = auraOwner)
                 )

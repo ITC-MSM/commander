@@ -309,7 +309,7 @@ data class ManaPool(
      * Restricted/rider mana is not considered.
      *
      * Shared by `CastPaymentProcessor.autoPay` (spends each unit and tallies per-color X spend)
-     * and `ActivateAbilityHandler.autoTapForManaCost` (uses only the count, to reduce how much X
+     * and `ActivationAutoTapper.autoTapForManaCost` (uses only the count, to reduce how much X
      * it must tap sources for) so both apply the exact same coverage rule.
      */
     fun xCoveragePlan(xAmount: Int, xManaRestriction: Set<Color>): List<Color?> {

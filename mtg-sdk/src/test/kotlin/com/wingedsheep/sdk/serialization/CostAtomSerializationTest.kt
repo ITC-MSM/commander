@@ -40,6 +40,7 @@ class CostAtomSerializationTest : FunSpec({
         CostAtom.TapPermanents(count = 1, filter = GameObjectFilter.Creature),
         CostAtom.ReturnToHand(GameObjectFilter.Any, count = 1),
         CostAtom.RevealFromHand(GameObjectFilter.Any, count = 1),
+        CostAtom.PutFromHandOnTopOfLibrary(count = 1, filter = GameObjectFilter.Any),
         CostAtom.RemoveCounters(Counters.PLUS_ONE_PLUS_ONE, filter = GameObjectFilter.Creature),
         CostAtom.RemoveCounters("charge", self = true),
         CostAtom.RemoveCounters(counterType = null, filter = GameObjectFilter.Creature),

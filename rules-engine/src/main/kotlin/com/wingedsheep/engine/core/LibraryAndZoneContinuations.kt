@@ -197,6 +197,12 @@ data class MoveCollectionAuraTargetContinuation(
     /** True when the auras are returning under their owner's control (e.g. Seam Rip's LTB trigger). */
     val underOwnersControl: Boolean = false,
     val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+    /**
+     * Every card of the batch entering the battlefield together with these Auras. An Aura can't
+     * enchant an object entering at the same time as it (CR 303.4f names only objects already
+     * there — Warp World's ruling), so these are never offered as hosts.
+     */
+    val excludedHosts: List<EntityId> = emptyList(),
 ) : AnswerContinuation
 
 /**

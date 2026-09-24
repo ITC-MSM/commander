@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.costs
 import com.wingedsheep.engine.core.EvidenceCollectedEvent
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.legalactions.AdditionalCostData
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
@@ -163,6 +164,7 @@ object CollectEvidenceResolver {
      * resolution-time `Effects.CollectEvidence` can't accidentally start a pile.
      */
     fun collect(
+        zones: ZoneTransitionService,
         state: GameState,
         playerId: EntityId,
         amount: Int,
@@ -192,7 +194,7 @@ object CollectEvidenceResolver {
 
         val totalManaValue = toExile.sumOf { candidates.manaValueById[it] ?: 0 }
 
-        val (exiledState, events) = GraveyardTotalExileResolver.exile(state, toExile)
+        val (exiledState, events) = GraveyardTotalExileResolver.exile(zones, state, toExile)
         // The link is applied after the exile, not during it: ZoneMovementUtils.linkExiledToSource
         // writes the pile onto the *source*, and only cards that actually reached exile belong in
         // it. Linking a card the move failed on would leave a dangling id the lookup has to filter

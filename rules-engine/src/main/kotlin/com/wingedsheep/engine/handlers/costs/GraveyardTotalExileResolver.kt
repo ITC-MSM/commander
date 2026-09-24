@@ -195,11 +195,11 @@ object GraveyardTotalExileResolver {
         costInfo(atom, candidates(state, playerId, atom.measure, atom.filter, excludeCardId))
 
     /** Move [cards] to exile in order, accumulating the zone-change events. */
-    fun exile(state: GameState, cards: List<EntityId>): Pair<GameState, List<GameEvent>> {
+    fun exile(zones: ZoneTransitionService, state: GameState, cards: List<EntityId>): Pair<GameState, List<GameEvent>> {
         var newState = state
         val events = mutableListOf<GameEvent>()
         for (cardId in cards) {
-            val transition = ZoneTransitionService.moveToZone(newState, cardId, Zone.EXILE)
+            val transition = zones.moveToZone(newState, cardId, Zone.EXILE)
             newState = transition.state
             events.addAll(transition.events)
         }

@@ -1,11 +1,13 @@
 package com.wingedsheep.engine.handlers.effects.damage
 
+import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.DamageUtils.dealDamageToTarget
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -17,6 +19,7 @@ import kotlin.reflect.KClass
  * multi-player targets (e.g., PlayerRef(Player.Each), PlayerRef(Player.EachOpponent)).
  */
 class DealDamageExecutor(
+    private val zones: ZoneTransitionService,
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator()
 ) : EffectExecutor<DealDamageEffect> {
 
@@ -62,7 +65,7 @@ class DealDamageExecutor(
             var newState = readyState
             val events = mutableListOf<EngineGameEvent>()
             for (recipientId in recipients) {
-                val result = dealDamageToTarget(newState, recipientId, amount, sourceId, effect.cantBePrevented)
+                val result = dealDamageToTarget(zones, newState, recipientId, amount, sourceId, effect.cantBePrevented)
                 newState = result.newState
                 events.addAll(result.events)
             }
@@ -86,7 +89,7 @@ class DealDamageExecutor(
             var newState = readyState
             val events = mutableListOf<EngineGameEvent>()
             for (playerId in playerIds) {
-                val result = dealDamageToTarget(newState, playerId, amount, sourceId, effect.cantBePrevented)
+                val result = dealDamageToTarget(zones, newState, playerId, amount, sourceId, effect.cantBePrevented)
                 newState = result.newState
                 events.addAll(result.events)
             }
@@ -106,10 +109,19 @@ class DealDamageExecutor(
         )
         if (pause != null) return pause
 
-        return dealDamageToTarget(
+        val result = dealDamageToTarget(
+            zones,
             readyState, targetId, amount, sourceId, effect.cantBePrevented,
             excessToController = effect.excessToController
         )
+        val excessVariable = effect.excessDamageVariable ?: return result
+        // Excess damage (CR 120.4a) dealt to this target by this instruction, read off the actual
+        // DamageDealtEvent so prevention, deathtouch, marked damage and loyalty are all accounted.
+        val excess = result.events
+            .filterIsInstance<DamageDealtEvent>()
+            .filter { it.targetId == targetId }
+            .sumOf { it.excessAmount }
+        return result.copy(updatedStoredNumbers = result.updatedStoredNumbers + (excessVariable to excess))
     }
 
     /**

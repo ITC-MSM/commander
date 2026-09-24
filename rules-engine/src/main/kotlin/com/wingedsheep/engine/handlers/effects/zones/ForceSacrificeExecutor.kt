@@ -31,6 +31,7 @@ import kotlin.reflect.KClass
  * - The Eldest Reborn: "Each opponent sacrifices a creature or planeswalker."
  */
 class ForceSacrificeExecutor(
+    private val zones: ZoneTransitionService,
     private val decisionHandler: DecisionHandler = DecisionHandler(),
     private val dynamicAmountEvaluator: com.wingedsheep.engine.handlers.DynamicAmountEvaluator =
         com.wingedsheep.engine.handlers.DynamicAmountEvaluator()
@@ -218,7 +219,7 @@ class ForceSacrificeExecutor(
         }
 
         for (permanentId in permanentIds) {
-            val transitionResult = ZoneTransitionService.moveToZone(
+            val transitionResult = zones.moveToZone(
                 newState, permanentId, Zone.GRAVEYARD
             )
             newState = transitionResult.state

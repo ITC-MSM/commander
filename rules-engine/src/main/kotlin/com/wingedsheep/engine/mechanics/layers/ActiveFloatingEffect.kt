@@ -589,6 +589,27 @@ sealed interface SerializableModification {
     ) : SerializableModification
 
     /**
+     * Damage prevention: prevent all damage — combat and noncombat, unless [combatOnly] — that a
+     * source matching [filter] would deal this turn, to any recipient ("prevent all damage that
+     * would be dealt by creatures this turn", Ethereal Haze). The filter is re-evaluated against
+     * projected state each time damage would be dealt, with the floating effect's controller as
+     * the "you" reference.
+     *
+     * When [controllerGainsLife] is set, the shield's controller gains life equal to the damage it
+     * actually prevents, once per damage event (Chant of Vitu-Ghazi). Checked by
+     * `DamageUtils.checkPreventFromGroupShield` on the noncombat path and by the combat damage
+     * pipeline for a whole combat damage step.
+     *
+     * [PreventCombatDamageFromGroup] stays the combat-only, no-life-gain lowering.
+     */
+    @Serializable
+    data class PreventAllDamageFromGroup(
+        val filter: GameObjectFilter,
+        val combatOnly: Boolean = false,
+        val controllerGainsLife: Boolean = false
+    ) : SerializableModification
+
+    /**
      * Damage prevention: prevent **all** damage that would be dealt to every permanent matching
      * [filter] this turn ("prevent all damage that would be dealt to creatures you control this
      * turn", Summon: Alexander). The recipient-side counterpart of [PreventCombatDamageFromGroup]:
@@ -827,6 +848,8 @@ fun SerializableModification.toModification(): Modification = when (this) {
     is SerializableModification.ExileControllerGraveyardOnDeath -> Modification.NoOp
     // PreventCombatDamageFromGroup doesn't map to a layer modification - it's checked by CombatManager directly
     is SerializableModification.PreventCombatDamageFromGroup -> Modification.NoOp
+    // PreventAllDamageFromGroup doesn't map to a layer modification - it's checked during damage resolution directly
+    is SerializableModification.PreventAllDamageFromGroup -> Modification.NoOp
     // PreventAllDamageToGroup doesn't map to a layer modification - it's checked during damage resolution directly
     is SerializableModification.PreventAllDamageToGroup -> Modification.NoOp
     // PreventCombatDamageToAndBy doesn't map to a layer modification - it's checked by CombatManager directly

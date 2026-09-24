@@ -14,6 +14,7 @@ import com.wingedsheep.engine.core.GameEndReason
 import com.wingedsheep.engine.core.GameInitializer
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.core.PlayerLeftGameEvent
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
@@ -65,6 +66,7 @@ class LeaveTheGameTest : FunSpec({
     )
 
     fun registry(): CardRegistry = CardRegistry().also { it.register(bear) }
+    val zones = ZoneTransitionService(registry())
 
     fun initGame(playerCount: Int): Pair<GameState, List<EntityId>> {
         val deck = Deck(cards = List(40) { "Leave Test Bear" })
@@ -146,6 +148,7 @@ class LeaveTheGameTest : FunSpec({
         withCreature.getZone(players[1], Zone.HAND).isEmpty() shouldBe false
 
         val (afterLeave, _) = PlayerLeavesGameProcessor.process(
+            zones,
             withCreature, players[1], GameEndReason.CONCESSION
         ).let { it.newState to it.events }
 
@@ -163,6 +166,7 @@ class LeaveTheGameTest : FunSpec({
         withTheft.projectedState.getController(creatureId) shouldBe players[1]
 
         val afterLeave = PlayerLeavesGameProcessor.process(
+            zones,
             withTheft, players[1], GameEndReason.CONCESSION
         ).newState
 
@@ -181,6 +185,7 @@ class LeaveTheGameTest : FunSpec({
         val withTheft = withCreature.controlEffect(target = creatureId, newController = players[0])
 
         val afterLeave = PlayerLeavesGameProcessor.process(
+            zones,
             withTheft, players[1], GameEndReason.CONCESSION
         ).newState
 
@@ -208,6 +213,7 @@ class LeaveTheGameTest : FunSpec({
             .pushToStack(abilityId)
 
         val afterLeave = PlayerLeavesGameProcessor.process(
+            zones,
             state, players[1], GameEndReason.CONCESSION
         ).newState
 
@@ -237,6 +243,7 @@ class LeaveTheGameTest : FunSpec({
             .updateEntity(blockerId) { it.with(BlockingComponent(listOf(attackerId))) }
 
         val afterLeave = PlayerLeavesGameProcessor.process(
+            zones,
             state, players[1], GameEndReason.CONCESSION
         ).newState
 
@@ -254,7 +261,7 @@ class LeaveTheGameTest : FunSpec({
             .updateEntity(atB) { it.with(AttackingComponent(defenderId = players[1])) }
             .updateEntity(atC) { it.with(AttackingComponent(defenderId = players[2])) }
 
-        val afterLeave = PlayerLeavesGameProcessor.process(state, players[2], GameEndReason.CONCESSION).newState
+        val afterLeave = PlayerLeavesGameProcessor.process(zones, state, players[2], GameEndReason.CONCESSION).newState
 
         // Nothing is left for the second bear to deal damage to — it is out of combat …
         afterLeave.getEntity(atC)?.has<AttackingComponent>() shouldBe false
@@ -313,7 +320,7 @@ class LeaveTheGameTest : FunSpec({
         val (s4, anthemSource) = s3.withCreature(owner = players[1])
         val (state, anthem) = s4.pumpEffect(ownCreature, controller = players[1], sourceId = anthemSource, duration = Duration.WhileSourceOnBattlefield())
 
-        val afterLeave = PlayerLeavesGameProcessor.process(state, players[1], GameEndReason.CONCESSION).newState
+        val afterLeave = PlayerLeavesGameProcessor.process(zones, state, players[1], GameEndReason.CONCESSION).newState
 
         afterLeave.floatingEffects.any { it.id == pump } shouldBe true
         afterLeave.floatingEffects.any { it.id == anthem } shouldBe false
@@ -362,6 +369,7 @@ class LeaveTheGameTest : FunSpec({
         state.priorityPlayerId shouldBe players[1]
 
         val afterLeave = PlayerLeavesGameProcessor.process(
+            zones,
             state, players[1], GameEndReason.CONCESSION
         ).newState
         afterLeave.priorityPlayerId shouldBe players[2]
@@ -451,7 +459,7 @@ class LeaveTheGameTest : FunSpec({
         }.updateEntity(players[1]) {
             it.with(PlayerLostComponent(com.wingedsheep.engine.state.components.player.LossReason.CONCESSION))
         }
-        val afterLeave = PlayerLeavesGameProcessor.process(state, players[1], GameEndReason.CONCESSION).newState
+        val afterLeave = PlayerLeavesGameProcessor.process(zones, state, players[1], GameEndReason.CONCESSION).newState
         afterLeave.pendingDecision.shouldBeNull()
         afterLeave.priorityPlayerId shouldBe players[2]
     }

@@ -51,7 +51,8 @@ val FromFatherToSon = card("From Father to Son") {
                     player = Player.You,
                     filter = GameObjectFilter.Artifact.withSubtype(Subtype.VEHICLE)
                 ),
-                storeAs = "searchable"
+                storeAs = "searchable",
+                search = true
             ),
             SelectFromCollectionEffect(
                 from = "searchable",

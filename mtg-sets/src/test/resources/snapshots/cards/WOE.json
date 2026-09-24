@@ -1711,7 +1711,8 @@
                         "type": "FromZone",
                         "zone": "Library"
                     },
-                    "storeAs": "beseechLibrary"
+                    "storeAs": "beseechLibrary",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -2531,7 +2532,8 @@
                         "zone": "Library",
                         "filter": "basicland"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -2602,7 +2604,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -9511,7 +9514,8 @@
                                 "zone": "Library",
                                 "filter": "Aura|Equipment"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -13881,7 +13885,8 @@
                                     "zone": "Library",
                                     "filter": "basicland"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -17791,7 +17796,8 @@
                                     ]
                                 }
                             },
-                            "storeAs": "matches"
+                            "storeAs": "matches",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -18068,7 +18074,8 @@
                                         "zone": "Library",
                                         "filter": "creature|basicland"
                                     },
-                                    "storeAs": "searchable"
+                                    "storeAs": "searchable",
+                                    "search": true
                                 },
                                 {
                                     "type": "SelectFromCollection",

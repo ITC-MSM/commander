@@ -80,7 +80,7 @@ class GrantedStaticAbilityCleanupScenarioTest : FunSpec({
         driver.state.grantedStaticAbilities.any { it.entityId == g } shouldBe true
 
         // Move it to the graveyard through the real zone-transition path.
-        val result = ZoneTransitionService.moveToZone(
+        val result = driver.zones.moveToZone(
             state = driver.state,
             entityId = g,
             destinationZone = Zone.GRAVEYARD,

@@ -29,7 +29,10 @@ class ChangeColorToChosenExecutor : EffectExecutor<ChangeColorToChosenEffect> {
         effect: ChangeColorToChosenEffect,
         context: EffectContext
     ): EffectResult {
-        val chosenColor = context.chosenColor ?: return EffectResult.success(state)
+        // "The color or colors of your choice" (Quickchange) exposes the whole set; a single-color
+        // choice (Blind Seer) exposes just `chosenColor`.
+        val chosenColors = context.chosenColors.ifEmpty { setOfNotNull(context.chosenColor) }
+        if (chosenColors.isEmpty()) return EffectResult.success(state)
         val targetId = context.resolveTarget(effect.target, state) ?: return EffectResult.success(state)
         if (!state.getBattlefield().contains(targetId) && !state.stack.contains(targetId)) {
             return EffectResult.success(state)
@@ -37,7 +40,7 @@ class ChangeColorToChosenExecutor : EffectExecutor<ChangeColorToChosenEffect> {
 
         val newState = state.addFloatingEffect(
             layer = Layer.COLOR,
-            modification = SerializableModification.ChangeColor(setOf(chosenColor.name)),
+            modification = SerializableModification.ChangeColor(chosenColors.map { it.name }.toSet()),
             affectedEntities = setOf(targetId),
             duration = effect.duration,
             context = context

@@ -123,7 +123,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val siegeId = game.findCardsInGraveyard(1, "Test Siege").single()
-                val result = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                val result = zones.moveToZone(
                     game.state, siegeId, com.wingedsheep.sdk.core.Zone.BATTLEFIELD
                 )
                 game.state = result.state
@@ -197,7 +197,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
                 val siegeId = game.findPermanent("Test Siege")!!
                 protectorOf(game, "Test Siege") shouldNotBe null
 
-                val result = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                val result = zones.moveToZone(
                     game.state, siegeId, com.wingedsheep.sdk.core.Zone.GRAVEYARD
                 )
                 game.state = result.state
@@ -396,6 +396,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
                 val bears = game.findPermanent("Grizzly Bears")!!
 
                 val result = com.wingedsheep.engine.handlers.effects.DamageUtils.dealDamageToTarget(
+                    zones,
                     game.state, bulwark, 10, sourceId = bears
                 )
                 game.state = result.state

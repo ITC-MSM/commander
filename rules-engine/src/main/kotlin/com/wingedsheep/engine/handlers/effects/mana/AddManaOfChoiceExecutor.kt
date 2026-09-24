@@ -74,6 +74,15 @@ class AddManaOfChoiceExecutor(
             ?: if (context.manaColorChoice != null) availableColors.first() else null
         if (color != null) return addManaToPool(state, effect, context, color, availableColors)
 
+        // Who picks the color: the controller, or — "that player adds one mana of any color they
+        // choose" (Spectral Searchlight) — the recipient. A recipient who can no longer be
+        // resolved gets no mana, so there is nothing to choose.
+        val chooserId = if (effect.colorChosenByRecipient && effect.recipient != EffectTarget.Controller) {
+            context.resolvePlayerTarget(effect.recipient, state) ?: return EffectResult.success(state)
+        } else {
+            context.controllerId
+        }
+
         val sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
         val continuation = ChooseManaColorContinuation(
             controllerId = context.controllerId,
@@ -85,7 +94,7 @@ class AddManaOfChoiceExecutor(
 
         val decisionResult = decisionHandler.createColorDecision(
             state = state,
-            playerId = context.controllerId,
+            playerId = chooserId,
             sourceId = context.sourceId,
             sourceName = sourceName,
             prompt = "Choose a color of mana to add",

@@ -558,6 +558,11 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.PowerLessThanEntity(reference)
     )
 
+    /** An Aura card whose enchant restriction the referenced permanent satisfies (Auratouched Mage). */
+    fun couldEnchant(reference: EntityReference) = copy(
+        cardPredicates = cardPredicates + CardPredicate.CouldEnchant(reference)
+    )
+
     fun powerAtMostEntity(reference: EntityReference) = copy(
         cardPredicates = cardPredicates + CardPredicate.PowerAtMostEntity(reference)
     )
@@ -984,6 +989,15 @@ data class GameObjectFilter(
     )
 
     /**
+     * Must have dealt *combat* damage (to any recipient) at least once since entering the
+     * battlefield — [hasDealtDamage] narrowed to combat damage. `Conditions.SourceHasDealtCombatDamage`
+     * is this predicate under `SourceMatches` (Ruric Thar, Magecrusher).
+     */
+    fun hasDealtCombatDamage() = copy(
+        statePredicates = statePredicates + StatePredicate.HasDealtDamage(combatOnly = true)
+    )
+
+    /**
      * Must be in the same combat band as the effect's source (the source itself, or a band-mate
      * sharing its band id — CR 702.22). Source-relative; only matches while the source attacks.
      */
@@ -1327,6 +1341,14 @@ data class GameObjectFilter(
     /** Must have blocked, or been blocked by, a legendary creature this turn (You Cannot Pass!). */
     fun blockedOrWasBlockedByLegendaryThisTurn() = copy(
         statePredicates = statePredicates + StatePredicate.BlockedOrWasBlockedByLegendaryThisTurn
+    )
+
+    /**
+     * Must have blocked, or been blocked by, the creature [reference] names this turn — "all
+     * creatures that blocked or were blocked by it this turn" (Gaze of the Gorgon).
+     */
+    fun blockedOrWasBlockedByThisTurn(reference: com.wingedsheep.sdk.scripting.values.EntityReference) = copy(
+        statePredicates = statePredicates + StatePredicate.BlockedOrWasBlockedByEntityThisTurn(reference)
     )
 
     /** Must have at least one Equipment attached */

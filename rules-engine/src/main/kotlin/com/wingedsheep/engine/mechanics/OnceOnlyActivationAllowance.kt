@@ -18,10 +18,10 @@ import com.wingedsheep.sdk.scripting.OnceOnlyAbilityKind
  * — exhaust (CR 702.177) and power-up (CR 702.193) — given the
  * [ExtraOnceOnlyActivations] permissions currently on their battlefield.
  *
- * Lives here rather than in `CastPermissionUtils` because three independent activation-legality
- * paths need the same answer and must not drift: the legal-action enumerators and
- * `ActivateAbilityHandler` (both through `CastPermissionUtils`), and `ManaSolver`'s inlined
- * restriction check for auto-tapping, which deliberately doesn't depend on the legalactions module.
+ * Lives here rather than in `CastPermissionUtils` because three activation-legality paths need the
+ * same answer and must not drift: the legal-action enumerators, `ActivateAbilityHandler`, and
+ * `ManaSolver`'s restriction check for auto-tapping, which deliberately doesn't depend on the
+ * legalactions module. All three reach it through the legality kernel.
  */
 object OnceOnlyActivationAllowance {
 

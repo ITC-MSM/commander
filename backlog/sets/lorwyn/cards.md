@@ -2,7 +2,7 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 281 / 286
+**Implemented:** 286 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 43   |
@@ -55,7 +55,7 @@
 - [x] Oblivion Ring
 - [x] Plover Knights
 - [x] Pollen Lullaby
-- [ ] Purity
+- [x] Purity
 - [x] Sentry Oak
 - [x] Shields of Velis Vel
 - [x] Soaring Hope
@@ -89,7 +89,7 @@
 - [x] Forced Fruition
 - [x] Glen Elendra Pranksters
 - [x] Glimmerdust Nap
-- [ ] Guile
+- [x] Guile
 - [x] Inkfathom Divers
 - [x] Jace Beleren
 - [x] Merrow Commerce
@@ -127,7 +127,7 @@
 - [x] Boggart Harbinger
 - [x] Boggart Loggers
 - [x] Boggart Mob
-- [ ] Cairn Wanderer
+- [x] Cairn Wanderer
 - [x] Colfenor's Plans
 - [x] Dread
 - [x] Dreamspoiler Witches
@@ -200,7 +200,7 @@
 - [x] Hamletback Goliath
 - [x] Hearthcage Giant
 - [x] Heat Shimmer
-- [ ] Hostility
+- [x] Hostility
 - [x] Hurly-Burly
 - [x] Incandescent Soulstoke
 - [x] Incendiary Command
@@ -266,7 +266,7 @@
 - [x] Sylvan Echoes
 - [x] Timber Protector
 - [x] Treefolk Harbinger
-- [ ] Vigor
+- [x] Vigor
 - [x] Warren-Scourge Elf
 - [x] Woodland Changeling
 - [x] Woodland Guidance

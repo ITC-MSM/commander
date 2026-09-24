@@ -22,12 +22,13 @@ import kotlin.reflect.KClass
  *  1. Compute the beholder's eligible objects: matching permanents they control (projected
  *     state) and matching cards in their hand (base state, matching the cast-time Behold
  *     convention in [com.wingedsheep.engine.handlers.CostHandler]).
- *  2. If none are eligible, the player can't behold — skip the prompt and don't run `ifBeheld`.
+ *  2. If none are eligible, the player can't behold — skip the prompt, don't run `ifBeheld`,
+ *     and run `otherwise` instead.
  *  3. Otherwise present a [SelectCardsDecision] with `minSelections = 0, maxSelections = 1` over
  *     the union. The player either beholds one object or submits an empty selection (declines).
  *  4. On behold: if the chosen object is a hand card, emit the public reveal; either way, run
  *     `effect.ifBeheld` (the payoff, e.g. create a Treasure token).
- *  5. On decline: nothing happens.
+ *  5. On decline (or when nothing is eligible, step 2): run `effect.otherwise`, if any.
  *
  * @param effectExecutor sub-effect runner provided by the registry, used to chain into
  *   `ifBeheld` (which itself may pause).
@@ -63,8 +64,9 @@ class BeholdEffectExecutor(
 
         val options = (battlefieldMatches + handMatches).distinct()
         if (options.isEmpty()) {
-            // Can't behold — the "if you do" payoff doesn't run.
-            return EffectResult.success(state)
+            // Can't behold — the "if you do" payoff doesn't run, the "if you don't" rider does.
+            val otherwise = effect.otherwise ?: return EffectResult.success(state)
+            return effectExecutor(state, otherwise, context)
         }
 
         val sourceName = context.sourceId
@@ -90,6 +92,7 @@ class BeholdEffectExecutor(
             handOptionIds = handMatches.toSet(),
             ifBeheld = effect.ifBeheld,
             effectContext = context,
+            otherwise = effect.otherwise,
         )
 
         return EffectResult.from(state.suspendForDecision(decision, continuation))

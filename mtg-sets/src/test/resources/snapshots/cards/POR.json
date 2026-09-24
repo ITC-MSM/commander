@@ -1306,7 +1306,8 @@
                                 "type": "FromZone",
                                 "zone": "Library"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -2429,7 +2430,8 @@
                             "zone": "Library",
                             "filter": "land Plains"
                         },
-                        "storeAs": "searchable"
+                        "storeAs": "searchable",
+                        "search": true
                     },
                     {
                         "type": "SelectFromCollection",
@@ -3809,7 +3811,8 @@
                         "zone": "Library",
                         "filter": "sorcery"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -4986,7 +4989,8 @@
                         "zone": "Library",
                         "filter": "creature"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -6138,7 +6142,8 @@
                                 "zone": "Library",
                                 "filter": "land Forest"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",

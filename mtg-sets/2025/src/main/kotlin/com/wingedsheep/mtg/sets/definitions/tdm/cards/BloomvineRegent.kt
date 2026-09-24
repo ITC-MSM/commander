@@ -78,7 +78,8 @@ val BloomvineRegent = card("Bloomvine Regent") {
                             Player.You,
                             GameObjectFilter.BasicLand.withSubtype(Subtype.FOREST)
                         ),
-                        storeAs = "searchable"
+                        storeAs = "searchable",
+                        search = true
                     ),
                     SelectFromCollectionEffect(
                         from = "searchable",

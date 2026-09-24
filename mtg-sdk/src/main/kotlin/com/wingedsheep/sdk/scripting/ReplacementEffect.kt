@@ -660,13 +660,24 @@ data class EntersWithKeywords(
  * statics are expressed without a dedicated conditional-replacement wrapper — e.g.
  * Spirit of Resistance ("As long as you control a permanent of each color, prevent
  * all damage that would be dealt to you").
+ *
+ * [onPrevented] is what the prevention effect does with the damage it prevented — the Lorwyn
+ * Incarnations' second sentence: Purity's "You gain life equal to the damage prevented this way",
+ * Vigor's "Put a +1/+1 counter on that creature for each 1 damage prevented this way", Hostility's
+ * tokens. It is part of the same prevention effect (CR 615.5), not a trigger: it never uses the stack, runs before
+ * state-based actions, and runs once per application with the amount *that* application actually
+ * prevented, read by [com.wingedsheep.sdk.dsl.DynamicAmounts.preventedDamage]. `Self` is this
+ * permanent, "you" its controller, and [com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity]
+ * the permanent the damage would have been dealt to. Damage that can't be prevented is dealt, and
+ * then nothing was prevented, so the rider doesn't run.
  */
 @SerialName("PreventDamage")
 @Serializable
 data class PreventDamage(
     val amount: Int? = null,  // null = prevent all
     override val restrictions: List<Condition> = emptyList(),
-    override val appliesTo: EventPattern
+    override val appliesTo: EventPattern,
+    val onPrevented: Effect? = null
 ) : ReplacementEffect {
     override val description: String = buildString {
         val restrictionDesc = restrictions.joinToString(" and ") { it.description.removePrefix("if ") }
@@ -683,14 +694,18 @@ data class PreventDamage(
         } else {
             append("$amount of that damage")
         }
+        onPrevented?.let { append(". ${it.description.replaceFirstChar { c -> c.uppercase() }}") }
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
         val newAppliesTo = appliesTo.applyTextReplacement(replacer)
         val newRestrictions = restrictions.map { it.applyTextReplacement(replacer) }
-        val anyChanged = newAppliesTo !== appliesTo ||
+        val newOnPrevented = onPrevented?.applyTextReplacement(replacer)
+        val anyChanged = newAppliesTo !== appliesTo || newOnPrevented !== onPrevented ||
             newRestrictions.zip(restrictions).any { (n, o) -> n !== o }
-        return if (anyChanged) copy(appliesTo = newAppliesTo, restrictions = newRestrictions) else this
+        return if (anyChanged) {
+            copy(appliesTo = newAppliesTo, restrictions = newRestrictions, onPrevented = newOnPrevented)
+        } else this
     }
 }
 
@@ -2123,6 +2138,12 @@ enum class DamageCounterRecipient {
  *        Only meaningful together with [DamageCounterRecipient.ReplacementHost].
  * @param counterRecipient Which permanent receives the counters. Defaults to the replacement's
  *        own host, which is what every "on this permanent" printing says.
+ * @param damagedPlayerMills When the replaced damage was headed for a **player**, that player also
+ *        mills that many cards as part of the same replacement — Szadek, Lord of Secrets: "If
+ *        Szadek would deal combat damage to a player, instead put that many +1/+1 counters on
+ *        Szadek and that player mills that many cards." One replacement producing both results, so
+ *        they can never be split across two replacements that would each want to consume the same
+ *        damage event. Ignored when the recipient is a permanent.
  */
 @SerialName("ReplaceDamageWithCounters")
 @Serializable
@@ -2132,14 +2153,17 @@ data class ReplaceDamageWithCounters(
     override val appliesTo: EventPattern = EventPattern.DamageEvent(
         recipient = RecipientFilter.You
     ),
-    val counterRecipient: DamageCounterRecipient = DamageCounterRecipient.ReplacementHost
+    val counterRecipient: DamageCounterRecipient = DamageCounterRecipient.ReplacementHost,
+    val damagedPlayerMills: Boolean = false
 ) : ReplacementEffect {
     override val description: String = buildString {
         val where = when (counterRecipient) {
             DamageCounterRecipient.ReplacementHost -> "this permanent"
             DamageCounterRecipient.DamagedPermanent -> "that permanent"
         }
-        append("If ${appliesTo.description}, put that many $counterType counters on $where instead")
+        append("If ${appliesTo.description}, put that many $counterType counters on $where")
+        if (damagedPlayerMills) append(" and that player mills that many cards")
+        append(" instead")
         if (sacrificeThreshold != null) {
             append(". When there are $sacrificeThreshold or more $counterType counters on this permanent, sacrifice it")
         }
@@ -2177,6 +2201,51 @@ data class ReplaceDamageWithMill(
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
         val newAppliesTo = appliesTo.applyTextReplacement(replacer)
         return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+    }
+}
+
+// =============================================================================
+// Counter Replacement Effects
+// =============================================================================
+
+/**
+ * "If a spell or ability you control would counter a spell, instead exile that spell and you may
+ * play that card without paying its mana cost." — Guile.
+ *
+ * Replaces the counter, so the spell is **never countered**: no "whenever a spell is countered"
+ * trigger sees it, and it goes to exile rather than to its owner's graveyard. Exiling is
+ * mandatory. [then] is the rest of the replacement and runs immediately, before the countering
+ * spell or ability continues to resolve; it reads the exiled card from the pipeline collection
+ * [EXILED_CARD] (and as [com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity]).
+ * Guile's `then` is a "you may" cast without paying the mana cost — declining leaves the card in
+ * exile for good.
+ *
+ * A spell that can't be countered isn't countered, so this replacement never gets a look at it
+ * and it resolves normally. A copy of a spell is exiled and ceases to exist (CR 707.10a), so there
+ * is nothing left to play.
+ *
+ * Only the counters that go through the engine's counter routine are seen — "counter target
+ * spell", "counter unless its controller pays", ward, and "counter all spells".
+ */
+@SerialName("ExileCounteredSpellInstead")
+@Serializable
+data class ExileCounteredSpellInstead(
+    val then: Effect? = null,
+    override val appliesTo: EventPattern = EventPattern.CounterSpellEvent()
+) : ReplacementEffect {
+    override val description: String = buildString {
+        append("If ${appliesTo.description}, instead exile that spell")
+        then?.let { append(" and ${it.description.replaceFirstChar { c -> c.lowercase() }}") }
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newThen = then?.applyTextReplacement(replacer)
+        return if (newThen !== then) copy(then = newThen) else this
+    }
+
+    companion object {
+        /** The pipeline collection [then] reads the exiled card from. */
+        const val EXILED_CARD = "exiledInsteadOfCountered"
     }
 }
 

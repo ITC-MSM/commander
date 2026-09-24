@@ -46,6 +46,7 @@ import com.wingedsheep.engine.core.Outcome
  *   ever changes it fails loudly instead of silently skipping a rules-required replacement.
  */
 class MoveToZoneEffectExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val targetFinder: TargetFinder = TargetFinder(),
     private val effectExecutor: (GameState, Effect, EffectContext) -> EffectResult
@@ -67,7 +68,7 @@ class MoveToZoneEffectExecutor(
 
         // byDestruction delegates to destroyPermanent (handles indestructible)
         if (effect.byDestruction) {
-            return destroyPermanent(state, targetId)
+            return destroyPermanent(zones, state, targetId)
         }
 
         val container = state.getEntity(targetId)
@@ -120,7 +121,7 @@ class MoveToZoneEffectExecutor(
         // Build ZoneEntryOptions based on placement and effect properties
         val entryOptions = buildEntryOptions(effect, cardComponent, controllerId, context.controllerId)
 
-        val transitionResult = ZoneTransitionService.moveToZone(
+        val transitionResult = zones.moveToZone(
             state, targetId, effect.destination, entryOptions, currentZone
         )
 

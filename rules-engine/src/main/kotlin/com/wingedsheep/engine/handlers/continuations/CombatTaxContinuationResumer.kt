@@ -73,7 +73,7 @@ class CombatTaxContinuationResumer(
             )
         }
 
-        val sacrificeResult = com.wingedsheep.engine.handlers.effects.zones.ForceSacrificeExecutor()
+        val sacrificeResult = com.wingedsheep.engine.handlers.effects.zones.ForceSacrificeExecutor(services.zones)
             .sacrificePermanents(state, continuation.attackingPlayer, response.selectedCards)
             .toExecutionResult()
         if (sacrificeResult.outcome !is Outcome.Done) return sacrificeResult

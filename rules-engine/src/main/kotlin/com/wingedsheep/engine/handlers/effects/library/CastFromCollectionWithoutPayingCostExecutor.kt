@@ -295,7 +295,7 @@ class CastFromCollectionWithoutPayingCostExecutor(
             val isModalSpell = script?.spellEffect is ModalEffect
             val targetRequirements = buildList {
                 addAll(script?.targetRequirements.orEmpty())
-                script?.auraTarget?.let { add(it) }
+                script?.castAuraTarget?.let { add(it) }
             }
             if (isModalSpell || targetRequirements.isEmpty()) {
                 return TargetPrep.NotNeeded

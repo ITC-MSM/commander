@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.mechanics.sba.permanent
 
 import com.wingedsheep.engine.core.ExecutionResult
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.sba.SbaOrder
 import com.wingedsheep.engine.mechanics.sba.SbaZoneMovementHelper
 import com.wingedsheep.engine.mechanics.sba.StateBasedActionCheck
@@ -16,7 +17,7 @@ import com.wingedsheep.sdk.core.CounterType
  * A planeswalker with the projected [AbilityFlag.SURVIVES_ZERO_LOYALTY] flag (Sanctum Lurker) is
  * exempt from this one check.
  */
-class PlaneswalkerLoyaltyCheck : StateBasedActionCheck {
+class PlaneswalkerLoyaltyCheck(private val zones: ZoneTransitionService) : StateBasedActionCheck {
     override val name = "704.5i Planeswalker Loyalty"
     override val order = SbaOrder.PLANESWALKER_LOYALTY
 
@@ -37,6 +38,7 @@ class PlaneswalkerLoyaltyCheck : StateBasedActionCheck {
 
             if (loyalty <= 0) {
                 val result = SbaZoneMovementHelper.putPermanentInGraveyard(
+                    zones,
                     newState, entityId, cardComponent
                 )
                 newState = result.newState

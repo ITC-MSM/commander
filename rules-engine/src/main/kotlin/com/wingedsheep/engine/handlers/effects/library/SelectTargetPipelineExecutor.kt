@@ -42,6 +42,8 @@ class SelectTargetPipelineExecutor(
             requirement = effect.requirement,
             controllerId = controllerId,
             sourceId = sourceId,
+            // A non-targeting choice ("choose a player") isn't limited by hexproof or shroud.
+            ignoreTargetingRestrictions = effect.nonTargeting,
             // Carry the resolving ability's granter so a target filter can exclude it via
             // StatePredicate.IsGrantingPermanent — e.g. Dire Blunderbuss's "an artifact other than
             // Dire Blunderbuss" (CR 201.5a). Only granterId is threaded; other context fields keep

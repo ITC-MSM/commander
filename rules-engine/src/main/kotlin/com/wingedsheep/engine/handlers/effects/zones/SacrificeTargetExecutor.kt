@@ -25,7 +25,7 @@ import kotlin.reflect.KClass
  * (stripBattlefieldComponents, cleanupCombatReferences, cleanupReverseAttachmentLink,
  * removeFloatingEffectsTargeting).
  */
-class SacrificeTargetExecutor : EffectExecutor<SacrificeTargetEffect> {
+class SacrificeTargetExecutor(private val zones: ZoneTransitionService) : EffectExecutor<SacrificeTargetEffect> {
 
     override val effectType: KClass<SacrificeTargetEffect> = SacrificeTargetEffect::class
 
@@ -96,7 +96,7 @@ class SacrificeTargetExecutor : EffectExecutor<SacrificeTargetEffect> {
         var newState = ZoneTransitionService.trackPermanentSacrifice(state, listOf(targetId), controllerId)
 
         // Delegate zone movement to ZoneTransitionService
-        val transitionResult = ZoneTransitionService.moveToZone(
+        val transitionResult = zones.moveToZone(
             newState, targetId, Zone.GRAVEYARD, fromZoneKey = currentZone
         )
 

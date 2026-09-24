@@ -46,11 +46,11 @@ object LifePaymentService {
      *   [payerId] has no life total (nothing mutated) so cost callers can surface a payment
      *   failure. A non-positive [amount] is a no-op that still succeeds.
      */
-    fun pay(state: GameState, payerId: EntityId, amount: Int): Pair<GameState, List<GameEvent>>? {
+    fun pay(zones: ZoneTransitionService, state: GameState, payerId: EntityId, amount: Int): Pair<GameState, List<GameEvent>>? {
         if (state.getEntity(payerId)?.get<LifeTotalComponent>() == null) return null
         if (amount <= 0) return state to emptyList()
 
-        exileFromLibraryInstead(state, payerId, amount)?.let { return it }
+        exileFromLibraryInstead(zones, state, payerId, amount)?.let { return it }
 
         val (newState, event) = DamageUtils.loseLife(state, payerId, amount, LifeChangeReason.PAYMENT)
         return newState to listOfNotNull(event)
@@ -67,6 +67,7 @@ object LifePaymentService {
      * Returns `null` when no replacement applies, so the caller pays life normally.
      */
     private fun exileFromLibraryInstead(
+        zones: ZoneTransitionService,
         state: GameState,
         payerId: EntityId,
         amount: Int
@@ -78,7 +79,7 @@ object LifePaymentService {
         // replacement simply doesn't apply and life is paid as normal (printed ruling).
         if (library.size < amount) return null
 
-        val result = ZoneTransitionService.moveToZoneBatch(state, library.take(amount), Zone.EXILE)
+        val result = zones.moveToZoneBatch(state, library.take(amount), Zone.EXILE)
         return result.state to result.events
     }
 

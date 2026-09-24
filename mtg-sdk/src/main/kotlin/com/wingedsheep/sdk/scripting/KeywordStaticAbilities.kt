@@ -35,6 +35,47 @@ data class GrantKeyword(
 }
 
 /**
+ * "As long as a creature card with flying is in a graveyard, this creature has flying. The same is
+ * true for fear, first strike, …" — Cairn Wanderer.
+ *
+ * The affected permanents have each of [keywords] that some creature card in **any** graveyard has.
+ * [anyLandwalk] and [anyProtection] are the two printed words that name a *family* rather than one
+ * keyword: "landwalk" means every landwalk ability found (swampwalk, nonbasic landwalk, …) and
+ * "protection" means every protection ability found, quality and all — a graveyard holding a
+ * creature card with protection from red grants protection from red, not a generic "protection"
+ * (the printed ruling: "It gains any landwalk abilities and any protection abilities").
+ *
+ * The graveyard is read each time characteristics are determined, so the keywords come and go as
+ * cards enter and leave graveyards. A card in a graveyard has only its printed abilities (nothing
+ * on the battlefield can grant it one), so the card's own keywords are what count.
+ */
+@SerialName("GainKeywordsOfGraveyardCreatureCards")
+@Serializable
+data class GainKeywordsOfGraveyardCreatureCards(
+    val keywords: List<Keyword>,
+    val anyLandwalk: Boolean = false,
+    val anyProtection: Boolean = false,
+    val filter: GroupFilter = GroupFilter.source()
+) : StaticAbility {
+    override val description: String = buildString {
+        val names = keywords.map { it.displayName.lowercase() } +
+            listOfNotNull("landwalk".takeIf { anyLandwalk }, "protection".takeIf { anyProtection })
+        append("As long as a creature card with ${names.firstOrNull() ?: "an ability"} is in a graveyard, ")
+        append("${filter.description} has ${names.firstOrNull() ?: "it"}")
+        if (names.size > 1) {
+            append(". The same is true for ")
+            val rest = names.drop(1)
+            append(if (rest.size == 1) rest.single() else rest.dropLast(1).joinToString(", ") + ", and " + rest.last())
+        }
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
  * Removes a keyword from the affected permanents (continuous static ability).
  * Used for Equipment that causes the equipped creature to lose a keyword.
  * E.g., Starforged Sword: "Equipped creature loses flying."

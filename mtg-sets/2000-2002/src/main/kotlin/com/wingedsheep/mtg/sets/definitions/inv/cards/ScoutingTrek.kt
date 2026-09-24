@@ -34,7 +34,8 @@ val ScoutingTrek = card("Scouting Trek") {
             listOf(
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.LIBRARY, filter = Filters.BasicLand),
-                    storeAs = "searchable"
+                    storeAs = "searchable",
+                    search = true
                 ),
                 SelectFromCollectionEffect(
                     from = "searchable",

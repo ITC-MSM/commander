@@ -3,11 +3,13 @@ package com.wingedsheep.engine.handlers.effects.life
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ExecutorModule
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 
 /**
  * Module providing all life-related effect executors.
  */
 class LifeExecutors(
+    private val zones: ZoneTransitionService,
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator(),
     private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry
 ) : ExecutorModule {
@@ -18,8 +20,8 @@ class LifeExecutors(
         GainLifeExecutor(amountEvaluator),
         LoseLifeExecutor(amountEvaluator),
         OwnerGainsLifeExecutor(),
-        PayLifeEffectExecutor(),
-        PayDynamicLifeEffectExecutor(amountEvaluator),
+        PayLifeEffectExecutor(zones),
+        PayDynamicLifeEffectExecutor(zones, amountEvaluator),
         SetLifeTotalExecutor(amountEvaluator)
     )
 }

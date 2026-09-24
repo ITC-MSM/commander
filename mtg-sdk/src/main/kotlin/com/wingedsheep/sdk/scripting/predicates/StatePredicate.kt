@@ -410,16 +410,26 @@ sealed interface StatePredicate {
      * no memory), which is what "that dealt damage this turn" asks for: the object in front of you
      * must be the one that dealt it.
      *
-     * Damage *type* is not an axis here — combat and noncombat damage both count, matching the
-     * printed wording. "Dealt combat damage" specifically has its own predicates
-     * ([HasDealtCombatDamageToPlayer], [DealtCombatDamageToSourceControllerThisTurn]) because those
-     * also scope by recipient.
+     * [combatOnly] narrows the damage *type*: `false` (default) counts combat and noncombat damage
+     * alike, matching the bare "dealt damage" wording; `true` counts only combat damage, to any
+     * recipient — "Ruric Thar has hexproof as long as they haven't dealt combat damage yet" (Ruric
+     * Thar, Magecrusher), via `Conditions.SourceHasDealtCombatDamage`. The same marker records the
+     * turn of the most recent *combat* damage beside the turn of the most recent damage of any kind,
+     * so both windows work for both types. The recipient-scoped combat predicates
+     * ([HasDealtCombatDamageToPlayer], [DealtCombatDamageToSourceControllerThisTurn]) stay separate
+     * because they also scope by who was dealt the damage.
      */
     @SerialName("HasDealtDamage")
     @Serializable
-    data class HasDealtDamage(val thisTurnOnly: Boolean = false) : History {
-        override val description: String =
-            if (thisTurnOnly) "dealt damage this turn" else "has dealt damage"
+    data class HasDealtDamage(
+        val thisTurnOnly: Boolean = false,
+        val combatOnly: Boolean = false
+    ) : History {
+        override val description: String = buildString {
+            append(if (thisTurnOnly) "dealt " else "has dealt ")
+            append(if (combatOnly) "combat damage" else "damage")
+            if (thisTurnOnly) append(" this turn")
+        }
     }
 
     /** Has dealt combat damage to a player (ever, since entering the battlefield) */
@@ -630,6 +640,27 @@ sealed interface StatePredicate {
     @Serializable
     data object BlockedOrWasBlockedByLegendaryThisTurn : History {
         override val description: String = "that blocked or was blocked by a legendary creature this turn"
+    }
+
+    /**
+     * This creature blocked, or was blocked by, the creature [reference] names at some point
+     * during the current turn — "destroy all creatures that blocked or were blocked by **it** this
+     * turn" (Gaze of the Gorgon). The relational sibling of [BlockedOrWasBlockedByLegendaryThisTurn].
+     *
+     * Backed by the turn-scoped `CombatPartnersThisTurnComponent`, stamped on both creatures of a
+     * blocking pair at block declaration and cleared at end-of-turn cleanup, so it covers blocks
+     * made before the spell was cast and keeps matching after the referenced creature has left the
+     * battlefield (the card's own ruling). A reference that resolves to nothing matches nothing.
+     *
+     * In a delayed trigger, [EntityReference.Triggering] names the trigger's watched entity — a
+     * step-based `CreateDelayedTriggerEffect` exposes its baked `watchedTarget` that way.
+     */
+    @SerialName("BlockedOrWasBlockedByEntityThisTurn")
+    @Serializable
+    data class BlockedOrWasBlockedByEntityThisTurn(
+        val reference: com.wingedsheep.sdk.scripting.values.EntityReference
+    ) : History {
+        override val description: String = "that blocked or was blocked by ${reference.description} this turn"
     }
 
     // =============================================================================

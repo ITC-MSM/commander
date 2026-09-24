@@ -86,7 +86,7 @@ class PermanentLeftBattlefieldThisTurnConditionTest : FunSpec({
         val land = driver.putLandOnBattlefield(player, "Forest")
         driver.state.nonlandPermanentLeftBattlefieldThisTurn shouldBe false
 
-        val result = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val result = driver.zones.moveToZone(
             state = driver.state,
             entityId = land,
             destinationZone = Zone.GRAVEYARD

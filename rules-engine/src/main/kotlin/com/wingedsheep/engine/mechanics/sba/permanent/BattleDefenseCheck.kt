@@ -2,6 +2,7 @@ package com.wingedsheep.engine.mechanics.sba.permanent
 
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.battle.Battles
 import com.wingedsheep.engine.mechanics.sba.SbaOrder
 import com.wingedsheep.engine.mechanics.sba.SbaZoneMovementHelper
@@ -30,7 +31,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
  * distinction is gated on [Battles.isSiege] rather than left to be discovered by the first non-Siege
  * battle that carries a triggered ability.
  */
-class BattleDefenseCheck : StateBasedActionCheck {
+class BattleDefenseCheck(private val zones: ZoneTransitionService) : StateBasedActionCheck {
     override val name = "704.5v/w Battle Defense"
     override val order = SbaOrder.BATTLE_DEFENSE
 
@@ -65,7 +66,7 @@ class BattleDefenseCheck : StateBasedActionCheck {
                 if (container.has<DefeatTriggerArmedComponent>()) continue
             }
 
-            val result = SbaZoneMovementHelper.putPermanentInGraveyard(newState, entityId, cardComponent)
+            val result = SbaZoneMovementHelper.putPermanentInGraveyard(zones, newState, entityId, cardComponent)
             newState = result.newState
             events.addAll(result.events)
         }

@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ExecutorModule
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -16,13 +17,14 @@ import com.wingedsheep.sdk.scripting.effects.Effect
  * into PayOrSufferExecutor, which needs it for executing arbitrary suffer effects.
  */
 class PlayerExecutors(
+    private val zones: ZoneTransitionService,
     private val decisionHandler: DecisionHandler = DecisionHandler(),
     private val cardRegistry: CardRegistry
 ) : ExecutorModule {
     private lateinit var effectExecutor: (GameState, Effect, EffectContext) -> EffectResult
 
     private val payOrSufferExecutor by lazy {
-        PayOrSufferExecutor(cardRegistry = cardRegistry, executeEffect = effectExecutor)
+        PayOrSufferExecutor(zones, cardRegistry = cardRegistry, executeEffect = effectExecutor)
     }
 
     private val openLifeBidExecutor by lazy {
@@ -39,7 +41,7 @@ class PlayerExecutors(
 
     override fun executors(): List<EffectExecutor<*>> = listOf(
         AmassExecutor(effectExecutor),
-        CollectEvidenceExecutor(decisionHandler),
+        CollectEvidenceExecutor(zones, decisionHandler),
         CollectEvidenceChosenAmountExecutor(),
         AddAdditionalUpkeepStepsExecutor(),
         AddAdditionalEndStepsExecutor(),
@@ -48,6 +50,7 @@ class PlayerExecutors(
         AnyPlayerMayPayExecutor(executeEffect = effectExecutor),
         CantActivateLoyaltyAbilitiesExecutor(),
         CantCastSpellsExecutor(),
+        CantSearchLibrariesExecutor(),
         CantCastSpellsFromNonHandZonesExecutor(),
         CantPlayCardsFromHandExecutor(),
         ChooseNumberForSourceExecutor(decisionHandler),
@@ -71,6 +74,7 @@ class PlayerExecutors(
         GrantEvasionKeywordExecutor(),
         GrantPlayerProtectionExecutor(),
         HijackNextTurnExecutor(),
+        ControlCombatDeclarationsExecutor(),
         LockLifeGainExecutor(),
         openLifeBidExecutor,
         LoseGameExecutor(),

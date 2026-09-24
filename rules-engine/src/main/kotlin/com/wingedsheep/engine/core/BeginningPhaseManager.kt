@@ -483,6 +483,8 @@ class BeginningPhaseManager(
         StatePredicate.SharesNameWithSpellCastThisTurn -> false
         StatePredicate.PutIntoGraveyardThisTurn -> false
         StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false
+        // Combat-partner history is cleared at cleanup, so nothing has blocked anything yet this turn.
+        is StatePredicate.BlockedOrWasBlockedByEntityThisTurn -> false
         // No granter context in untap filtering — granter-relative exclusion is resolution-time only.
         StatePredicate.IsGrantingPermanent -> false
         // Counter history is plain per-entity state, so answer it exactly rather than falling open.
@@ -497,9 +499,16 @@ class BeginningPhaseManager(
         // can have dealt damage *this* turn yet: the per-turn window is exactly `false` for every
         // permanent. Falling into the "no constraint" group below would answer `true` instead, which
         // for an "each creature that dealt damage this turn" untap filter is the maximally wrong
-        // answer (match everything rather than nothing). The lifetime window is just the marker.
-        is StatePredicate.HasDealtDamage ->
-            if (predicate.thisTurnOnly) false else container.has<HasDealtDamageComponent>()
+        // answer (match everything rather than nothing). The lifetime window is just the marker (its
+        // combat stamp, for `combatOnly`).
+        is StatePredicate.HasDealtDamage -> {
+            val marker = container.get<HasDealtDamageComponent>()
+            when {
+                predicate.thisTurnOnly || marker == null -> false
+                predicate.combatOnly -> marker.lastDealtCombatDamageTurn != null
+                else -> true
+            }
+        }
         // Tap history, by the same argument as the per-turn damage window above: the untap step is
         // the first step of the turn, so no permanent has become tapped this turn yet and nothing can
         // have become tapped exactly once. Answered exactly rather than falling open, because an

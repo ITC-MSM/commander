@@ -29,6 +29,7 @@ import kotlin.reflect.KClass
  * same player, the existing Role is put into the graveyard before the new one enters.
  */
 class CreateRoleTokenExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val staticAbilityHandler: StaticAbilityHandler? = null
 ) : EffectExecutor<CreateRoleTokenEffect> {
@@ -61,7 +62,7 @@ class CreateRoleTokenExecutor(
             if (roleController != tokenControllerId) continue
 
             // Put existing Role into graveyard
-            val transitionResult = ZoneTransitionService.moveToZone(newState, permanentId, Zone.GRAVEYARD)
+            val transitionResult = zones.moveToZone(newState, permanentId, Zone.GRAVEYARD)
             newState = transitionResult.state
             events.addAll(transitionResult.events)
         }

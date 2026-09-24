@@ -212,7 +212,7 @@ class TannukSteadfastSecondScenarioTest : ScenarioTestBase() {
 
                 // Send Tannuk to the graveyard out-of-band — the grant must drop with it.
                 val tannukId = game.findPermanent("Tannuk, Steadfast Second")!!
-                val transition = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                val transition = zones.moveToZone(
                     state = game.state,
                     entityId = tannukId,
                     destinationZone = com.wingedsheep.sdk.core.Zone.GRAVEYARD

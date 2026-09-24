@@ -1,11 +1,13 @@
 package com.wingedsheep.engine.mechanics.sba.permanent
 
 import com.wingedsheep.engine.handlers.DecisionHandler
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.sba.StateBasedActionCheck
 import com.wingedsheep.engine.mechanics.sba.StateBasedActionModule
 import com.wingedsheep.engine.registry.CardRegistry
 
 class PermanentSbaModule(
+    private val zones: ZoneTransitionService,
     private val decisionHandler: DecisionHandler,
     private val cardRegistry: CardRegistry
 ) : StateBasedActionModule {
@@ -14,14 +16,14 @@ class PermanentSbaModule(
         EndedDurationExpiryCheck(),
         AttachedCopyExpiryCheck(),
         AttackedPermanentRemovedFromCombatCheck(),
-        PlaneswalkerLoyaltyCheck(),
-        BattleDefenseCheck(),
-        BattleProtectorCheck(),
+        PlaneswalkerLoyaltyCheck(zones),
+        BattleDefenseCheck(zones),
+        BattleProtectorCheck(zones),
         LegendRuleCheck(decisionHandler, cardRegistry),
         CounterAnnihilationCheck(),
-        UnattachedAurasCheck(cardRegistry),
+        UnattachedAurasCheck(zones, cardRegistry),
         SoulbondPairingCheck(),
-        SagaSacrificeCheck(cardRegistry),
+        SagaSacrificeCheck(zones, cardRegistry),
         CommanderZoneChoiceCheck(decisionHandler),
     )
 }

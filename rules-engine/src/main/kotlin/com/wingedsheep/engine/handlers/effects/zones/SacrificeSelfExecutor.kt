@@ -16,7 +16,7 @@ import kotlin.reflect.KClass
  *
  * Sacrifices the source permanent (the card that has this effect).
  */
-class SacrificeSelfExecutor : EffectExecutor<SacrificeSelfEffect> {
+class SacrificeSelfExecutor(private val zones: ZoneTransitionService) : EffectExecutor<SacrificeSelfEffect> {
 
     override val effectType: KClass<SacrificeSelfEffect> = SacrificeSelfEffect::class
 
@@ -41,7 +41,7 @@ class SacrificeSelfExecutor : EffectExecutor<SacrificeSelfEffect> {
 
         var newState = ZoneTransitionService.trackPermanentSacrifice(state, listOf(sourceId), controllerId)
 
-        val transitionResult = ZoneTransitionService.moveToZone(
+        val transitionResult = zones.moveToZone(
             newState, sourceId, Zone.GRAVEYARD, fromZoneKey = battlefieldZone
         )
 

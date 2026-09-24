@@ -52,6 +52,12 @@ class CommandZoneAbilityEnumerator : ActionEnumerator {
                 // too, or the action would be offered and then refused.
                 if (context.castPermissionUtils.isPowerUpActivationRestricted(state, ability)) continue
 
+                // An any-zone "players can't activate abilities" (Yuriko, Blade of the Mighty).
+                if (context.castPermissionUtils.isActivationPreventedForPlayer(
+                        state, entityId, playerId, abilityIsManaAbility = ability.isManaAbility
+                    )
+                ) continue
+
                 // Activation restrictions (e.g. once each turn).
                 if (!context.legality.activationRestrictionsMet(state, playerId, entityId, ability)) continue
 

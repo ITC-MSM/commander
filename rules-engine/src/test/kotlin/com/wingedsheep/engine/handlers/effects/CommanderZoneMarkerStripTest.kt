@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.effects
 
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -25,6 +26,7 @@ import io.kotest.matchers.shouldBe
  * so the next entry into a non-command zone produces a fresh prompt.
  */
 class CommanderZoneMarkerStripTest : FunSpec({
+    val zones = ZoneTransitionService(CardRegistry())
 
     val ownerId = EntityId.generate()
     val cmdrId = EntityId.generate()
@@ -61,13 +63,13 @@ class CommanderZoneMarkerStripTest : FunSpec({
         val state = stateWithAskedCommanderIn(Zone.GRAVEYARD)
         state.getEntity(cmdrId)!!.has<CommanderZoneChoiceAskedComponent>() shouldBe true
 
-        val result = ZoneTransitionService.moveToZone(state, cmdrId, Zone.COMMAND)
+        val result = zones.moveToZone(state, cmdrId, Zone.COMMAND)
         result.state.getEntity(cmdrId)!!.has<CommanderZoneChoiceAskedComponent>() shouldBe false
     }
 
     test("moving a commander from exile to hand also strips the marker") {
         val state = stateWithAskedCommanderIn(Zone.EXILE)
-        val result = ZoneTransitionService.moveToZone(state, cmdrId, Zone.HAND)
+        val result = zones.moveToZone(state, cmdrId, Zone.HAND)
         result.state.getEntity(cmdrId)!!.has<CommanderZoneChoiceAskedComponent>() shouldBe false
     }
 
@@ -75,7 +77,7 @@ class CommanderZoneMarkerStripTest : FunSpec({
         // E.g. graveyard → exile via Tormod's-Crypt-style effect: SBA should re-ask on the
         // new entry, so the marker must not survive the trip.
         val state = stateWithAskedCommanderIn(Zone.GRAVEYARD)
-        val result = ZoneTransitionService.moveToZone(state, cmdrId, Zone.EXILE)
+        val result = zones.moveToZone(state, cmdrId, Zone.EXILE)
         result.state.getEntity(cmdrId)!!.has<CommanderZoneChoiceAskedComponent>() shouldBe false
     }
 
@@ -107,7 +109,7 @@ class CommanderZoneMarkerStripTest : FunSpec({
             .addToZone(ZoneKey(ownerId, Zone.GRAVEYARD), regularId)
             .copy(turnOrder = listOf(ownerId))
 
-        val result = ZoneTransitionService.moveToZone(state, regularId, Zone.EXILE)
+        val result = zones.moveToZone(state, regularId, Zone.EXILE)
         result.state.getEntity(regularId)!!.has<CommanderZoneChoiceAskedComponent>() shouldBe true
     }
 })

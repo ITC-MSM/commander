@@ -267,6 +267,23 @@ class PreventDamageExecutor(
                 modification = SerializableModification.PreventAllDamageTo(combatOnly = true)
             }
 
+            // Prevent all damage — not just combat damage — that a group of sources would deal,
+            // with no recipient clause ("prevent all damage that would be dealt by creatures this
+            // turn", Ethereal Haze), optionally gaining the controller life for what it prevents
+            // (Chant of Vitu-Ghazi). A life-gaining combat-only shield rides the same modification,
+            // since only it knows how to credit the prevented amount.
+            effect.sourceFilter is PreventionSourceFilter.FromGroup &&
+            effect.direction == PreventionDirection.FromTarget &&
+            (effect.scope == PreventionScope.AllDamage || effect.gainLifeFromPrevented) -> {
+                val fromGroup = effect.sourceFilter as PreventionSourceFilter.FromGroup
+                affectedEntities = emptySet()
+                modification = SerializableModification.PreventAllDamageFromGroup(
+                    filter = fromGroup.filter.baseFilter,
+                    combatOnly = effect.scope == PreventionScope.CombatOnly,
+                    controllerGainsLife = effect.gainLifeFromPrevented
+                )
+            }
+
             // Prevent combat damage from a group (e.g., non-Soldier creatures)
             effect.sourceFilter is PreventionSourceFilter.FromGroup -> {
                 val fromGroup = effect.sourceFilter as PreventionSourceFilter.FromGroup

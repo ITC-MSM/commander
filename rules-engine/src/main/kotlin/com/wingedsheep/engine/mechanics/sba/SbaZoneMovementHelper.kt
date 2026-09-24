@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -49,6 +50,7 @@ object SbaZoneMovementHelper {
      *        Defaults to [state] for callers outside a batch.
      */
     fun putCreatureInGraveyard(
+        zones: ZoneTransitionService,
         state: GameState,
         entityId: EntityId,
         cardComponent: CardComponent,
@@ -113,7 +115,7 @@ object SbaZoneMovementHelper {
             } else {
                 com.wingedsheep.engine.handlers.effects.LibraryPlacement.Top
             }
-        val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val transitionResult = zones.moveToZone(
             newState, entityId, destinationZone,
             com.wingedsheep.engine.handlers.effects.ZoneEntryOptions(
                 skipZoneChangeRedirect = true,
@@ -182,6 +184,7 @@ object SbaZoneMovementHelper {
         // counters, The Darkness Crystal's "you gain 2 life").
         if (redirectResult.additionalEffect != null) {
             val (updatedState, extraEvents) = ZoneMovementUtils.applyReplacementAdditionalEffect(
+                zones,
                 newState, redirectResult.additionalEffect, redirectResult.effectControllerId, entityId,
                 sourceId = redirectResult.effectSourceId
             )
@@ -198,13 +201,14 @@ object SbaZoneMovementHelper {
      * Respects zone change redirects.
      */
     fun putPermanentInGraveyard(
+        zones: ZoneTransitionService,
         state: GameState,
         entityId: EntityId,
         cardComponent: CardComponent,
         lastKnownAttachedTo: EntityId? = null
     ): ExecutionResult {
         // Delegate zone movement to ZoneTransitionService for full cleanup
-        val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val transitionResult = zones.moveToZone(
             state, entityId, Zone.GRAVEYARD,
             com.wingedsheep.engine.handlers.effects.ZoneEntryOptions(lastKnownAttachedTo = lastKnownAttachedTo)
         )

@@ -43,7 +43,7 @@ class SamwiseTheStoutheartedTest : FunSpec({
         // Stage a permanent in your graveyard that arrived via battlefield this turn —
         // moving via ZoneTransitionService sets the Gap 20 marker.
         val bear = driver.putCreatureOnBattlefield(active, "Grizzly Bears")
-        val mv = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val mv = driver.zones.moveToZone(
             state = driver.state,
             entityId = bear,
             destinationZone = Zone.GRAVEYARD
@@ -76,7 +76,7 @@ class SamwiseTheStoutheartedTest : FunSpec({
         // Stage a valid graveyard card so the ETB trigger goes on the stack with a real
         // "up to one" target prompt — the player can either pick the card or decline.
         val bear = driver.putCreatureOnBattlefield(active, "Grizzly Bears")
-        val mv = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val mv = driver.zones.moveToZone(
             state = driver.state,
             entityId = bear,
             destinationZone = Zone.GRAVEYARD

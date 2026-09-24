@@ -53,7 +53,12 @@ class ColorChoiceContinuationResumer(
             return ExecutionResult.error(state, "Expected color choice response for ChooseColorThen effect")
         }
 
-        val contextWithColor = continuation.baseContext.copy(chosenColor = response.color)
+        // A multi-color answer ("the color or colors of your choice") also exposes the whole set;
+        // a single-color answer leaves `chosenColors` empty so single-color atoms are unaffected.
+        val contextWithColor = continuation.baseContext.copy(
+            chosenColor = response.color,
+            chosenColors = if (response.colors.isEmpty()) emptySet() else response.allColors
+        )
         val effectResult = effectRunner.executeRemainingEffects(
             state,
             listOf(continuation.then),

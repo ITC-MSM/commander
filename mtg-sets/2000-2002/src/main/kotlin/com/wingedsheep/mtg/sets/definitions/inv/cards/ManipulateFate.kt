@@ -40,7 +40,8 @@ val ManipulateFate = card("Manipulate Fate") {
                 // Search your library.
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Any),
-                    storeAs = "searchable"
+                    storeAs = "searchable",
+                    search = true
                 ),
                 // Choose up to three cards.
                 SelectFromCollectionEffect(

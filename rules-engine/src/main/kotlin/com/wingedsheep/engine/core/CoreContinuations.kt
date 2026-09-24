@@ -253,7 +253,8 @@ data class MayRevealCardFromHandContinuation(
  * @property handOptionIds The subset of the decision options that live in the beholder's hand
  *                          (revealed when chosen); battlefield options are merely chosen.
  * @property ifBeheld Effect to run when the player successfully beholds
- * @property effectContext Effect context propagated to [ifBeheld]
+ * @property effectContext Effect context propagated to [ifBeheld] / [otherwise]
+ * @property otherwise Effect to run when the player declines to behold
  */
 @Serializable
 data class BeholdContinuation(
@@ -262,6 +263,7 @@ data class BeholdContinuation(
     val handOptionIds: Set<EntityId>,
     val ifBeheld: Effect?,
     val effectContext: EffectContext,
+    val otherwise: Effect? = null,
 ) : AnswerContinuation
 
 /**

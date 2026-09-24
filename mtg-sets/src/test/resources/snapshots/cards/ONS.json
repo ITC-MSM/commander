@@ -1065,7 +1065,8 @@
                                     "zone": "Library",
                                     "filter": "name:Avarax"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -1893,7 +1894,8 @@
                                 "zone": "Library",
                                 "filter": "land Swamp|Mountain"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -3971,7 +3973,8 @@
                                     "zone": "Library",
                                     "filter": "name:Daru Cavalier"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -5611,7 +5614,8 @@
                                     "zone": "Library",
                                     "filter": "name:Embermage Goblin"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -6112,7 +6116,8 @@
                         "zone": "Library",
                         "filter": "basicland"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -6643,7 +6648,8 @@
                                 "zone": "Library",
                                 "filter": "land Plains|Island"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -8553,7 +8559,8 @@
                             "index": 0
                         }
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -9696,7 +9703,8 @@
                                     "zone": "Library",
                                     "filter": "basicland"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -11470,7 +11478,8 @@
                                 "zone": "Library",
                                 "filter": "land Island|Swamp"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -12929,7 +12938,8 @@
                                     "zone": "Library",
                                     "filter": "name:Screaming Seahawk"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -15243,7 +15253,8 @@
                                     "index": 0
                                 }
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -17172,7 +17183,8 @@
                                 "zone": "Library",
                                 "filter": "land"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -17255,7 +17267,8 @@
                             "zone": "Library",
                             "filter": "creature"
                         },
-                        "storeAs": "searchable"
+                        "storeAs": "searchable",
+                        "search": true
                     },
                     {
                         "type": "SelectFromCollection",
@@ -17513,7 +17526,8 @@
                                 "zone": "Library",
                                 "filter": "land Forest|Plains"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -17618,7 +17632,8 @@
                                     "zone": "Library",
                                     "filter": "Elf"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -17931,7 +17946,8 @@
                                 "zone": "Library",
                                 "filter": "land Mountain|Forest"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",

@@ -11,6 +11,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.DamageUtils.dealDamageToTarget
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.toEntityId
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
@@ -29,6 +30,7 @@ import com.wingedsheep.engine.core.Outcome
  * non-interactive controller) does it deal the whole total or ask for the division at resolution.
  */
 class DividedDamageExecutor(
+    private val zones: ZoneTransitionService,
     private val decisionHandler: DecisionHandler,
     private val amountEvaluator: com.wingedsheep.engine.handlers.DynamicAmountEvaluator =
         com.wingedsheep.engine.handlers.DynamicAmountEvaluator()
@@ -78,7 +80,7 @@ class DividedDamageExecutor(
 
             for ((targetId, amount) in distribution) {
                 if (amount <= 0 || targetId !in stillLegal) continue
-                val result = dealDamageToTarget(currentState, targetId, amount, context.sourceId)
+                val result = dealDamageToTarget(zones, currentState, targetId, amount, context.sourceId)
                 if (result.outcome !is Outcome.Done) {
                     return result
                 }
@@ -100,7 +102,7 @@ class DividedDamageExecutor(
                 context
             )
             if (pause != null) return pause
-            return dealDamageToTarget(readyState, targets.first(), total, context.sourceId)
+            return dealDamageToTarget(zones, readyState, targets.first(), total, context.sourceId)
         }
         return createDistributionDecision(state, effect, context, targets, total)
     }

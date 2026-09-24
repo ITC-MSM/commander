@@ -4,6 +4,7 @@ import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ExecutorModule
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GainAllActivatedAbilitiesOfExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantActivatedAbilityExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantActivatedAbilityToGroupExecutor
@@ -51,6 +52,7 @@ import com.wingedsheep.engine.handlers.effects.permanent.protection.ChooseColorT
 import com.wingedsheep.engine.handlers.effects.permanent.protection.GrantCantBeBlockedByChosenColorExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.protection.GrantHexproofFromChosenColorExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.protection.GrantProtectionFromChosenColorExecutor
+import com.wingedsheep.engine.handlers.effects.permanent.protection.GrantProtectionsSharedByGroupExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.protection.GrantProtectionFromChosenCardTypeExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.stats.ModifyStatsExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.stats.SwitchPowerToughnessExecutor
@@ -113,6 +115,7 @@ import com.wingedsheep.engine.registry.CardRegistry
  *  - `protection/` — color protection
  */
 class PermanentExecutors(
+    private val zones: ZoneTransitionService,
     private val decisionHandler: DecisionHandler = DecisionHandler(),
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator(),
     private val cardRegistry: CardRegistry
@@ -197,10 +200,10 @@ class PermanentExecutors(
         MassAnimateExecutor(),
         SetCreatureSubtypesExecutor(),
         SetGroupCreatureSubtypesExecutor(),
-        TransformEffectExecutor(cardRegistry),
-        ReturnSelfFromExileTransformedExecutor(cardRegistry),
-        ReturnSelfFromZoneTransformedExecutor(cardRegistry),
-        ExileAndReturnTransformedExecutor(cardRegistry),
+        TransformEffectExecutor(zones, cardRegistry),
+        ReturnSelfFromExileTransformedExecutor(zones, cardRegistry),
+        ReturnSelfFromZoneTransformedExecutor(zones, cardRegistry),
+        ExileAndReturnTransformedExecutor(zones, cardRegistry),
         TurnFaceDownExecutor(),
         TurnFaceUpExecutor(cardRegistry),
         RevealFaceDownPermanentExecutor(),
@@ -231,7 +234,7 @@ class PermanentExecutors(
         LevelUpClassExecutor(staticAbilityHandler),
         IncrementAbilityResolutionCountExecutor(),
         MarkEnduringReturnExecutor(),
-        ExploreEffectExecutor(recursion),
+        ExploreEffectExecutor(zones, recursion),
         EmitExploredEventExecutor(),
         // connive (CR 701.50) — same shape as explore: the executor consults
         // ModifyKeywordAction replacements and delegates the pipeline through [recursion]
@@ -253,6 +256,7 @@ class PermanentExecutors(
         ChooseColorThenExecutor(decisionHandler),
         GrantHexproofFromChosenColorExecutor(),
         GrantProtectionFromChosenColorExecutor(),
+        GrantProtectionsSharedByGroupExecutor(),
         GrantProtectionFromChosenCardTypeExecutor(),
         GrantCantBeBlockedByChosenColorExecutor()
     )

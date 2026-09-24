@@ -1,4 +1,5 @@
 package com.wingedsheep.engine.handlers.effects.library
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.sdk.dsl.Patterns
 
 import com.wingedsheep.engine.handlers.EffectContext
@@ -61,8 +62,9 @@ class ReturnLinkedExilePipelineTest : FunSpec({
 
     fun createRegistry(): EffectExecutorRegistry {
         val cardRegistry = com.wingedsheep.engine.registry.CardRegistry()
-        val registry = EffectExecutorRegistry(cardRegistry = cardRegistry)
-        registry.registerModule(LibraryExecutors(cardRegistry))
+        val zones = ZoneTransitionService(cardRegistry)
+        val registry = EffectExecutorRegistry(zones, cardRegistry = cardRegistry)
+        registry.registerModule(LibraryExecutors(zones, cardRegistry))
         return registry
     }
 

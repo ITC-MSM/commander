@@ -137,6 +137,16 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
     phases.push({ type: 'xSelection' })
   }
 
+  // 1b. "You may pay any amount of mana" as an additional cost (Chorus of the Conclave). Announced
+  //     with the other cast-time values (CR 601.2b) and before any mana is picked, since it raises
+  //     the total cost. Skipped when there is nothing left over to pay with.
+  if (
+    actionInfo.action.type === 'CastSpell' &&
+    (actionInfo.maxAdditionalManaForCounters ?? 0) > 0
+  ) {
+    phases.push({ type: 'additionalManaForCounters' })
+  }
+
   // 2. Delve
   //    Push when there's any generic mana that delve could pay for — either
   //    printed generic (Murderous Cut's {4}{B}) or generic that appears once an X
@@ -357,6 +367,13 @@ export function mergeResult(
             distributedCounterRemovals: [...result.distributedCounterRemovals],
           },
         }
+      }
+      return action
+    }
+
+    case 'additionalManaForCounters': {
+      if (action.type === 'CastSpell' && result.amount > 0) {
+        return { ...action, additionalManaForCounters: result.amount }
       }
       return action
     }
@@ -654,6 +671,18 @@ export function enterPhase(
         ...(fixedTotal && fixedTotal > 0
           ? { requiredTotal: fixedTotal, description: actionInfo.additionalCostInfo!.description }
           : {}),
+      })
+      break
+    }
+
+    case 'additionalManaForCounters': {
+      store.startXSelection({
+        actionInfo,
+        cardName: actionInfo.description.replace(/^Cast /, ''),
+        minX: 0,
+        maxX: actionInfo.maxAdditionalManaForCounters ?? 0,
+        selectedX: 0,
+        isAdditionalManaForCounters: true,
       })
       break
     }

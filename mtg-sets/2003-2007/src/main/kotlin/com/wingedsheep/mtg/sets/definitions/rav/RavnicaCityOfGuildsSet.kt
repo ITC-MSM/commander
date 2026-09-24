@@ -19,7 +19,6 @@ object RavnicaCityOfGuildsSet : MtgSet {
     override val displayName = "Ravnica: City of Guilds"
     override val releaseDate = "2005-10-07"
     override val block = "Ravnica"
-    override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)

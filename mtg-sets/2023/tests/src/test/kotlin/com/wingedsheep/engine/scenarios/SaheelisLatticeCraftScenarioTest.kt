@@ -231,7 +231,7 @@ class SaheelisLatticeCraftScenarioTest : FunSpec({
         driver.state.getEntity(saheeli)!!.get<CardComponent>()!!.name shouldBe "Mastercraft Raptor"
 
         // Send Mastercraft Raptor to the graveyard (any leave-battlefield event will do).
-        val transition = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val transition = driver.zones.moveToZone(
             state = driver.state,
             entityId = saheeli,
             destinationZone = Zone.GRAVEYARD

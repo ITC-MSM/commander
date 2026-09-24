@@ -72,7 +72,7 @@ class StateBasedContinuationResumer(
         for (entityId in toRemove) {
             val container = newState.getEntity(entityId) ?: continue
             val cardComponent = container.get<CardComponent>() ?: continue
-            val result = SbaZoneMovementHelper.putPermanentInGraveyard(newState, entityId, cardComponent)
+            val result = SbaZoneMovementHelper.putPermanentInGraveyard(services.zones, newState, entityId, cardComponent)
             newState = result.newState
             events.addAll(result.events)
         }
@@ -103,7 +103,7 @@ class StateBasedContinuationResumer(
             }
             // Move to the command zone. ZoneTransitionService strips the asked marker on the
             // way (every commander zone change clears it), so the SBA will not re-prompt.
-            val result = ZoneTransitionService.moveToZone(
+            val result = services.zones.moveToZone(
                 state,
                 continuation.commanderId,
                 Zone.COMMAND,

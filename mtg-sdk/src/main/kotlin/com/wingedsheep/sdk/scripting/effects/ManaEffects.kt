@@ -253,9 +253,22 @@ data class AddManaOfChoiceEffect(
      *
      * The *color* is still chosen by the ability's controller, not by the recipient: "Choose a
      * color. Target player adds three mana of the chosen color …" names no other chooser, so the
-     * choice falls to the controller (CR 608.2). Only the pool the mana is added to moves.
+     * choice falls to the controller (CR 608.2). Only the pool the mana is added to moves —
+     * unless [colorChosenByRecipient] hands the choice over too.
+     *
+     * A non-targeting recipient keeps a mana ability a mana ability: Spectral Searchlight's
+     * "Choose a player. That player adds one mana of any color they choose" points this at a
+     * player picked mid-resolution (`EffectTarget.PipelineTarget`).
      */
     val recipient: EffectTarget = EffectTarget.Controller,
+    /**
+     * When `true`, the [recipient] — not the ability's controller — chooses the color: "that player
+     * adds one mana of any color **they choose**" (Spectral Searchlight). The choice is then made
+     * at resolution by the recipient, never pre-supplied at activation, so an activation-time
+     * `manaColorChoice` is ignored for such an ability. Irrelevant while [recipient] is the
+     * controller (the same player chooses either way).
+     */
+    val colorChosenByRecipient: Boolean = false,
 ) : Effect {
     constructor(colorSet: ManaColorSet, amount: Int, restriction: ManaRestriction? = null) :
         this(colorSet, DynamicAmount.Fixed(amount), restriction)
@@ -267,6 +280,7 @@ data class AddManaOfChoiceEffect(
         }
         if (recipient == EffectTarget.Controller) append("Add $amountText ${colorSet.description}")
         else append("${recipient.description} adds $amountText ${colorSet.description}")
+        if (colorChosenByRecipient && recipient != EffectTarget.Controller) append(" they choose")
         if (restriction != null && restriction.description.isNotEmpty()) append(". ${restriction.description}")
         for (rider in riders) append(". ${rider.description}")
     }

@@ -314,6 +314,43 @@ data class GrantKeywordToOwnSpells(
 }
 
 /**
+ * "As an additional cost to cast [spellFilter] spells, you may pay any amount of mana. If you do,
+ * that creature enters with that many additional [counterType] counters on it." (Chorus of the
+ * Conclave.)
+ *
+ * While a permanent with this ability is on the battlefield, every matching spell its controller
+ * casts carries an optional *additional* cost of `{N}` generic mana, for an N the caster announces
+ * while casting (CR 601.2b) — zero declines it. The payment rides the cast action
+ * (`CastSpell.additionalManaForCounters`), is added on top of whatever else pays for the spell (an
+ * additional cost survives a free or alternative cast, CR 601.2f), and is recorded on the spell; the
+ * permanent the spell becomes enters with N more [counterType] counters.
+ *
+ * The ability matters only **as the spell is cast** (rulings): it does nothing for a creature put
+ * onto the battlefield by an effect, and the source must already be on the battlefield — it can't
+ * pay for itself. Once paid, the counters are the spell's: they arrive even if the source has left
+ * the battlefield by the time the spell resolves. Scoped to the source's controller ("you").
+ *
+ * @property spellFilter Which spells may take the payment (Chorus: creature spells).
+ * @property counterType The counter placed once per mana paid.
+ */
+@SerialName("AdditionalManaForEntryCounters")
+@Serializable
+data class AdditionalManaForEntryCounters(
+    val spellFilter: GameObjectFilter = GameObjectFilter.Creature,
+    val counterType: com.wingedsheep.sdk.scripting.events.CounterTypeFilter =
+        com.wingedsheep.sdk.scripting.events.CounterTypeFilter.PlusOnePlusOne
+) : StaticAbility {
+    override val description: String =
+        "As an additional cost to cast ${spellFilter.description} spells, you may pay any amount of mana. " +
+            "If you do, that creature enters with that many additional ${counterType.description} counters on it"
+
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = spellFilter.applyTextReplacement(replacer)
+        return if (newFilter !== spellFilter) copy(spellFilter = newFilter) else this
+    }
+}
+
+/**
  * Grants **web-slinging [cost]** (CR 702.188) to spells the controller casts that match
  * [spellFilter]. Web-slinging carries a [ManaCost], which the generic [GrantKeywordToOwnSpells]
  * (keyword + optional int) cannot express, so it gets its own static. Read by the web-slinging cast
@@ -905,16 +942,30 @@ data class PlayersCantCastSpells(
  *    ("During your turn, your opponents can't activate abilities of artifacts, creatures, or
  *    enchantments.")
  *
+ * Two further axes, both off by default:
+ *  - [nonManaAbilitiesOnly] exempts mana abilities ("… abilities that aren't mana abilities").
+ *  - [anyZone] extends the prohibition past the battlefield to abilities of cards in any zone —
+ *    graveyard and hand abilities, cycling, and the crew/saddle actions — for the unqualified
+ *    "players can't activate abilities" wording. Off, it speaks of permanents only.
+ *
+ *  - Yuriko, Blade of the Mighty's activate clause: `PlayersCantActivateAbilities(Player.Each,
+ *    condition = IsInPhase(COMBAT, yoursOnly = false), nonManaAbilitiesOnly = true, anyZone = true)`
+ *    ("During combat, players can't … activate abilities that aren't mana abilities.")
+ *
  * @property affected Who is forbidden, relative to the source's controller.
  * @property permanentFilter Which permanents' abilities are forbidden (matched against the source).
  * @property condition Optional timing/state gate, evaluated in the controller's context; null = always.
+ * @property nonManaAbilitiesOnly When true, mana abilities stay activatable.
+ * @property anyZone When true, abilities of cards outside the battlefield are forbidden too.
  */
 @SerialName("PlayersCantActivateAbilities")
 @Serializable
 data class PlayersCantActivateAbilities(
     val affected: Player = Player.EachOpponent,
     val permanentFilter: GameObjectFilter = GameObjectFilter.Any,
-    val condition: Condition? = null
+    val condition: Condition? = null,
+    val nonManaAbilitiesOnly: Boolean = false,
+    val anyZone: Boolean = false
 ) : StaticAbility {
     override val description: String = buildString {
         when (condition) {
@@ -928,8 +979,9 @@ data class PlayersCantActivateAbilities(
             else -> append("${affected.description} can't activate ")
         }
         append(
-            if (permanentFilter == GameObjectFilter.Any) "activated abilities"
-            else "abilities of ${permanentFilter.description}"
+            if (permanentFilter == GameObjectFilter.Any) {
+                if (nonManaAbilitiesOnly) "abilities that aren't mana abilities" else "activated abilities"
+            } else "abilities of ${permanentFilter.description}"
         )
         when (condition) {
             is IsYourTurn, is IsNotYourTurn, null -> {}

@@ -13,7 +13,18 @@ export function XCostSelector() {
 
   if (!xSelectionState) return null
 
-  const { cardName, minX, maxX, selectedX, isRepeatCount } = xSelectionState
+  const { cardName, minX, maxX, selectedX, isRepeatCount, isAdditionalManaForCounters } = xSelectionState
+  const title = isAdditionalManaForCounters
+    ? 'Pay Extra Mana for +1/+1 Counters?'
+    : isRepeatCount
+      ? 'Activate How Many Times?'
+      : 'Choose X Value'
+  const valueLabel = isAdditionalManaForCounters ? 'Extra mana =' : isRepeatCount ? 'Times =' : 'X ='
+  const maxLabel = isAdditionalManaForCounters
+    ? 'Each extra mana adds a +1/+1 counter. Maximum'
+    : isRepeatCount
+      ? 'Maximum activations'
+      : 'Maximum X'
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateXValue(parseInt(e.target.value, 10))
@@ -34,11 +45,11 @@ export function XCostSelector() {
   return (
     <div style={styles.overlay}>
       <div style={styles.container}>
-        <h2 style={styles.title}>{isRepeatCount ? 'Activate How Many Times?' : 'Choose X Value'}</h2>
+        <h2 style={styles.title}>{title}</h2>
         <p style={styles.cardName}>{cardName}</p>
 
         <div style={styles.valueDisplay}>
-          <span style={styles.xLabel}>{isRepeatCount ? 'Times =' : 'X ='}</span>
+          <span style={styles.xLabel}>{valueLabel}</span>
           <span style={styles.xValue}>{selectedX}</span>
         </div>
 
@@ -78,7 +89,7 @@ export function XCostSelector() {
         </div>
 
         <p style={styles.manaInfo}>
-          {isRepeatCount ? 'Maximum activations' : 'Maximum X'}: {maxX}
+          {maxLabel}: {maxX}
         </p>
 
         <div style={styles.buttonRow}>

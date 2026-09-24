@@ -194,7 +194,8 @@
                                     "zone": "Library",
                                     "filter": "basicland"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -5190,7 +5191,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -6870,7 +6872,8 @@
                                         "zone": "Library",
                                         "filter": "basicland"
                                     },
-                                    "storeAs": "searchable"
+                                    "storeAs": "searchable",
+                                    "search": true
                                 },
                                 {
                                     "type": "SelectFromCollection",
@@ -7256,7 +7259,8 @@
                         "zone": "Library",
                         "filter": "land"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -12253,7 +12257,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -12300,7 +12305,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -12586,7 +12592,8 @@
                                 "zone": "Library",
                                 "filter": "Lesson|Noble"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -15037,7 +15044,8 @@
                                     },
                                     "filter": "basicland"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -16981,7 +16989,8 @@
                         "zone": "Library",
                         "filter": "basicland"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -18581,7 +18590,8 @@
                                 "zone": "Library",
                                 "filter": "Mountain|Cave"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -18760,7 +18770,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -19946,7 +19957,8 @@
                                     ]
                                 }
                             },
-                            "storeAs": "sozinMatches"
+                            "storeAs": "sozinMatches",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -21622,7 +21634,8 @@
                                             "zone": "Library",
                                             "filter": "basicland"
                                         },
-                                        "storeAs": "searchable"
+                                        "storeAs": "searchable",
+                                        "search": true
                                     },
                                     {
                                         "type": "SelectFromCollection",

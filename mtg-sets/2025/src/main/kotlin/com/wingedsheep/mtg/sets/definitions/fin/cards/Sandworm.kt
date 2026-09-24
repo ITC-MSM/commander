@@ -65,6 +65,7 @@ val Sandworm = card("Sandworm") {
                             filter = GameObjectFilter.BasicLand,
                         ),
                         storeAs = "searchable",
+                        search = true,
                     ),
                     SelectFromCollectionEffect(
                         from = "searchable",

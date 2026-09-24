@@ -12,6 +12,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -48,6 +49,7 @@ import com.wingedsheep.engine.core.Outcome
  * ≤ threshold and keeps the discovered card on the non-cast branch.
  */
 class DiscoverExecutor(
+    private val zones: ZoneTransitionService,
     /** Runs a [DiscoverEffect.thenEffect] through the registry (the late-bound recursion entry). */
     private val runEffect: (GameState, Effect, EffectContext) -> EffectResult,
     private val decisionHandler: DecisionHandler = DecisionHandler()
@@ -113,7 +115,7 @@ class DiscoverExecutor(
         )
 
         for (cardId in exiledCards) {
-            val result = ZoneMovementUtils.moveCardToZone(currentState, cardId, Zone.EXILE)
+            val result = ZoneMovementUtils.moveCardToZone(zones, currentState, cardId, Zone.EXILE)
             if (result.outcome is Outcome.Done) {
                 currentState = result.state
                 allEvents.addAll(result.events)
@@ -123,7 +125,7 @@ class DiscoverExecutor(
         if (discoveredCard == null) {
             // Library exhausted without exiling a nonland card with mana value ≤ N — no castable
             // stopping card, so no may-cast/hand decision; every exiled card is bottom-randomized.
-            val bottomEvents = CascadeExecutor.bottomRandomize(currentState, controllerId, exiledCards) { newState ->
+            val bottomEvents = CascadeExecutor.bottomRandomize(zones, currentState, controllerId, exiledCards) { newState ->
                 currentState = newState
             }
             // CR 701.57c: the final card exiled is still the "discovered card" if its mana value is

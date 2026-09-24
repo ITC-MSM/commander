@@ -146,8 +146,10 @@ class LegacySuspensionMigrationTest : ScenarioTestBase() {
             // reader lifts them (LegacyTriggerContextLift) — all null here, so they simply fold away.
             val capturedAnswer = LegacyTriggerContextLift.lift(JsonObject(original[0].jsonObject - "decisionId")).jsonObject
             restrictTo(saved.getValue("answer"), capturedAnswer) shouldBe capturedAnswer
-            migrated.last().jsonObject.getValue("question") shouldBe
-                fixtureObject("suspended-mana-window", "state.json").getValue("pendingDecision")
+            // Same rule for the pending question: fields added to the decision since the capture
+            // (ChooseColorDecision.maxColors) decode to their defaults, so compare the captured shape.
+            val capturedQuestion = fixtureObject("suspended-mana-window", "state.json").getValue("pendingDecision")
+            restrictTo(migrated.last().jsonObject.getValue("question"), capturedQuestion) shouldBe capturedQuestion
         }
 
         test("legacy combat question is retained once and the duplicate answer shape is removed") {
@@ -309,6 +311,7 @@ class LegacySuspensionMigrationTest : ScenarioTestBase() {
         private val POST_CAPTURE_FIELDS = setOf(
             "objectIdentities", "nextObjectGeneration", "zoneReturns", "pendingTriggers",
             "playersDealtNoncombatDamageThisTurn", "playersDealtNoncombatDamageLastTurn",
+            "pendingReplacementRiders",
         )
     }
 }

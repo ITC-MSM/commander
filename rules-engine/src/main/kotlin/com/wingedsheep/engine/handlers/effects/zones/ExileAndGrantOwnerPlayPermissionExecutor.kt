@@ -19,7 +19,7 @@ import kotlin.reflect.KClass
  * as it remains exiled. Optionally adds a generic tax when the owner is an opponent
  * of the effect controller.
  */
-class ExileAndGrantOwnerPlayPermissionExecutor : EffectExecutor<ExileAndGrantOwnerPlayPermissionEffect> {
+class ExileAndGrantOwnerPlayPermissionExecutor(private val zones: ZoneTransitionService) : EffectExecutor<ExileAndGrantOwnerPlayPermissionEffect> {
 
     override val effectType: KClass<ExileAndGrantOwnerPlayPermissionEffect> =
         ExileAndGrantOwnerPlayPermissionEffect::class
@@ -34,7 +34,7 @@ class ExileAndGrantOwnerPlayPermissionExecutor : EffectExecutor<ExileAndGrantOwn
         val ownerId = state.getEntity(targetId)?.get<CardComponent>()?.ownerId
             ?: return EffectResult.error(state, "Could not resolve owner of exiled target")
 
-        val transition = ZoneTransitionService.moveToZone(state, targetId, Zone.EXILE)
+        val transition = zones.moveToZone(state, targetId, Zone.EXILE)
 
         val (permId, stateWithId) = transition.state.newEntity()
         var newState = stateWithId.addMayPlayPermission(

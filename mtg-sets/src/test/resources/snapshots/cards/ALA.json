@@ -3354,7 +3354,8 @@
                                     "zone": "Library",
                                     "filter": "creature mv<=1"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

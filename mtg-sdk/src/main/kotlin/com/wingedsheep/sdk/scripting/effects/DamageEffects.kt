@@ -42,7 +42,16 @@ data class DealDamageEffect(
      * When true and the target is a creature, damage in excess of lethal (CR 120.4a) is dealt to
      * that creature's controller instead (Gandalf's Sanction).
      */
-    val excessToController: Boolean = false
+    val excessToController: Boolean = false,
+    /**
+     * When set, the excess damage (CR 120.4a) this effect deals to its single permanent target —
+     * above lethal for a creature, above loyalty for a planeswalker, above defense for a battle —
+     * is stored into this pipeline number variable for a following effect to read via
+     * `DynamicAmount.VariableReference`. 0 when no excess was dealt (including when the damage was
+     * prevented or the target is gone). Violent Echoes: "If excess damage was dealt to that
+     * permanent this way, empower Jace X, where X is that excess damage."
+     */
+    val excessDamageVariable: String? = null
 ) : Effect {
     /** Convenience constructor for fixed amounts */
     constructor(amount: Int, target: EffectTarget, cantBePrevented: Boolean = false, damageSource: EffectTarget? = null)

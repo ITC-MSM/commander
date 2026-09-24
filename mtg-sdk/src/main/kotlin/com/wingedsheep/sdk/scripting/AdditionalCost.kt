@@ -519,6 +519,14 @@ data class AdditionalCostPayment(
      */
     val revealedCards: List<EntityId> = emptyList(),
 
+    /**
+     * Cards put from hand on top of the library for a
+     * [com.wingedsheep.sdk.scripting.costs.CostAtom.PutFromHandOnTopOfLibrary] cost (Leashling),
+     * in the order chosen — the last one ends up on top. Its own channel rather than
+     * [discardedCards] because the move is not a discard (no discard trigger, no madness).
+     */
+    val cardsPutOnLibrary: List<EntityId> = emptyList(),
+
     /** Permanents that were tapped */
     val tappedPermanents: List<EntityId> = emptyList(),
 
@@ -557,6 +565,7 @@ data class AdditionalCostPayment(
                 variableCostPermanents.isEmpty() &&
                 beheldCards.isEmpty() &&
                 revealedCards.isEmpty() &&
+                cardsPutOnLibrary.isEmpty() &&
                 tappedPermanents.isEmpty() &&
                 bouncedPermanents.isEmpty() &&
                 blightTargets.isEmpty() &&

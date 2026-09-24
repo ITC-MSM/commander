@@ -1223,6 +1223,12 @@ class ManaSolver(
 
                 val manaEffect = manaProducingEffect(ability.effect, state, entityId, playerId)
 
+                // A mana ability whose mana goes to a player picked as it resolves (Spectral
+                // Searchlight: "Choose a player. That player adds …") isn't an auto-pay source:
+                // who gets the mana, and who picks its color, are real decisions the fast path
+                // can't make on the player's behalf. It stays activatable by hand.
+                if (manaEffect is AddManaOfChoiceEffect && manaEffect.recipient != EffectTarget.Controller) continue
+
                 // A dynamic amount that evaluates to zero right now — Gaea's Cradle with no
                 // creatures, Marwyn the Nurturer at 0 power, Quintorius Kand with nothing exiled —
                 // adds no mana at all, even though the ability stays activatable. Skip the ability

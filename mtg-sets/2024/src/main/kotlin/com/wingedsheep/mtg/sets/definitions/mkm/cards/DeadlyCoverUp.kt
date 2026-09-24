@@ -68,6 +68,7 @@ val DeadlyCoverUp = card("Deadly Cover-Up") {
                         filter = GameObjectFilter.Any.namedFromVariable(cardName.key),
                     ),
                     name = "matches",
+                    search = true,
                 )
                 val selected = chooseAnyNumber(
                     from = matches,

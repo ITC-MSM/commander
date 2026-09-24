@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.effects.permanent.types
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CraftedFromExiledComponent
@@ -31,6 +32,7 @@ import kotlin.reflect.KClass
  * the back face are dispatched normally by the `ZoneChangeEvent` emitted from the move.
  */
 class ReturnSelfFromExileTransformedExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry
 ) : EffectExecutor<ReturnSelfFromExileTransformedEffect> {
 
@@ -55,6 +57,7 @@ class ReturnSelfFromExileTransformedExecutor(
         // BATTLEFIELD under owner's control. The shared helper handles the face swap + zone move
         // (it is also used by the FIN Dominant exile-and-return-transformed effect).
         val transition = returnDfcFace(
+            zones,
             state, cardRegistry, sourceId, DoubleFacedComponent.Face.BACK
         )
         var newState = transition.state

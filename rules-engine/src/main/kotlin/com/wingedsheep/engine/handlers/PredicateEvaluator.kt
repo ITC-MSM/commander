@@ -74,7 +74,14 @@ import com.wingedsheep.engine.state.components.stack.TargetsComponent
  * - ControllerPredicate (youControl, opponentControls)
  * - GameObjectFilter (composed from the above predicates)
  */
-class PredicateEvaluator {
+class PredicateEvaluator(
+    /**
+     * Printed definitions, for the few predicates that read a candidate's script rather than its
+     * components (an Aura's enchant restriction for [CardPredicate.CouldEnchant]). Those predicates
+     * fail closed on an evaluator built without one.
+     */
+    private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry? = null
+) {
 
     /**
      * Evaluate a GameObjectFilter against an entity using projected state.
@@ -289,6 +296,7 @@ class PredicateEvaluator {
             is CardPredicate.PowerAtLeast,
             CardPredicate.PowerAtLeastX,
             is CardPredicate.PowerAtMost,
+            is CardPredicate.CouldEnchant,
             is CardPredicate.PowerAtMostEntity,
             is CardPredicate.PowerEquals,
             is CardPredicate.PowerEqualsDynamic,
@@ -878,6 +886,19 @@ class PredicateEvaluator {
                     ?: return false
                 val candidatePower = projectedValues?.power ?: card.baseStats?.basePower ?: 0
                 candidatePower > refPower
+            }
+
+            // "An Aura card that could enchant it" (Auratouched Mage). Reads the candidate's printed
+            // enchant restriction off its definition and evaluates it against the referenced
+            // permanent — the same reading the enchant SBA uses. Fails closed with no registry.
+            is CardPredicate.CouldEnchant -> {
+                if (!card.typeLine.isAura) return false
+                val hostId = resolveEntityReference(state, predicate.reference, context, projected) ?: return false
+                val registry = cardRegistry ?: return false
+                com.wingedsheep.engine.handlers.predicates.EnchantRestriction.couldAttach(
+                    state, projected, this, registry, entityId, card, hostId,
+                    controllerId = context?.controllerId ?: return false
+                )
             }
 
             is CardPredicate.PowerAtMostEntity -> {
@@ -1824,6 +1845,16 @@ class PredicateEvaluator {
                 container.has<com.wingedsheep.engine.state.components.combat.BlockedOrWasBlockedByLegendaryThisTurnComponent>()
             }
 
+            // "…that blocked or were blocked by it this turn" (Gaze of the Gorgon) — the candidate's
+            // own turn-scoped partner record, so it still matches after the referenced creature
+            // has left the battlefield.
+            is StatePredicate.BlockedOrWasBlockedByEntityThisTurn -> {
+                val referenced = resolveEntityReference(state, predicate.reference, context, projected)
+                referenced != null &&
+                    container.get<com.wingedsheep.engine.state.components.combat.CombatPartnersThisTurnComponent>()
+                        ?.partnerIds?.contains(referenced) == true
+            }
+
             // Face-down state
             StatePredicate.IsFaceDown -> container.has<FaceDownComponent>()
             StatePredicate.IsFaceUp -> !container.has<FaceDownComponent>()
@@ -2248,6 +2279,7 @@ class PredicateEvaluator {
             is CardPredicate.PowerOrToughnessAtMost,
             is CardPredicate.TotalPowerAndToughnessAtMost,
             is CardPredicate.PowerGreaterThanEntity,
+            is CardPredicate.CouldEnchant,
             is CardPredicate.PowerAtMostEntity,
             is CardPredicate.PowerLessThanEntity,
             CardPredicate.PowerGreaterThanBase,

@@ -11,6 +11,7 @@ import com.wingedsheep.engine.core.SubmitDecision
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
@@ -108,7 +109,7 @@ class OpponentDeciderChoiceTest : FunSpec({
         )
 
         // First pause: the CONTROLLER is asked which opponent decides, one option per opponent.
-        val first = EffectExecutorRegistry(cardRegistry = registry).execute(state, effect, context)
+        val first = EffectExecutorRegistry(ZoneTransitionService(registry), cardRegistry = registry).execute(state, effect, context)
         (first.outcome is Outcome.Paused) shouldBe true
         val deciderPick = first.state.pendingDecision
         deciderPick.shouldNotBeNull()
@@ -153,7 +154,7 @@ class OpponentDeciderChoiceTest : FunSpec({
             pipeline = PipelineState(storedCollections = mapOf("faceUp" to pileA, "faceDown" to pileB))
         )
 
-        val result = EffectExecutorRegistry(cardRegistry = registry).execute(state, effect, context)
+        val result = EffectExecutorRegistry(ZoneTransitionService(registry), cardRegistry = registry).execute(state, effect, context)
         (result.outcome is Outcome.Paused) shouldBe true
         val decision = result.state.pendingDecision
         decision.shouldNotBeNull()
@@ -184,7 +185,7 @@ class OpponentDeciderChoiceTest : FunSpec({
             pipeline = PipelineState(storedCollections = mapOf("looked" to cards))
         )
 
-        val first = EffectExecutorRegistry(cardRegistry = registry).execute(state, effect, context)
+        val first = EffectExecutorRegistry(ZoneTransitionService(registry), cardRegistry = registry).execute(state, effect, context)
         (first.outcome is Outcome.Paused) shouldBe true
         val deciderPick = first.state.pendingDecision
         deciderPick.shouldNotBeNull()
@@ -233,7 +234,7 @@ class OpponentDeciderChoiceTest : FunSpec({
         )
 
         val processor = ActionProcessor(registry)
-        val first = EffectExecutorRegistry(cardRegistry = registry).execute(state, composite, context)
+        val first = EffectExecutorRegistry(ZoneTransitionService(registry), cardRegistry = registry).execute(state, composite, context)
 
         // Step 1: decider pick, then the selection itself.
         val pick1 = first.state.pendingDecision

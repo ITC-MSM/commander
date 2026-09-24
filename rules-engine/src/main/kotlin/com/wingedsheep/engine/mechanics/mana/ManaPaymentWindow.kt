@@ -10,6 +10,7 @@ import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.ReopenManaPaymentDecisionContinuation
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.core.GameEvent
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
@@ -120,6 +121,7 @@ object ManaPaymentWindow {
      * its "didn't pay" branch either way.
      */
     fun floatSelectedMana(
+        zones: ZoneTransitionService,
         state: GameState,
         playerId: EntityId,
         cost: com.wingedsheep.sdk.core.ManaCost,
@@ -157,7 +159,7 @@ object ManaPaymentWindow {
             val byId = availableSources.associateBy { it.entityId }
             for (sourceId in response.selectedSources) {
                 val source = byId[sourceId] ?: return FloatResult(state, emptyList(), paid = false)
-                val tapped = tapOrSacrifice(current, sourceId, source, playerId)
+                val tapped = tapOrSacrifice(zones, current, sourceId, source, playerId)
                 current = tapped.first
                 events.addAll(tapped.second)
                 produced = when {
@@ -177,6 +179,7 @@ object ManaPaymentWindow {
      * either way so "becomes tapped" triggers see the tap sub-cost.
      */
     private fun tapOrSacrifice(
+        zones: ZoneTransitionService,
         state: GameState,
         sourceId: EntityId,
         source: ManaSourceOption,
@@ -198,8 +201,7 @@ object ManaPaymentWindow {
         )
         val preState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
             .trackPermanentSacrifice(state, listOf(sourceId), controller)
-        val transition = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-            .moveToZone(preState, sourceId, com.wingedsheep.sdk.core.Zone.GRAVEYARD)
+        val transition = zones.moveToZone(preState, sourceId, com.wingedsheep.sdk.core.Zone.GRAVEYARD)
         events.add(com.wingedsheep.engine.core.PermanentsSacrificedEvent(controller, listOf(sourceId)))
         events.addAll(transition.events)
         return transition.state to events
