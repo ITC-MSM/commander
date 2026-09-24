@@ -267,6 +267,13 @@ class CardBuilder(private val name: String) {
     var auraTarget: TargetRequirement? = null
 
     /**
+     * A narrower requirement the Aura spell's target must meet only as it is cast (Dream Leash:
+     * "You can't choose an untapped permanent as this spell's target as you cast it"). Leave
+     * [auraTarget] as the printed enchant restriction; this only narrows the cast-time choice.
+     */
+    var auraCastTarget: TargetRequirement? = null
+
+    /**
      * Morph cost as a mana cost string (e.g., "{2}{U}").
      * When set, the card gains the Morph keyword ability with a mana cost.
      * For non-mana morph costs (e.g., pay life), use [morphCost] instead.
@@ -944,6 +951,7 @@ class CardBuilder(private val name: String) {
             additionalCosts = additionalCosts.toList(),
             spellWaterbend = spellWaterbend,
             auraTarget = auraTarget,
+            auraCastTarget = auraCastTarget,
             castRestrictions = spellBuilder?.restrictions ?: emptyList(),
             castTimeCreatureTypeChoice = castTimeCreatureTypeChoice,
             cantBeCountered = cantBeCountered,

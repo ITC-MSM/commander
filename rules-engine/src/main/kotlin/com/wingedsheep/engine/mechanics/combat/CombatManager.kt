@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.mechanics.combat
 
 import com.wingedsheep.engine.core.*
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.*
@@ -31,6 +32,7 @@ import com.wingedsheep.engine.mechanics.combat.rules.defaultBlockEvasionRules
  * 5. End of combat step
  */
 class CombatManager(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val manaAbilitySideEffectExecutor: com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor,
     private val damageCalculator: DamageCalculator = DamageCalculator(cardRegistry),
@@ -40,7 +42,7 @@ class CombatManager(
 ) {
     internal val attackPhase = AttackPhaseManager(cardRegistry, attackRestrictionRules, attackDefenderRules, manaAbilitySideEffectExecutor)
     internal val blockPhase = BlockPhaseManager(cardRegistry, blockEvasionRules, manaAbilitySideEffectExecutor)
-    private val damagePhase = CombatDamageManager(cardRegistry, damageCalculator)
+    private val damagePhase = CombatDamageManager(zones, cardRegistry, damageCalculator)
 
     // =========================================================================
     // Declare Attackers

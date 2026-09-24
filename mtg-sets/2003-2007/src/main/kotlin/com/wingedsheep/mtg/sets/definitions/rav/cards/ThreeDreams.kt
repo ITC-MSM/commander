@@ -44,7 +44,8 @@ val ThreeDreams = card("Three Dreams") {
                     Player.You,
                     GameObjectFilter.Enchantment.withSubtype("Aura")
                 ),
-                storeAs = "searchable"
+                storeAs = "searchable",
+                search = true
             ),
             SelectFromCollectionEffect(
                 from = "searchable",

@@ -9,6 +9,7 @@ import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.handlers.actions.special.ConcedeHandler
 import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.StateBasedActionChecker
 import com.wingedsheep.engine.mechanics.combat.CombatDefenders
 import com.wingedsheep.engine.registry.CardRegistry
@@ -51,8 +52,9 @@ class TeamVsTeamTest : FunSpec({
     val forest = "Forest"
 
     fun registry(): CardRegistry = CardRegistry().also { it.register(TestCards.all) }
+    val zones = ZoneTransitionService(registry())
 
-    fun checker() = StateBasedActionChecker(cardRegistry = registry())
+    fun checker() = StateBasedActionChecker(zones, cardRegistry = registry())
 
     fun boot(
         format: Format = Format.TeamVsTeam(),

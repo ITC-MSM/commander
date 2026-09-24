@@ -621,7 +621,8 @@
                         "zone": "Library",
                         "filter": "basicland"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -833,7 +834,8 @@
                                 "zone": "Library",
                                 "filter": "creature"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -1089,7 +1091,8 @@
                                     "zone": "Library",
                                     "filter": "artifact"
                                 },
-                                "storeAs": "hoardSearchable"
+                                "storeAs": "hoardSearchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -2007,7 +2010,8 @@
                                     "zone": "Library",
                                     "filter": "basicland"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

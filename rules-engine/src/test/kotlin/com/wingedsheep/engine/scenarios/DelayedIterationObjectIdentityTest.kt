@@ -50,7 +50,7 @@ class DelayedIterationObjectIdentityTest : FunSpec({
                 val destination = if (sacrifice) Zone.GRAVEYARD else Zone.HAND
                 val cleanup = if (sacrifice) Effects.SacrificeTarget(EffectTarget.Self)
                     else Effects.ReturnToHand(EffectTarget.Self)
-                val result = EffectExecutorRegistry(cardRegistry = d.cardRegistry).execute(d.state,
+                val result = EffectExecutorRegistry(d.zones, cardRegistry = d.cardRegistry).execute(d.state,
                     ForEachInCollectionEffect("cleanup", CreateDelayedTriggerEffect(step = Step.END, effect = cleanup)),
                     EffectContext(sourceId = source, controllerId = d.player1,
                         objectReferences = ObjectReferenceEnvironment(captured = true,

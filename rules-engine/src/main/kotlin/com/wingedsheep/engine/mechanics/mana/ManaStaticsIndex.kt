@@ -53,7 +53,7 @@ class ManaStaticsIndex private constructor(
      *
      * This is now the single source for both the solver and the mana-ability *labeller*
      * (`ManaAbilityEnumerator`), which each carried their own copy of the scan. It must stay in
-     * sync with `ActivateAbilityHandler.findEnchantedLandManaColorOverride`, which resolves the
+     * sync with `ActivatedManaAbilityResolver.findEnchantedLandManaColorOverride`, which resolves the
      * same override once per activation — if they disagree, the label, the affordability check and
      * the mana actually produced drift apart.
      */

@@ -41,7 +41,8 @@ val ReachTheHorizon = card("Reach the Horizon") {
             listOf(
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.LIBRARY, Player.You, basicOrTown),
-                    storeAs = "searchable"
+                    storeAs = "searchable",
+                    search = true
                 ),
                 SelectFromCollectionEffect(
                     from = "searchable",

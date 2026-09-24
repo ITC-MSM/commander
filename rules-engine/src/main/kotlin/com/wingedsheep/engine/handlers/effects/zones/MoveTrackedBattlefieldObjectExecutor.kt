@@ -15,7 +15,7 @@ import kotlin.reflect.KClass
 /**
  * Executor for timestamp-guarded movement of one battlefield object.
  */
-class MoveTrackedBattlefieldObjectExecutor : EffectExecutor<MoveTrackedBattlefieldObjectEffect> {
+class MoveTrackedBattlefieldObjectExecutor(private val zones: ZoneTransitionService) : EffectExecutor<MoveTrackedBattlefieldObjectEffect> {
 
     override val effectType: KClass<MoveTrackedBattlefieldObjectEffect> =
         MoveTrackedBattlefieldObjectEffect::class
@@ -28,6 +28,7 @@ class MoveTrackedBattlefieldObjectExecutor : EffectExecutor<MoveTrackedBattlefie
         val targetId = context.resolveTarget(effect.target, state)
             ?: return EffectResult.success(state)
         val transitionResult = moveTrackedBattlefieldObject(
+            zones,
             state,
             targetId,
             effect.destination,
@@ -44,6 +45,7 @@ class MoveTrackedBattlefieldObjectExecutor : EffectExecutor<MoveTrackedBattlefie
  * is what distinguishes a blinked permanent from the object an earlier delayed trigger tracked.
  */
 internal fun moveTrackedBattlefieldObject(
+    zones: ZoneTransitionService,
     state: GameState,
     targetId: EntityId,
     destination: Zone,
@@ -55,7 +57,7 @@ internal fun moveTrackedBattlefieldObject(
         val currentEntry = container.get<BattlefieldEntryTimestampComponent>()?.timestamp
         if (currentEntry != enteredBattlefieldTimestamp) return null
     }
-    return ZoneTransitionService.moveToZone(
+    return zones.moveToZone(
         state = state,
         entityId = targetId,
         destinationZone = destination

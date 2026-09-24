@@ -569,6 +569,21 @@ sealed interface Modification {
         override val layer get() = Layer.ABILITY
     }
 
+    /**
+     * Grants each affected entity every keyword in [keywords] — plus, when [anyLandwalk] /
+     * [anyProtection] is set, every landwalk / protection keyword — that some creature card in any
+     * graveyard has (Cairn Wanderer). Read at apply-time off the graveyard cards' own printed
+     * keywords; see [com.wingedsheep.sdk.scripting.GainKeywordsOfGraveyardCreatureCards].
+     */
+    @Serializable
+    data class GrantKeywordsOfGraveyardCreatureCards(
+        val keywords: Set<String>,
+        val anyLandwalk: Boolean,
+        val anyProtection: Boolean
+    ) : Modification {
+        override val layer get() = Layer.ABILITY
+    }
+
     @Serializable
     data object SetCantAttack : Modification {
         override val layer get() = Layer.ABILITY

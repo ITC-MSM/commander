@@ -13,7 +13,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.MoveUntilSourceLeavesEffect
 import kotlin.reflect.KClass
 
-class MoveUntilSourceLeavesExecutor : EffectExecutor<MoveUntilSourceLeavesEffect> {
+class MoveUntilSourceLeavesExecutor(private val zones: ZoneTransitionService) : EffectExecutor<MoveUntilSourceLeavesEffect> {
     override val effectType: KClass<MoveUntilSourceLeavesEffect> = MoveUntilSourceLeavesEffect::class
 
     override fun execute(state: GameState, effect: MoveUntilSourceLeavesEffect, context: EffectContext): EffectResult {
@@ -32,7 +32,7 @@ class MoveUntilSourceLeavesExecutor : EffectExecutor<MoveUntilSourceLeavesEffect
         val targetId = context.resolveTarget(effect.target, state) ?: return EffectResult.success(state)
         val previousZone = state.logicalZone(targetId)?.zoneType ?: return EffectResult.success(state)
         if (previousZone == effect.destination) return EffectResult.success(state)
-        val result = ZoneTransitionService.moveToZone(state, targetId, effect.destination)
+        val result = zones.moveToZone(state, targetId, effect.destination)
         val moved = result.transitions.firstOrNull { it.oldObject == state.objectRef(targetId) }
             ?.newObject ?: return EffectResult.success(result.state, result.events)
         if (result.actualDestination != effect.destination || !result.state.isCurrentObject(moved)) {
@@ -44,7 +44,7 @@ class MoveUntilSourceLeavesExecutor : EffectExecutor<MoveUntilSourceLeavesEffect
         } else result.state
         val recorded = linked.copy(zoneReturns = linked.zoneReturns + ZoneReturn(source, moved, previousZone))
         // Moving the source itself can end the duration as part of the initial move.
-        val returns = ZoneReturnService.returnDepartedSources(recorded)
+        val returns = ZoneReturnService.returnDepartedSources(zones, recorded)
         return EffectResult.success(returns.state, result.events + returns.events)
     }
 }

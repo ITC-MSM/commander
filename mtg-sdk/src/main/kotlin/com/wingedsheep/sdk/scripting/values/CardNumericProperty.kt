@@ -54,6 +54,17 @@ enum class Aggregation {
      */
     DISTINCT_BASIC_LAND_SUBTYPES,
     /**
+     * Count distinct planeswalker types (CR 205.3j) across all matched entities that are
+     * planeswalkers — "the number of planeswalker types among planeswalkers you control" (Tam, the
+     * Possibility). Two Jaces count once; a planeswalker with no subtype contributes nothing.
+     *
+     * A planeswalker's subtypes are planeswalker types unless it has also become another card
+     * type (an animated Gideon is also a Human Soldier creature, CR 205.3d), so creature types
+     * are excluded rather than a fixed list of planeswalker types included: that list grows with
+     * every set, and a stale copy would silently undercount a new walker.
+     */
+    DISTINCT_PLANESWALKER_SUBTYPES,
+    /**
      * Count distinct kinds of counters across all matched entities — i.e. the number of
      * different [com.wingedsheep.sdk.core.CounterType]s present on at least one matched
      * permanent. A permanent with both +1/+1 and finality counters contributes two kinds;

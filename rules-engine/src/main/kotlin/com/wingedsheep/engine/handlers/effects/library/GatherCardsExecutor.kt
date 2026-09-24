@@ -13,6 +13,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.engine.state.components.player.CantSearchLibrariesComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CardSource
@@ -34,12 +35,14 @@ import kotlin.reflect.KClass
  * from their current zone — they are only referenced for subsequent
  * pipeline steps (SelectFromCollection, MoveCollection).
  */
-class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
+class GatherCardsExecutor(
+    cardRegistry: com.wingedsheep.engine.registry.CardRegistry? = null
+) : EffectExecutor<GatherCardsEffect> {
 
     override val effectType: KClass<GatherCardsEffect> = GatherCardsEffect::class
 
     private val amountEvaluator = DynamicAmountEvaluator()
-    private val predicateEvaluator = PredicateEvaluator()
+    private val predicateEvaluator = PredicateEvaluator(cardRegistry)
 
     override fun execute(
         state: GameState,
@@ -330,7 +333,17 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
             }
         }
 
-        val cards = gathered
+        // A search the searcher is forbidden to make finds nothing in any library (Shadow of
+        // Doubt). Only the library half is dropped: "search your graveyard and/or library" still
+        // finds graveyard cards. The rest of the instruction (move nothing, shuffle) still runs.
+        val cards = if (effect.search &&
+            state.getEntity(context.controllerId)?.has<CantSearchLibrariesComponent>() == true
+        ) {
+            val libraries = state.turnOrder.flatMap { state.getZone(ZoneKey(it, Zone.LIBRARY)) }.toSet()
+            gathered.filter { it !in libraries }
+        } else {
+            gathered
+        }
 
         if (cards.isEmpty()) {
             return EffectResult.success(state).copy(

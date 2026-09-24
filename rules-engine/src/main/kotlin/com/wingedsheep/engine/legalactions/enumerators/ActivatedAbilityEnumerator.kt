@@ -303,6 +303,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             )
                             if (tapTargets.size < atom.count) continue
                         }
+                        // CR 118.3 — unpayable with too few matching cards in hand. The choice of
+                        // card is raised by ActivateAbilityHandler as a pause, so nothing to surface.
+                        is CostAtom.PutFromHandOnTopOfLibrary -> {
+                            if (context.costUtils.findDiscardTargets(state, playerId, atom.filter).size < atom.count) continue
+                        }
                         is CostAtom.Discard -> {
                             val targets = context.costUtils.findDiscardTargets(state, playerId, atom.filter)
                             if (targets.size < atom.count) continue
@@ -571,6 +576,13 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         }
                                         exileCost = atom
                                         exileTargets = targets
+                                    }
+                                    // See the top-level branch: a hand-size gate, choice via pause.
+                                    is CostAtom.PutFromHandOnTopOfLibrary -> {
+                                        if (context.costUtils.findDiscardTargets(state, playerId, atom.filter).size < atom.count) {
+                                            costCanBePaid = false
+                                            break
+                                        }
                                     }
                                     is CostAtom.Discard -> {
                                         val targets = context.costUtils.findDiscardTargets(state, playerId, atom.filter)

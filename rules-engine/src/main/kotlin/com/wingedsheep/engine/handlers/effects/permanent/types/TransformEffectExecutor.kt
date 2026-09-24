@@ -43,6 +43,7 @@ import kotlin.reflect.KClass
  * fire through the standard trigger pipeline.
  */
 class TransformEffectExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry
 ) : EffectExecutor<TransformEffect> {
 
@@ -410,6 +411,7 @@ internal fun buildCardComponentForDfcFace(
  * responsible for the entity already being in the zone it is to be returned from.
  */
 internal fun returnDfcFace(
+    zones: ZoneTransitionService,
     state: GameState,
     cardRegistry: CardRegistry,
     entityId: EntityId,
@@ -424,7 +426,7 @@ internal fun returnDfcFace(
         ?: return ZoneTransitionResult(state, emptyList())
     val prepared = prepareDfcFaceSwap(state, cardRegistry, entityId, destinationFace)
         ?: return ZoneTransitionResult(state, emptyList())
-    return ZoneTransitionService.moveToZone(
+    return zones.moveToZone(
         prepared,
         entityId,
         Zone.BATTLEFIELD,

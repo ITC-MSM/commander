@@ -76,6 +76,115 @@
     ]
 }
 
+// Auratouched Mage
+{
+    "name": "Auratouched Mage",
+    "manaCost": "{5}{W}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "When this creature enters, search your library for an Aura card that could enchant it. If this creature is still on the battlefield, put that Aura card onto the battlefield attached to it. Otherwise, reveal the Aura card and put it into your hand. Then shuffle.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsEnchantment",
+                                        {
+                                            "type": "HasSubtype",
+                                            "subtype": "Aura"
+                                        },
+                                        {
+                                            "type": "CouldEnchant",
+                                            "reference": "Source"
+                                        }
+                                    ]
+                                }
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found",
+                            "prompt": "Search for an Aura card that could enchant Auratouched Mage"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "SourceInZone",
+                                    "zones": [
+                                        "Battlefield"
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                },
+                                "attachTo": "Self"
+                            },
+                            "otherwise": {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            }
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "1",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff Miracola",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/4/942d6414-11e1-4822-9c5d-e4f96846a85f.jpg?1783943709",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "Any Aura card you find must be able to enchant Auratouched Mage as it currently exists, or as it most recently existed on the battlefield if it's no longer on the battlefield. If an effect has made the Mage an artifact, for example, you could search for an Aura with \"enchant artifact.\""
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Autochthon Wurm
 {
     "name": "Autochthon Wurm",
@@ -1202,7 +1311,8 @@
                                 "zone": "Library",
                                 "filter": "mv=5"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -1778,6 +1888,45 @@
     ]
 }
 
+// Chant of Vitu-Ghazi
+{
+    "name": "Chant of Vitu-Ghazi",
+    "manaCost": "{6}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nPrevent all damage that would be dealt by creatures this turn. You gain life equal to the damage prevented this way.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "PreventDamageShield",
+            "direction": "FromTarget",
+            "sourceFilter": {
+                "type": "FromGroup",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            },
+            "gainLifeFromPrevented": true
+        }
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "rarity": "UNCOMMON",
+        "artist": "Stephen Tappin",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/23c22d01-1d14-4f73-a2db-a77f96a9a0e3.jpg?1783943705",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The damage prevention shield lasts for the rest of the turn, and you gain life each time that shield prevents 1 or more damage."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Char
 {
     "name": "Char",
@@ -1856,7 +2005,8 @@
                             ]
                         }
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -1891,6 +2041,51 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Chorus of the Conclave
+{
+    "name": "Chorus of the Conclave",
+    "manaCost": "{4}{G}{G}{W}{W}",
+    "typeLine": "Legendary Creature — Dryad",
+    "oracleText": "Forestwalk (This creature can't be blocked as long as defending player controls a Forest.)\nAs an additional cost to cast creature spells, you may pay any amount of mana. If you do, that creature enters with that many additional +1/+1 counters on it.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 8
+    },
+    "keywords": [
+        "FORESTWALK"
+    ],
+    "script": {
+        "staticAbilities": [
+            "AdditionalManaForEntryCounters"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "RARE",
+        "artist": "Brian Despain",
+        "flavorText": "\"We are many, yet one. We are separate in body, yet speak with a single voice. Join us in our chorus.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/2/d2792033-19e1-4629-8155-85c6c2d89106.jpg?1783943626",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "Chorus of the Conclave's ability works only while it's on the battlefield, so you can't use it to put +1/+1 counters on itself."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Chorus of the Conclave's ability applies to creature spells only as they're being cast. You can't pay mana to put counters on creatures being put onto the battlefield by an effect."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Chorus of the Conclave's ability combines well with the convoke mechanic, effectively letting you tap creatures to put +1/+1 counters on the creature with convoke that you're casting, if you choose to do so."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 
@@ -2065,7 +2260,8 @@
                                     "zone": "Library",
                                     "filter": "basicland"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -2366,7 +2562,8 @@
                                 "zone": "Library",
                                 "filter": "mv=4"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -2550,6 +2747,409 @@
     ]
 }
 
+// Concerted Effort
+{
+    "name": "Concerted Effort",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of each upkeep, creatures you control gain flying until end of turn if a creature you control has flying. The same is true for fear, first strike, double strike, landwalk, protection, trample, and vigilance.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:flying"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "FLYING",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:fear"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "FEAR",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:first_strike"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "FIRST_STRIKE",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:double_strike"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "DOUBLE_STRIKE",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:swampwalk"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "SWAMPWALK",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:forestwalk"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "FORESTWALK",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:islandwalk"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "ISLANDWALK",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:mountainwalk"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "MOUNTAINWALK",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:plainswalk"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "PLAINSWALK",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:desertwalk"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "DESERTWALK",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:nonbasic_landwalk"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "NONBASIC_LANDWALK",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:trample"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "TRAMPLE",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:vigilance"
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "VIGILANCE",
+                                    "target": "Self"
+                                }
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "GrantProtectionsSharedByGroup",
+                                "group": {
+                                    "baseFilter": "creature ctrl:you"
+                                }
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Creatures you control gain flying until end of turn if a creature you control has flying. The same is true for fear, first strike, double strike, landwalk, protection, trample, and vigilance."
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "rarity": "RARE",
+        "artist": "Michael Sutfin",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4afa3367-eb7e-4c92-96a1-2b6865b24f52.jpg?1783943704",
+        "rulings": [
+            {
+                "date": "2006-05-01",
+                "text": "In Two-Headed Giant, triggers only once per upkeep, not once for each player."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "For example, a player controls three creatures when Concerted Effort’s ability resolves: one creature with flying and protection from red, one with islandwalk and protection from green; and one with vigilance. All three creatures will have flying, islandwalk, vigilance, protection from red, and protection from green until the end of the turn."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Creatures keep all abilities granted this way until the end of the turn, even if Concerted Effort or the original creature with that ability leaves the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Conclave Equenaut
 {
     "name": "Conclave Equenaut",
@@ -2695,7 +3295,8 @@
                         "zone": "Library",
                         "filter": "creature"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -3683,7 +4284,8 @@
                                 "zone": "Library",
                                 "filter": "mv=4"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -3763,7 +4365,8 @@
                                 "zone": "Library",
                                 "filter": "mv=2"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -3895,7 +4498,8 @@
                                 "zone": "Library",
                                 "filter": "mv=3"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -4163,7 +4767,8 @@
                                 "zone": "Library",
                                 "filter": "mv=1"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -4385,6 +4990,51 @@
     ]
 }
 
+// Dream Leash
+{
+    "name": "Dream Leash",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant permanent\nYou can't choose an untapped permanent as this spell's target as you cast it.\nYou control enchanted permanent.",
+    "script": {
+        "staticAbilities": [
+            "ControlEnchantedPermanent"
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "permanent"
+            }
+        },
+        "auraCastTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "permanent tapped"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "rarity": "RARE",
+        "artist": "Alex Horley-Orlandelli",
+        "flavorText": "The tendrils of sorcery find easy purchase on the soft underbelly of dreams.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0de4fa3d-a144-4918-b032-7495ab2e1c8c.jpg?1783943688",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The restriction that the permanent must be tapped is checked only if you cast Dream Leash as a spell. Once Dream Leash is on the battlefield, it doesn't matter if the enchanted permanent becomes untapped."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If an effect puts Dream Leash onto the battlefield or moves it to another permanent, the permanent it becomes attached to need not be tapped."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Drift of Phantasms
 {
     "name": "Drift of Phantasms",
@@ -4426,7 +5076,8 @@
                                 "zone": "Library",
                                 "filter": "mv=3"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -4944,7 +5595,8 @@
                                 "zone": "Library",
                                 "filter": "mv=6"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -5043,6 +5695,85 @@
     ]
 }
 
+// Eye of the Storm
+{
+    "name": "Eye of the Storm",
+    "manaCost": "{5}{U}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a player casts an instant or sorcery card, exile it. Then that player copies each instant or sorcery card exiled with this enchantment. For each copy, the player may cast the copy without paying its mana cost.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    },
+                    "player": "Each",
+                    "requires": [
+                        "SpellIsCard"
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ExileTargetSpell",
+                            "linkToSource": true,
+                            "spell": "CounterTargetSource.TriggeringEntity"
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Players",
+                                "players": "TriggeringPlayer"
+                            },
+                            "body": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": "FromLinkedExile",
+                                        "storeAs": "eyeExiled"
+                                    },
+                                    {
+                                        "type": "CopyCollectionIntoCollection",
+                                        "from": "eyeExiled",
+                                        "storeAs": "eyeCopies"
+                                    },
+                                    {
+                                        "type": "CastAnyNumberFromCollectionWithoutPayingCost",
+                                        "from": "eyeCopies"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "rarity": "RARE",
+        "artist": "Hideaki Takamura",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/49967eb9-5020-4f0a-8775-5114f6d96d75.jpg?1783943687"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Faith's Fetters
 {
     "name": "Faith's Fetters",
@@ -5138,7 +5869,8 @@
                         "zone": "Library",
                         "filter": "land Plains|Island|Swamp|Mountain"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -5643,6 +6375,138 @@
     ]
 }
 
+// Flickerform
+{
+    "name": "Flickerform",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\n{2}{W}{W}: Exile enchanted creature and all Auras attached to it. At the beginning of the next end step, return that card to the battlefield under its owner's control. If you do, return the other cards exiled this way to the battlefield under their owners' control attached to that creature.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{W}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "statePredicates": [
+                                        "IsAttachedToBySource"
+                                    ]
+                                }
+                            },
+                            "storeAs": "flickerHost"
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "AttachedToTarget",
+                                "host": "EnchantedCreature",
+                                "filter": "enchantment Aura"
+                            },
+                            "storeAs": "flickerAuras"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "flickerHost",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "flickerAuras",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "flickerHost",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Battlefield"
+                                        },
+                                        "underOwnersControl": true
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "flickerAuras",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Battlefield"
+                                        },
+                                        "underOwnersControl": true,
+                                        "attachTo": {
+                                            "type": "PipelineTarget",
+                                            "collectionName": "flickerHost"
+                                        }
+                                    }
+                                ]
+                            },
+                            "carryCollections": [
+                                "flickerHost",
+                                "flickerAuras"
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "{2}{W}{W}: Exile enchanted creature and all Auras attached to it. At the beginning of the next end step, return that card to the battlefield under its owner's control. If you do, return the other cards exiled this way to the battlefield under their owners' control attached to that creature."
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "rarity": "RARE",
+        "artist": "Ron Spears",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/1/6165de5d-57f0-419b-95a1-02bd53e5a0c5.jpg?1783943701",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The card that was enchanted comes back onto the battlefield first, regardless of whether it's still a creature. Then any Auras exiled that can legally enchant that card come back. Any Auras that can't enchant that permanent remain exiled."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If the enchanted creature was a token, it ceased to exist when it was exiled. Any Auras that were attached to it (including Flickerform) remain exiled."
+            },
+            {
+                "date": "2014-02-01",
+                "text": "If the enchanted creature was enchanted by any Auras with bestow or any Licids, those cards will return to the battlefield unattached as creatures."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Flight of Fancy
 {
     "name": "Flight of Fancy",
@@ -5961,6 +6825,94 @@
         "imageUri": "https://cards.scryfall.io/normal/front/9/3/93311f80-0d0e-4005-ba43-5dbfe438d127.jpg?1783943638"
     },
     "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Gaze of the Gorgon
+{
+    "name": "Gaze of the Gorgon",
+    "manaCost": "{3}{B/G}",
+    "typeLine": "Instant",
+    "oracleText": "({B/G} can be paid with either {B} or {G}.)\nRegenerate target creature. At this turn's next end of combat, destroy all creatures that blocked or were blocked by it this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Regenerate",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "CreateDelayedTrigger",
+                    "step": "END_COMBAT",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": {
+                                        "cardPredicates": [
+                                            "IsCreature"
+                                        ],
+                                        "statePredicates": [
+                                            {
+                                                "type": "BlockedOrWasBlockedByEntityThisTurn",
+                                                "reference": "Triggering"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
+                            }
+                        ]
+                    },
+                    "watchedTarget": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "timing": "ThisTurnOnly"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "246",
+        "artist": "Stephen Tappin",
+        "flavorText": "Even the dead give way to the mineral gaze of the gorgon.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/6/16c9e772-5213-4c28-9b6c-1cfa6675ee8f.jpg?1783943604",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "At the next end of combat step in the turn, all creatures that had blocked the targeted creature at any point during the turn will be destroyed. This includes creatures that blocked it before Gaze of the Gorgon was cast. It doesn’t matter whether the targeted creature is still on the battlefield at that point."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
         "GREEN"
     ]
 }
@@ -7184,7 +8136,8 @@
                                 "zone": "Library",
                                 "filter": "mv=9"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -8428,6 +9381,43 @@
     ]
 }
 
+// Leashling
+{
+    "name": "Leashling",
+    "manaCost": "{6}",
+    "typeLine": "Artifact Creature — Dog",
+    "oracleText": "Put a card from your hand on top of your library: Return this creature to its owner's hand.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": "AtomPutFromHandOnTopOfLibrary"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                },
+                "descriptionOverride": "Put a card from your hand on top of your library: Return this creature to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "265",
+        "rarity": "UNCOMMON",
+        "artist": "Carl Critchlow",
+        "flavorText": "Constructed of leather and irony.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/132551d3-ef8e-4ed0-a363-53db4f0621f0.jpg?1783943596"
+    },
+    "colorIdentityOverride": []
+}
+
 // Leave No Trace
 {
     "name": "Leave No Trace",
@@ -9023,6 +10013,51 @@
     ]
 }
 
+// Master Warcraft
+{
+    "name": "Master Warcraft",
+    "manaCost": "{2}{R/W}{R/W}",
+    "typeLine": "Instant",
+    "oracleText": "Cast this spell only before attackers are declared.\nYou choose which creatures attack this turn.\nYou choose which creatures block this turn and how those creatures block.",
+    "script": {
+        "spellEffect": "ControlCombatDeclarationsThisTurn",
+        "castRestrictions": [
+            {
+                "type": "CastOnlyIfCondition",
+                "condition": "BeforeAttackersDeclaredThisTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "250",
+        "rarity": "RARE",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9d111510-ca7f-4127-b540-48265aa36311.jpg?1783943603",
+        "rulings": [
+            {
+                "date": "2013-09-20",
+                "text": "If a turn has multiple combat phases, this spell can only be cast before the beginning of the Declare Attackers Step of the first combat phase in that turn."
+            },
+            {
+                "date": "2008-04-01",
+                "text": "If the defending player controls a planeswalker, the person who cast Master Warcraft first chooses the complete group of creatures that are going to attack. Then, for each of those creatures, the active player chooses who or what it's going to attack."
+            },
+            {
+                "date": "2006-01-01",
+                "text": "You can decide that a creature won't block."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "You choose attackers and make blocking assignments regardless of whether it's your turn and regardless of whether the creatures are attacking you. Your choices must be legal within the normal rules for attacking and blocking."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Mausoleum Turnkey
 {
     "name": "Mausoleum Turnkey",
@@ -9602,7 +10637,8 @@
                                 "zone": "Library",
                                 "filter": "mv=2"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -9875,7 +10911,8 @@
                                 "zone": "Library",
                                 "filter": "mv=6"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -10544,7 +11581,8 @@
                                 "zone": "Library",
                                 "filter": "land Plains|Island|Swamp|Mountain|Forest"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -10639,7 +11677,8 @@
                                 "zone": "Library",
                                 "filter": "mv=3"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -11127,6 +12166,68 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Quickchange
+{
+    "name": "Quickchange",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature becomes the color or colors of your choice until end of turn.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ChooseColorThen",
+                    "then": {
+                        "type": "ChangeColorToChosen",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "prompt": "Choose one or more colors",
+                    "maxColors": 5
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "artist": "Christopher Moeller",
+        "flavorText": "Most Ravnicans lead lives of desperate survival. Those who thrive are malleable enough to change with the ever-shifting politics of the guilds.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3f90c1a1-679d-45c5-a1d4-53dad05e45fa.jpg?1783943680",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "You can choose any single color or any combination of more than one color. You can't choose colorless."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Quickchange won't make an artifact stop being an artifact. It'll just be a colorful artifact."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -12907,6 +14008,46 @@
     ]
 }
 
+// Shadow of Doubt
+{
+    "name": "Shadow of Doubt",
+    "manaCost": "{U/B}{U/B}",
+    "typeLine": "Instant",
+    "oracleText": "({U/B} can be paid with either {U} or {B}.)\nPlayers can't search libraries this turn.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CantSearchLibraries",
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "Each"
+                    }
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "253",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "flavorText": "\"Your ignorance is my bliss.\"\n—Szadek",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7dbd0e3c-b26d-4080-b7cf-1c64fce09668.jpg?1783943602"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Shambling Shell
 {
     "name": "Shambling Shell",
@@ -13021,7 +14162,8 @@
                                 "zone": "Library",
                                 "filter": "mv=2"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -13086,6 +14228,39 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Sins of the Past
+{
+    "name": "Sins of the Past",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Until end of turn, you may cast target instant or sorcery card from your graveyard without paying its mana cost. If that spell would be put into your graveyard, exile it instead. Exile Sins of the Past.",
+    "script": {
+        "spellEffect": {
+            "type": "GrantFreeCastTargetFromExile",
+            "exileAfterResolve": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "instant|sorcery own:you",
+                    "zone": "Graveyard"
+                }
+            }
+        ],
+        "selfExileOnResolve": true
+    },
+    "metadata": {
+        "collectorNumber": "106",
+        "rarity": "RARE",
+        "artist": "Jeremy Jarvis",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5c518792-a50f-40b1-b6fb-674432093b6a.jpg?1783943661"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -13379,6 +14554,60 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Spectral Searchlight
+{
+    "name": "Spectral Searchlight",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}: Choose a player. That player adds one mana of any color they choose.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "SelectTarget",
+                            "requirement": {
+                                "type": "TargetPlayer",
+                                "descriptionOverride": "a player"
+                            },
+                            "storeAs": "chosenManaRecipient",
+                            "nonTargeting": true
+                        },
+                        {
+                            "type": "AddManaOfChoice",
+                            "recipient": {
+                                "type": "PipelineTarget",
+                                "collectionName": "chosenManaRecipient"
+                            },
+                            "colorChosenByRecipient": true
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Choose a player. That player adds one mana of any color they choose."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "271",
+        "rarity": "UNCOMMON",
+        "artist": "Martina Pilcerova",
+        "flavorText": "The first searchlights were given as gifts, symbols of cooperation, to the emissaries present at the signing of the Guildpact.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1b7209e2-8e62-40aa-ad84-16c6ad52fd69.jpg?1783943595",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "You may choose yourself."
+            }
+        ]
+    }
 }
 
 // Stasis Cell
@@ -14237,6 +15466,52 @@
     ]
 }
 
+// Szadek, Lord of Secrets
+{
+    "name": "Szadek, Lord of Secrets",
+    "manaCost": "{3}{U}{U}{B}{B}",
+    "typeLine": "Legendary Creature — Vampire",
+    "oracleText": "Flying\nIf Szadek would deal combat damage to a player, instead put that many +1/+1 counters on Szadek and that player mills that many cards.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ReplaceDamageWithCounters",
+                "counterType": "+1/+1",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "AnyPlayer",
+                    "source": "SourceSelf",
+                    "damageType": "DamageCombat"
+                },
+                "damagedPlayerMills": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "RARE",
+        "artist": "Donato Giancola",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/8/2882793e-5d7d-47f0-9308-652a5e036c2c.jpg?1783943610",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If another effect would prevent Szadek's combat damage from being dealt to the defending player or replace it with something else, that player chooses which effect applies first. For example, the player can choose to first have Mending Hands prevent 4 of the damage and then apply Szadek's ability so that it gets only one counter."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Tattered Drake
 {
     "name": "Tattered Drake",
@@ -14685,7 +15960,8 @@
                         "zone": "Library",
                         "filter": "enchantment Aura"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -16176,6 +17452,174 @@
         "artist": "Alex Horley-Orlandelli",
         "flavorText": "\"In a town shaped by the subtle machinations and political intrigue of its guilds, it's reassuring to see a goblin waving his torch and screaming about some nonsense or other.\"\n—Agrus Kos",
         "imageUri": "https://cards.scryfall.io/normal/front/2/5/259469b3-1212-4030-97ae-a84f132798d4.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Warp World
+{
+    "name": "Warp World",
+    "manaCost": "{5}{R}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Each player shuffles all permanents they own into their library, then reveals that many cards from the top of their library. Each player puts all artifact, creature, and land cards revealed this way onto the battlefield, then does the same for enchantment cards, then puts all cards revealed this way that weren't put onto the battlefield on the bottom of their library.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "Each"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "own:you"
+                                },
+                                "storeAs": "owned"
+                            },
+                            {
+                                "type": "FilterCollection",
+                                "from": "owned",
+                                "filter": {
+                                    "type": "MatchesFilter",
+                                    "filter": "token"
+                                },
+                                "storeMatching": "ownedTokens",
+                                "storeNonMatching": "ownedCards"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "ownedCards",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Shuffled"
+                                }
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "ownedTokens",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Bottom"
+                                }
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "VariableReference",
+                                        "variableName": "owned_count"
+                                    }
+                                },
+                                "storeAs": "revealed",
+                                "revealed": true
+                            },
+                            {
+                                "type": "FilterCollection",
+                                "from": "revealed",
+                                "filter": {
+                                    "type": "MatchesFilter",
+                                    "filter": "nontoken"
+                                },
+                                "storeMatching": "revealedCards"
+                            },
+                            {
+                                "type": "FilterCollection",
+                                "from": "revealedCards",
+                                "filter": {
+                                    "type": "MatchesFilter",
+                                    "filter": "artifact|creature|land"
+                                },
+                                "storeMatching": "acl",
+                                "storeNonMatching": "notAcl"
+                            },
+                            {
+                                "type": "FilterCollection",
+                                "from": "notAcl",
+                                "filter": {
+                                    "type": "MatchesFilter",
+                                    "filter": "enchantment"
+                                },
+                                "storeMatching": "enchantments",
+                                "storeNonMatching": "rest"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "rest",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Bottom"
+                                },
+                                "order": "ControllerChooses"
+                            }
+                        ]
+                    },
+                    "collectCollections": {
+                        "acl": "warpAcl",
+                        "enchantments": "warpEnchantments"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "warpAcl",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    },
+                    "underOwnersControl": true
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "warpEnchantments",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    },
+                    "underOwnersControl": true
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "warpEnchantments",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": {
+                            "statePredicates": [
+                                "IsOnBattlefield"
+                            ]
+                        }
+                    },
+                    "storeMatching": "warpEnchantmentsEntered",
+                    "storeNonMatching": "warpStranded"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "warpStranded",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Bottom"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "rarity": "RARE",
+        "artist": "Ron Spencer",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fdbf743a-6e28-47c4-acfe-1c5d42f80eee.jpg?1783943644"
     },
     "colorIdentityOverride": [
         "RED"

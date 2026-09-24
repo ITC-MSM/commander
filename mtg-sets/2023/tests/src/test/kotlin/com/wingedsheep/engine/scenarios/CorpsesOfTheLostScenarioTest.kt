@@ -1,7 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.YesNoDecision
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.lci.cards.CorpsesOfTheLost
@@ -51,7 +50,7 @@ class CorpsesOfTheLostScenarioTest : FunSpec({
      * increment the descend counter (CR 700.11).
      */
     fun GameTestDriver.descend(entityId: EntityId) {
-        val result = ZoneTransitionService.moveToZone(
+        val result = zones.moveToZone(
             state = state,
             entityId = entityId,
             destinationZone = Zone.GRAVEYARD

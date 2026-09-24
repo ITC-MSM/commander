@@ -51,7 +51,8 @@ val ElvenPassage = card("Elven Passage") {
             listOf(
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.BasicLand),
-                    storeAs = "passage_searchable"
+                    storeAs = "passage_searchable",
+                    search = true
                 ),
                 SelectFromCollectionEffect(
                     from = "passage_searchable",

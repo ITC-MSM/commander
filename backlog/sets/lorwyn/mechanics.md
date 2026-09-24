@@ -44,7 +44,7 @@ Cards: Adder-Staff Boggart, Bog Hoodlums, Broken Ambitions, Captivating Glance, 
 
 Create the printed number and kind of tokens, sometimes with a dynamic count, a copied characteristic set or tapped-and-attacking status.
 
-**Engine support:** Supported token and copy-token effects; [Cloudgoat Ranger](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/CloudgoatRanger.kt), [Militia's Pride](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/MilitiasPride.kt) and [Heat Shimmer](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/HeatShimmer.kt). Hostility's prevention-driven token creation remains a separate gap.
+**Engine support:** Supported token and copy-token effects; [Cloudgoat Ranger](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/CloudgoatRanger.kt), [Militia's Pride](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/MilitiasPride.kt) and [Heat Shimmer](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/HeatShimmer.kt).
 
 Cards: Ajani Goldmane, Benthicore, Boggart Mob, Cloudgoat Ranger, Crib Swap, Elvish Promenade, Eyes of the Wisent, Garruk Wildspeaker, Gilt-Leaf Ambush, Guardian of Cloverdell, Hearthcage Giant, Heat Shimmer, Hoofprints of the Stag, Hostility, Imperious Perfect, Lys Alana Huntmaster, Marsh Flitter, Militia's Pride, Nath of the Gilt-Leaf, Prowess of the Fair, Rebellion of the Flamekin, Summon the School, Wren's Run Packmaster
 
@@ -148,7 +148,7 @@ Cards: Aquitect's Will, Blind-Spot Giant, Boggart Sprite-Chaser, Dauntless Dourb
 
 A creature is unblockable while its defending player controls the specified land type. Includes granted landwalk and graveyard-derived landwalk.
 
-**Engine support:** Supported: landwalk keyword variants in the keyword model; [Hillcomber Giant](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/HillcomberGiant.kt), [Deeptread Merrow](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/DeeptreadMerrow.kt) and [Streambed Aquitects](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/StreambedAquitects.kt). Cairn Wanderer's keyword acquisition is a separate gap.
+**Engine support:** Supported: landwalk keyword variants in the keyword model; [Hillcomber Giant](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/HillcomberGiant.kt), [Deeptread Merrow](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/DeeptreadMerrow.kt) and [Streambed Aquitects](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/StreambedAquitects.kt). Cairn Wanderer gains graveyard landwalks via `GainKeywordsOfGraveyardCreatureCards`.
 
 Cards: Bog-Strider Ash, Boggart Loggers, Cairn Wanderer, Deeptread Merrow, Hillcomber Giant, Inkfathom Divers, Merrow Harbinger, Streambed Aquitects, Sygg, River Guide
 
@@ -220,7 +220,7 @@ Cards: Cairn Wanderer, Gilt-Leaf Ambush, Lace with Moonglove, Moonglove Winnower
 
 Prevents damage, attachment, blocking and targeting from the specified quality, including creature types and a chosen color.
 
-**Engine support:** Supported: `KeywordAbility` plus `ProtectionScope`; [Nath's Buffoon](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/NathsBuffoon.kt) and [Sygg, River Guide](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/SyggRiverGuide.kt). Cairn Wanderer needs to acquire the actual protection qualities, not just a generic keyword.
+**Engine support:** Supported: `KeywordAbility` plus `ProtectionScope`; [Nath's Buffoon](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/NathsBuffoon.kt) and [Sygg, River Guide](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/SyggRiverGuide.kt). Cairn Wanderer acquires the actual protection qualities via `GainKeywordsOfGraveyardCreatureCards(anyProtection = true)`.
 
 Cards: Burrenton Forge-Tender, Cairn Wanderer, Favor of the Mighty, Nath's Buffoon, Sygg, River Guide, Warren-Scourge Elf
 
@@ -232,11 +232,11 @@ On entry, look at four cards, exile one face down, and randomize the remainder o
 
 Cards: Howltooth Hollow, Mosswort Bridge, Shelldock Isle, Spinerock Knoll, Windbrisk Heights
 
-### - [ ] Incarnation graveyard shuffle triggers (5 cards)
+### - [x] Incarnation graveyard shuffle triggers (5 cards)
 
 When the card enters a graveyard from any zone, trigger to shuffle that card into its owner's library. It really enters the graveyard first.
 
-**Engine support:** Incomplete package: `Effects.ShuffleIntoLibrary` and generic zone-change triggers exist, but none of this five-card cycle is authored. Prove self-trigger registration from library, hand, stack and battlefield; a replacement that skips the graveyard is not equivalent.
+**Engine support:** Supported: a `triggerZone = GRAVEYARD` self zone-change trigger; [Dread](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/Dread.kt) proves it from library, hand, stack and battlefield, and the other four share its script.
 
 Cards: Dread, Guile, Hostility, Purity, Vigor
 
@@ -360,11 +360,11 @@ Observe a tribe going from battlefield to graveyard, with attacking, nontoken, o
 
 Cards: Boggart Shenanigans, Kithkin Mourncaller, Knucklebone Witch, Prowess of the Fair
 
-### - [ ] Prevention with immediate additional results (3 cards)
+### - [x] Prevention with immediate additional results (3 cards)
 
 Prevent damage and immediately gain life, create tokens or add counters equal to damage actually prevented. The additional result is part of the prevention effect, not a later triggered ability.
 
-**Engine support:** Gap: `PreventDamage` has amount/event/restrictions only. `PreventDamageEffect.onPrevented` is documented as a delayed stack trigger and `ReplaceDamageWithCounters` explicitly replaces rather than prevents damage. Neither establishes these three printed prevention effects; add a reusable prevention outcome mechanism that respects unpreventable damage.
+**Engine support:** Supported: `PreventDamage.onPrevented` (CR 615.5), run as a replacement rider before SBAs and never on the stack; `SourceFilter.SpellYouControl` for Hostility. [Purity](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/Purity.kt), [Vigor](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/Vigor.kt), [Hostility](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/Hostility.kt).
 
 Cards: Hostility, Purity, Vigor
 
@@ -432,11 +432,11 @@ Equipment grants effects to its attached creature; equip is a targeted sorcery-t
 
 Cards: Deathrender, Runed Stalactite
 
-### - [ ] Acquire keywords from graveyards (1 card)
+### - [x] Acquire keywords from graveyards (1 card)
 
 Continuously obtain each listed keyword found on a creature card in any graveyard, preserving specific landwalk and protection qualities.
 
-**Engine support:** Gap: ordinary conditional grants exist, but Cairn Wanderer is unauthored and no complete donor-keyword acquisition shape was found. A boolean “has protection” loses its protected qualities; all graveyards and changing donors must be covered.
+**Engine support:** Supported: `GainKeywordsOfGraveyardCreatureCards` (Layer 6, read over every graveyard at projection time, landwalk and protection kept with their qualities); [Cairn Wanderer](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/CairnWanderer.kt).
 
 Cards: Cairn Wanderer
 
@@ -448,11 +448,11 @@ Restrict a spell target to a player or permanent that was dealt damage during th
 
 Cards: Needle Drop
 
-### - [ ] Replace countering with exile and immediate free play (1 card)
+### - [x] Replace countering with exile and immediate free play (1 card)
 
 A controller's attempted spell counter instead exiles the spell and permits playing that card without its mana cost during resolution.
 
-**Engine support:** Gap: no matching counter-event replacement was found in `ReplacementEffect.kt`. A counterspell's exile destination and a later cast permission do not model replacement of any counter effect controlled by Guile's controller.
+**Engine support:** Supported: `ExileCounteredSpellInstead` + `EventPattern.CounterSpellEvent`, applied inside every `StackResolver` counter routine with the counterer's controller; the free cast is a replacement rider run before the countering spell continues. [Guile](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/Guile.kt).
 
 Cards: Guile
 

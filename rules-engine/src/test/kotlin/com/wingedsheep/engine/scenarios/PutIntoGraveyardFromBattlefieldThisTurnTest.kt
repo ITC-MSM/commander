@@ -91,7 +91,7 @@ class PutIntoGraveyardFromBattlefieldThisTurnTest : FunSpec({
         val player = driver.activePlayer!!
 
         val bear = driver.putCreatureOnBattlefield(player, "Grizzly Bears")
-        val moveToGraveyard = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val moveToGraveyard = driver.zones.moveToZone(
             state = driver.state,
             entityId = bear,
             destinationZone = Zone.GRAVEYARD
@@ -100,7 +100,7 @@ class PutIntoGraveyardFromBattlefieldThisTurnTest : FunSpec({
         driver.matches(bear) shouldBe true
 
         // Exile it — leaving the graveyard.
-        val moveToExile = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val moveToExile = driver.zones.moveToZone(
             state = driver.state,
             entityId = bear,
             destinationZone = Zone.EXILE
@@ -118,13 +118,13 @@ class PutIntoGraveyardFromBattlefieldThisTurnTest : FunSpec({
         // Put a fresh card into the library, then move it directly library → graveyard
         // (the milling path) and confirm the predicate is false.
         val card = driver.putCardInHand(player, "Grizzly Bears")
-        val moveToLibrary = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val moveToLibrary = driver.zones.moveToZone(
             state = driver.state,
             entityId = card,
             destinationZone = Zone.LIBRARY
         )
         driver.replaceState(moveToLibrary.state)
-        val moveToGraveyard = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val moveToGraveyard = driver.zones.moveToZone(
             state = driver.state,
             entityId = card,
             destinationZone = Zone.GRAVEYARD

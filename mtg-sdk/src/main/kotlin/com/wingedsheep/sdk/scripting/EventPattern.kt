@@ -734,6 +734,25 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     // =========================================================================
+    // Counter Events
+    // =========================================================================
+
+    /**
+     * When a spell or ability controlled by [counterer] would counter a spell. Replacement-only —
+     * used by [com.wingedsheep.sdk.scripting.ExileCounteredSpellInstead] (Guile).
+     */
+    @SerialName("CounterSpellEvent")
+    @Serializable
+    data class CounterSpellEvent(
+        val counterer: Player = Player.You
+    ) : EventPattern {
+        override val description: String = when (counterer) {
+            Player.You -> "a spell or ability you control would counter a spell"
+            else -> "a spell or ability ${counterer.description} controls would counter a spell"
+        }
+    }
+
+    // =========================================================================
     // Discard Events
     // =========================================================================
 

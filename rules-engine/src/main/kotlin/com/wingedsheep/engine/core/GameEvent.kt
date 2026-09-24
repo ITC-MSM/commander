@@ -147,10 +147,10 @@ data class DamageDealtEvent(
     /** Whether the recipient was a creature when the damage was dealt (LKI, see [targetControllerId]). */
     val targetWasCreature: Boolean = false,
     /**
-     * Damage in excess of what the creature target needed to be destroyed (CR 120.4a) —
-     * i.e. `max(0, amount - max(0, projectedToughness - markedDamageBeforeThisHit))`, or
-     * `max(0, amount - 1)` if the source has deathtouch. Always 0 for non-creature targets
-     * (planeswalkers, players). Used by triggers like
+     * Excess damage (CR 120.4a). For a creature: damage in excess of what it needed to be
+     * destroyed — `max(0, amount - max(0, projectedToughness - markedDamageBeforeThisHit))`, or
+     * `max(0, amount - 1)` if the source has deathtouch. For a planeswalker / battle: damage in
+     * excess of its loyalty / defense before the hit. Always 0 for players. Used by triggers like
      * Fall of Cair Andros that fire on "excess [non]combat damage" via
      * `DealsDamageEvent(requireExcess = true)` and by payoffs that read
      * `ContextPropertyKey.TRIGGER_EXCESS_DAMAGE_AMOUNT`.

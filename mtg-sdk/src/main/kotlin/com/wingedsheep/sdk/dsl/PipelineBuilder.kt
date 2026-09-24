@@ -38,6 +38,7 @@ import com.wingedsheep.sdk.scripting.effects.StoreCardNameEffect
 import com.wingedsheep.sdk.scripting.effects.StoreNumberEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
@@ -174,9 +175,14 @@ class PipelineBuilder private constructor(private val shared: Shared) {
     val triggerCaptured: CollectionSlot get() = CollectionSlot(IterationSpace.TRIGGER_CAPTURED_COLLECTION)
 
     /** Gather cards from [source] into a new collection ([GatherCardsEffect]). */
-    fun gather(source: CardSource, revealed: Boolean = false, name: String? = null): CollectionSlot {
+    fun gather(
+        source: CardSource,
+        revealed: Boolean = false,
+        name: String? = null,
+        search: Boolean = false
+    ): CollectionSlot {
         val slot = CollectionSlot(slotKey("gathered", nextIndex(), name))
-        steps += GatherCardsEffect(source = source, storeAs = slot.key, revealed = revealed)
+        steps += GatherCardsEffect(source = source, storeAs = slot.key, revealed = revealed, search = search)
         return slot
     }
 
@@ -666,7 +672,8 @@ class PipelineBuilder private constructor(private val shared: Shared) {
         noRegenerate: Boolean = false,
         underOwnersControl: Boolean = false,
         addCounterType: CounterType? = null,
-        markEnteredViaSourceAbility: Boolean = false
+        markEnteredViaSourceAbility: Boolean = false,
+        attachTo: EffectTarget? = null
     ) {
         nextIndex()
         steps += MoveCollectionEffect(
@@ -682,7 +689,8 @@ class PipelineBuilder private constructor(private val shared: Shared) {
             noRegenerate = noRegenerate,
             underOwnersControl = underOwnersControl,
             addCounterType = addCounterType,
-            markEnteredViaSourceAbility = markEnteredViaSourceAbility
+            markEnteredViaSourceAbility = markEnteredViaSourceAbility,
+            attachTo = attachTo
         )
     }
 

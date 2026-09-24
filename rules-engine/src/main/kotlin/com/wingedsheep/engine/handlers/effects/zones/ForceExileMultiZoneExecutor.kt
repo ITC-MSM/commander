@@ -26,6 +26,7 @@ import kotlin.reflect.KClass
  * which were previously missing for battlefield permanents).
  */
 class ForceExileMultiZoneExecutor(
+    private val zones: ZoneTransitionService,
     private val decisionHandler: DecisionHandler = DecisionHandler()
 ) : EffectExecutor<ForceExileMultiZoneEffect> {
 
@@ -64,7 +65,7 @@ class ForceExileMultiZoneExecutor(
 
         if (allOptions.size <= exileCount) {
             // Auto-exile everything — no choice needed
-            return exileEntities(state, playerId, allOptions)
+            return exileEntities(zones, state, playerId, allOptions)
         }
 
         // Player must choose which to exile
@@ -125,6 +126,7 @@ class ForceExileMultiZoneExecutor(
          * Delegates to [ZoneTransitionService] for consistent cleanup.
          */
         fun exileEntities(
+            zones: ZoneTransitionService,
             state: GameState,
             playerId: EntityId,
             entityIds: List<EntityId>
@@ -133,7 +135,7 @@ class ForceExileMultiZoneExecutor(
             val allEvents = mutableListOf<GameEvent>()
 
             for (entityId in entityIds) {
-                val transitionResult = ZoneTransitionService.moveToZone(
+                val transitionResult = zones.moveToZone(
                     currentState, entityId, Zone.EXILE,
                     ZoneEntryOptions(skipZoneChangeRedirect = true)
                 )

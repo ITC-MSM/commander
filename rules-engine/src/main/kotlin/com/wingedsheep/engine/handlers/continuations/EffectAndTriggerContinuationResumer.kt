@@ -575,8 +575,15 @@ class EffectAndTriggerContinuationResumer(
 
         val chosenId = response.selectedCards.firstOrNull()
         if (chosenId == null) {
-            // Player declined to behold — the "if you do" payoff doesn't run.
-            return checkForMore(state, emptyList())
+            // Player declined to behold — the "if you do" payoff doesn't run; the "if you don't"
+            // rider (Theorist's Sanctum entering tapped) does.
+            val otherwise = continuation.otherwise
+                ?: return checkForMore(state, emptyList())
+            val result = services.effectExecutorRegistry
+                .execute(state, otherwise, continuation.effectContext)
+                .toExecutionResult()
+            return if (result.outcome is Outcome.Paused) result
+            else checkForMore(result.state, result.events.toList())
         }
 
         // If the beheld object was a card in hand, reveal it publicly. Battlefield permanents

@@ -130,6 +130,19 @@ data object IsFirstCombatPhaseOfTurn : Condition {
 }
 
 /**
+ * Condition: "before attackers are declared" this turn — the game hasn't yet reached the declare
+ * attackers step of the turn's first combat phase (Master Warcraft's ruling: with several combat
+ * phases, it can only be cast before the first one's declare attackers step). True from the start
+ * of the turn through the beginning of combat step of the first combat; false from its declare
+ * attackers step on, including the postcombat main phase and any additional combat phase.
+ */
+@SerialName("BeforeAttackersDeclaredThisTurn")
+@Serializable
+data object BeforeAttackersDeclaredThisTurn : Condition {
+    override val description: String = "before attackers are declared"
+}
+
+/**
  * Condition: "If you've been attacked this step"
  * Used for cards like Defiant Stand and Harsh Justice that can only be cast
  * during the declare attackers step if you've been attacked.

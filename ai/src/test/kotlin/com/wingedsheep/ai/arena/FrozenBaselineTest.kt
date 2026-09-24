@@ -105,7 +105,13 @@ class FrozenBaselineTest : FunSpec({
          * a cast/action data class moves this hash without the AI having changed. Check the outcome
          * line in the failure clue first — if turns/winner/life match the values above, you are
          * almost certainly in this benign case rather than a real behavioural drift.
+         *
+         * Re-blessed 2026-09-24 for Chorus of the Conclave adding `CastSpell.additionalManaForCounters`.
+         * **`LEGACY_V0` did not move.** Every recorded cast now carries `additionalManaForCounters=0`;
+         * with `", additionalManaForCounters=0"` stripped from the recorded action text, this branch
+         * reproduces the previous golden `47e993c61a57ebbd` exactly. Seat 1 still wins on turn 20 at
+         * life -8 / 16.
          */
-        private const val GOLDEN_HASH = "47e993c61a57ebbd"
+        private const val GOLDEN_HASH = "c0db41664c50719f"
     }
 }

@@ -8,6 +8,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -27,7 +28,7 @@ import com.wingedsheep.engine.core.Outcome
  * accumulated into [ExileLibraryUntilManaValueEffect.storeAs] on the outer
  * pipeline so downstream grants operate under the spell's original controller.
  */
-class ExileLibraryUntilManaValueExecutor : EffectExecutor<ExileLibraryUntilManaValueEffect> {
+class ExileLibraryUntilManaValueExecutor(private val zones: ZoneTransitionService) : EffectExecutor<ExileLibraryUntilManaValueEffect> {
 
     override val effectType: KClass<ExileLibraryUntilManaValueEffect> = ExileLibraryUntilManaValueEffect::class
 
@@ -84,7 +85,7 @@ class ExileLibraryUntilManaValueExecutor : EffectExecutor<ExileLibraryUntilManaV
             )
 
             for (cardId in exiledForPlayer) {
-                val result = ZoneMovementUtils.moveCardToZone(currentState, cardId, Zone.EXILE)
+                val result = ZoneMovementUtils.moveCardToZone(zones, currentState, cardId, Zone.EXILE)
                 if (result.outcome is Outcome.Done) {
                     currentState = result.state
                     allEvents.addAll(result.events)

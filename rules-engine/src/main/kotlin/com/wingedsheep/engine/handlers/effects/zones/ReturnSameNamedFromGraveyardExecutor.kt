@@ -19,7 +19,7 @@ import kotlin.reflect.KClass
  * Each card is moved through [ZoneTransitionService] so enters-with-counters and other entry
  * replacements still apply.
  */
-class ReturnSameNamedFromGraveyardExecutor : EffectExecutor<ReturnSameNamedFromGraveyardEffect> {
+class ReturnSameNamedFromGraveyardExecutor(private val zones: ZoneTransitionService) : EffectExecutor<ReturnSameNamedFromGraveyardEffect> {
 
     override val effectType: KClass<ReturnSameNamedFromGraveyardEffect> =
         ReturnSameNamedFromGraveyardEffect::class
@@ -46,7 +46,7 @@ class ReturnSameNamedFromGraveyardExecutor : EffectExecutor<ReturnSameNamedFromG
         var newState = state
         val events = mutableListOf<GameEvent>()
         for (id in toReturn) {
-            val result = ZoneTransitionService.moveToZone(
+            val result = zones.moveToZone(
                 newState,
                 id,
                 Zone.BATTLEFIELD,

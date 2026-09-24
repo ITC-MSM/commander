@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -42,6 +43,7 @@ import kotlin.reflect.KClass
  * currently contains each card) and placed in the destination.
  */
 class MoveCollectionExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val targetFinder: TargetFinder? = null
 ) : EffectExecutor<MoveCollectionEffect> {
@@ -89,6 +91,11 @@ class MoveCollectionExecutor(
             return EffectResult.success(state)
         }
 
+        val attachTo = effect.attachTo
+        if (attachTo != null && destination is CardDestination.ToZone && destination.zone == Zone.BATTLEFIELD) {
+            return moveAurasAttachedTo(state, context, cards, destination, attachTo, effect)
+        }
+
         var result = when (destination) {
             is CardDestination.ToZone ->
                 moveToZone(state, context, cards, destination, effect.order, effect.revealed, effect.moveType, effect.faceDown, effect.noRegenerate, effect.storeMovedAs, effect.underOwnersControl, effect.revealToSelf)
@@ -125,6 +132,62 @@ class MoveCollectionExecutor(
             result = markEnteredViaSourceAbility(result, context, cards)
         }
         return result
+    }
+
+    /**
+     * [MoveCollectionEffect.attachTo]: every Aura in [cards] enters the battlefield attached to the
+     * named host — no enchant choice, the effect specifies it (CR 303.4f). An Aura the host can't
+     * legally carry, or every Aura when the host has left the battlefield, stays where it is
+     * (CR 303.4g). The rest of the collection then moves through the ordinary path.
+     */
+    private fun moveAurasAttachedTo(
+        state: GameState,
+        context: EffectContext,
+        cards: List<EntityId>,
+        destination: CardDestination.ToZone,
+        attachTo: com.wingedsheep.sdk.scripting.targets.EffectTarget,
+        effect: MoveCollectionEffect
+    ): EffectResult {
+        val (auras, others) = cards.partition { state.getEntity(it)?.get<CardComponent>()?.isAura == true }
+        val hostId = context.resolveTarget(attachTo, state)?.takeIf { it in state.getBattlefield() }
+        val defaultControllerId = resolvePlayer(destination.player, context, state) ?: context.controllerId
+        val predicateEvaluator = com.wingedsheep.engine.handlers.PredicateEvaluator()
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+        val moved = mutableListOf<EntityId>()
+        if (hostId != null) {
+            for (auraId in auras) {
+                val container = newState.getEntity(auraId) ?: continue
+                val card = container.get<CardComponent>() ?: continue
+                val controllerId = if (effect.underOwnersControl) {
+                    container.get<OwnerComponent>()?.playerId ?: card.ownerId ?: defaultControllerId
+                } else defaultControllerId
+                // Enchant restriction and protection (CR 702.16c) together: an Aura that couldn't stay
+                // attached never attaches, so it stays in its current zone (CR 303.4g).
+                val legal = com.wingedsheep.engine.handlers.predicates.EnchantRestriction.couldAttach(
+                    newState, newState.projectedState, predicateEvaluator, cardRegistry,
+                    auraId, card, hostId, controllerId
+                )
+                if (!legal || hostId !in newState.getBattlefield()) continue
+                val (afterMove, moveEvents) = moveAuraToBattlefield(newState, auraId, hostId, controllerId)
+                newState = afterMove
+                events.addAll(moveEvents)
+                moved.add(auraId)
+            }
+        }
+        val storeMovedAs = effect.storeMovedAs
+        if (others.isEmpty()) {
+            val collections = if (storeMovedAs != null) mapOf(storeMovedAs to moved.toList()) else emptyMap()
+            return EffectResult.success(newState, events).copy(updatedCollections = collections)
+        }
+        val rest = moveToZone(
+            newState, context, others, destination, effect.order, effect.revealed, effect.moveType,
+            effect.faceDown, effect.noRegenerate, storeMovedAs, effect.underOwnersControl, effect.revealToSelf
+        )
+        val collections = if (storeMovedAs != null) {
+            rest.updatedCollections + (storeMovedAs to (moved + (rest.updatedCollections[storeMovedAs] ?: emptyList())))
+        } else rest.updatedCollections
+        return rest.copy(events = events + rest.events, updatedCollections = collections)
     }
 
     /**
@@ -506,7 +569,9 @@ class MoveCollectionExecutor(
                     remainingAuras = auraCards.drop(1),
                     sourceId = context.sourceId,
                     sourceName = context.sourceId?.let { newState.getEntity(it)?.get<CardComponent>()?.name },
-                    underOwnersControl = underOwnersControl
+                    underOwnersControl = underOwnersControl,
+                    // The whole batch enters simultaneously: none of it can host these Auras.
+                    excludedHosts = cards
                 )
             }
         }
@@ -531,7 +596,8 @@ class MoveCollectionExecutor(
         remainingAuras: List<EntityId>,
         sourceId: EntityId?,
         sourceName: String?,
-        underOwnersControl: Boolean = false
+        underOwnersControl: Boolean = false,
+        excludedHosts: List<EntityId> = emptyList()
     ): EffectResult {
         val cardComponent = state.getEntity(auraId)?.get<CardComponent>()
         val cardDef = cardComponent?.let { cardRegistry.getCard(it.cardDefinitionId) }
@@ -540,7 +606,8 @@ class MoveCollectionExecutor(
         if (auraTarget == null) {
             // No aura target defined — skip this aura (leave in current zone)
             return continueAuraProcessingOrFinish(
-                state, events, remainingAuras, controllerId, destPlayerId, sourceId, sourceName
+                state, events, remainingAuras, controllerId, destPlayerId, sourceId, sourceName,
+                underOwnersControl, excludedHosts
             )
         }
 
@@ -550,12 +617,13 @@ class MoveCollectionExecutor(
             controllerId = controllerId,
             sourceId = auraId,
             ignoreTargetingRestrictions = true
-        )
+        ).filter { it !in excludedHosts }
 
         if (legalTargets.isEmpty()) {
             // No legal targets — Aura stays in current zone per Rule 303.4g
             return continueAuraProcessingOrFinish(
-                state, events, remainingAuras, controllerId, destPlayerId, sourceId, sourceName, underOwnersControl
+                state, events, remainingAuras, controllerId, destPlayerId, sourceId, sourceName,
+                underOwnersControl, excludedHosts
             )
         }
 
@@ -586,7 +654,8 @@ class MoveCollectionExecutor(
             remainingAuras = remainingAuras,
             sourceId = sourceId,
             sourceName = sourceName,
-            underOwnersControl = underOwnersControl
+            underOwnersControl = underOwnersControl,
+            excludedHosts = excludedHosts
         )
 
         return EffectResult.from(state.suspendForDecision(decision, continuation, emptyList()))
@@ -603,7 +672,8 @@ class MoveCollectionExecutor(
         destPlayerId: EntityId,
         sourceId: EntityId?,
         sourceName: String?,
-        underOwnersControl: Boolean = false
+        underOwnersControl: Boolean = false,
+        excludedHosts: List<EntityId> = emptyList()
     ): EffectResult {
         if (remainingAuras.isNotEmpty()) {
             val nextAuraId = remainingAuras.first()
@@ -620,7 +690,8 @@ class MoveCollectionExecutor(
                 remainingAuras = remainingAuras.drop(1),
                 sourceId = sourceId,
                 sourceName = sourceName,
-                underOwnersControl = underOwnersControl
+                underOwnersControl = underOwnersControl,
+                excludedHosts = excludedHosts
             )
         }
         return EffectResult.success(state, events)
@@ -745,7 +816,11 @@ class MoveCollectionExecutor(
         }
 
         for (cardId in cards) {
-            val ownerId = newState.getEntity(cardId)?.get<OwnerComponent>()?.playerId ?: destPlayerId
+            // Ownership lives on OwnerComponent once a card has been minted into a zone, but a
+            // card that has only ever been library content carries it on CardComponent.
+            val ownerId = newState.getEntity(cardId)?.get<OwnerComponent>()?.playerId
+                ?: newState.getEntity(cardId)?.get<CardComponent>()?.ownerId
+                ?: destPlayerId
 
             // For MoveType.Destroy, check indestructible and regeneration before moving
             if (moveType == MoveType.Destroy) {
@@ -786,7 +861,10 @@ class MoveCollectionExecutor(
                 (moveType == MoveType.Sacrifice || moveType == MoveType.Destroy) && destZone == Zone.GRAVEYARD -> ownerId
                 destZone == Zone.HAND && fromZone == Zone.BATTLEFIELD -> ownerId
                 destZone == Zone.EXILE && fromZone == Zone.BATTLEFIELD -> ownerId
-                destZone == Zone.LIBRARY && fromZone == Zone.BATTLEFIELD -> ownerId
+                // CR 400.3: a card bound for a library always goes to its *owner's* library,
+                // whatever zone it leaves — so a mixed-owner collection moved from libraries or
+                // hands (Warp World's stranded Auras) lands in each owner's own library.
+                destZone == Zone.LIBRARY -> ownerId
                 underOwnersControl && destZone == Zone.BATTLEFIELD -> ownerId
                 else -> destPlayerId
             }
@@ -823,7 +901,7 @@ class MoveCollectionExecutor(
 
             // Delegate to ZoneTransitionService for full cleanup + entry
             val fromZoneKey = if (fromZone != null) ZoneKey(ownerId, fromZone) else null
-            val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+            val transitionResult = zones.moveToZone(
                 newState, cardId, destZone, entryOptions, fromZoneKey
             )
             newState = transitionResult.state

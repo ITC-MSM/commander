@@ -33,6 +33,7 @@ import kotlin.reflect.KClass
  * reverts to its front face when it leaves the battlefield (Rule 712.8a).
  */
 class ExileAndReturnTransformedExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry
 ) : EffectExecutor<ExileAndReturnTransformedEffect> {
 
@@ -67,7 +68,7 @@ class ExileAndReturnTransformedExecutor(
 
         // 1. Exile from the battlefield. The permanent ceases to exist as its current object;
         //    leaves-the-battlefield triggers fire and attachments come off via standard cleanup.
-        val exileTransition = ZoneTransitionService.moveToZone(state, targetId, Zone.EXILE)
+        val exileTransition = zones.moveToZone(state, targetId, Zone.EXILE)
         var newState = exileTransition.state
         val events = exileTransition.events.toMutableList()
 
@@ -78,7 +79,7 @@ class ExileAndReturnTransformedExecutor(
         }
 
         // 2. Flip to the destination face and return it to the battlefield as a new object.
-        val returnTransition = returnDfcFace(newState, cardRegistry, targetId, destinationFace)
+        val returnTransition = returnDfcFace(zones, newState, cardRegistry, targetId, destinationFace)
         newState = returnTransition.state
         events.addAll(returnTransition.events)
 

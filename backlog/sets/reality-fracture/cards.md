@@ -2,7 +2,7 @@
 
 **Set Size:** 285 cards
 **Release Date:** October 2, 2026
-**Implemented:** 215 / 285
+**Implemented:** 262 / 285
 | Section    | Total | Done |
 |------------|-------|------|
 | Extras     | 285   | 78   |
@@ -18,8 +18,8 @@
 - [x] Academic Ascent
 - [x] Aerid Konstrari
 - [x] Afterthought Sentry
-- [ ] Ajani Resolute
-- [ ] Ajani Unrelenting
+- [x] Ajani Resolute
+- [x] Ajani Unrelenting
 - [x] Ajani's Anguish
 - [x] Apex Witchstalker
 - [x] Arcane Amphisbaena
@@ -41,17 +41,17 @@
 - [x] Carnivorous Cultivator
 - [x] Cast Away Doubt
 - [x] Chandra's Emberling
-- [ ] Chandra, Chill of Compliance
-- [ ] Chandra, Torch of Defiance
+- [x] Chandra, Chill of Compliance
+- [x] Chandra, Torch of Defiance
 - [x] Charge the Sanctum
-- [ ] Clash of Elements
+- [x] Clash of Elements
 - [ ] Codie, Ravenous Codex
 - [x] Command the Stage
-- [ ] Compel Brutality
-- [ ] Countersculpt
+- [x] Compel Brutality
+- [x] Countersculpt
 - [x] Craftwork Crusher
 - [x] Craterclaw Colossus
-- [ ] Cruel Calculations
+- [x] Cruel Calculations
 - [x] Cryotheory Adept
 - [x] Curse-Marred Demon
 - [x] Danitha, Spear of Agony
@@ -70,8 +70,8 @@
 - [x] Edgar, Moonlit Sovereign
 - [x] Emergency Phytomedic
 - [ ] Emrakul, the Exigent Doom
-- [ ] Enlightened Confidant
-- [ ] Entrust the Spark
+- [x] Enlightened Confidant
+- [x] Entrust the Spark
 - [x] Essence Burn
 - [x] Extended Absence
 - [ ] Extrapolate the Impossible
@@ -82,52 +82,52 @@
 - [x] Fatehold Chronologist
 - [x] Fateshaper Aspirant
 - [ ] Fblthp, Impossibly Lost
-- [ ] Fblthp, Knows the Way
+- [x] Fblthp, Knows the Way
 - [x] Ferocity of the Hunt
-- [ ] Flickering Hound
-- [ ] Flourishing Grapple
+- [x] Flickering Hound
+- [x] Flourishing Grapple
 - [x] Forest
 - [x] Formidable Commons
 - [x] Frostbite Pyromental
 - [x] Fulminous Forte
 - [x] Gallia, Tragic Host
 - [x] Gallia, the Merrymaker
-- [ ] Gardenize
-- [ ] Garruk, Curse Breaker
-- [ ] Garruk, Veiled Butcher
+- [x] Gardenize
+- [x] Garruk, Curse Breaker
+- [x] Garruk, Veiled Butcher
 - [x] Geist of Saint Thalia
 - [x] Generous Revival
 - [x] Germinate Recruits
-- [ ] Ghalta the Immovable
+- [x] Ghalta the Immovable
 - [x] Ghalta the Unstoppable
 - [x] Gideon the Oathless
-- [ ] Gideon's Memorial
+- [x] Gideon's Memorial
 - [x] Graft Surgeon
 - [x] Greenhouse Propagator
 - [x] Grim Repriser
 - [x] Guiding Hydra
 - [ ] Hall of Echoes
 - [x] Hallway Heckler
-- [ ] Hapatra, the Desert Fang
+- [x] Hapatra, the Desert Fang
 - [x] Hapatra, the Desert Frost
 - [x] Haunted Ridge
 - [x] Heartstring Puller
 - [ ] Heartwood Crafter
 - [x] Hexhaven Battalion
-- [ ] Hexhaven Dueling Arena
-- [ ] Hexhaven Invigorator
+- [x] Hexhaven Dueling Arena
+- [x] Hexhaven Invigorator
 - [x] Hungering Puppetbeast
-- [ ] Hunter's Axe
+- [x] Hunter's Axe
 - [x] Icy Reception
 - [ ] Identity Echo
-- [ ] Infinite Coursework
+- [x] Infinite Coursework
 - [x] Ingris Stingerquill
 - [x] Innovative Commons
-- [ ] Inspired Tethermage
+- [x] Inspired Tethermage
 - [x] Island
 - [ ] Jace's Machinations
 - [ ] Jace, Reality Sculptor
-- [ ] Jiang Yanggu, Alone
+- [x] Jiang Yanggu, Alone
 - [x] Jiang Yanggu, Never Alone
 - [ ] Karn, Argent Defender
 - [x] Karn, Gilded Guardian
@@ -140,17 +140,17 @@
 - [x] Konstrari Improviser
 - [x] Koth of the Homestead
 - [x] Koth, the Geomancer
-- [ ] Kwia Vigorbloom
+- [x] Kwia Vigorbloom
 - [x] Last Gasp
-- [ ] Lich's Relic
+- [x] Lich's Relic
 - [x] Liliana the Faultless
 - [x] Liliana the Repentant
 - [x] Living Library
 - [ ] Loot, the Anomaly
-- [ ] Loot, the Nexus
+- [x] Loot, the Nexus
 - [x] Loyal Tutor
 - [x] Lyra, Archangel of Dawn
-- [ ] Lyra, Tolarian Archangel
+- [x] Lyra, Tolarian Archangel
 - [x] Mabel, Bitter Recluse
 - [x] Mabel, Valley Hero
 - [x] Marwyn, the Clearcutter
@@ -175,7 +175,7 @@
 - [x] Pia, Aether Ascetic
 - [x] Pia, Determined Rebuilder
 - [x] Plains
-- [ ] Plan for All Outcomes
+- [x] Plan for All Outcomes
 - [x] Pompous Battlemage
 - [x] Precise Redaction
 - [x] Predictive Preparations
@@ -199,17 +199,17 @@
 - [x] Rewrite Regrets
 - [x] Rise of the Deathbringer
 - [x] Rockfall Vale
-- [ ] Roiling Canopy
+- [x] Roiling Canopy
 - [x] Room of Refuge
 - [x] Ruric Thar, Biomagus
-- [ ] Ruric Thar, Magecrusher
+- [x] Ruric Thar, Magecrusher
 - [x] Saheeli, Consul of Oversight
 - [x] Saheeli, Jewel of Avishkar
 - [x] Samut, Hazoret's Champion
 - [ ] Samut, Tyrant of Naktamun
 - [x] Sanctum Lurker
 - [x] Screeching Soulbreaker
-- [ ] Seasoned Cryomancer
+- [x] Seasoned Cryomancer
 - [x] Semester Foreseer
 - [x] Shatterwing Pegasus
 - [x] Shipwreck Marsh
@@ -217,7 +217,7 @@
 - [x] Simulacrum Shaper
 - [x] Skilled Battlecarver
 - [x] Solarium Sentry
-- [ ] Solitary Cell
+- [x] Solitary Cell
 - [x] Solve for Disappointment
 - [x] Something Worth Saving
 - [x] Sphinx of False Conclusions
@@ -232,8 +232,8 @@
 - [x] Surveillance Phantasm
 - [x] Swamp
 - [x] Tam's Resistance
-- [ ] Tam, the Possibility
-- [ ] Tarmogoyf
+- [x] Tam, the Possibility
+- [x] Tarmogoyf
 - [x] Tenured Tethermage
 - [x] Terminal Criticism
 - [x] Tether Technician
@@ -244,10 +244,10 @@
 - [x] Teyo, Lightshield Expert
 - [x] Thalia, the Survivor
 - [x] The Echoverse Fulcrum
-- [ ] The Theorist, Jace Beleren
+- [x] The Theorist, Jace Beleren
 - [x] Theoretical Necromancer
 - [x] Theorist's Proxy
-- [ ] Theorist's Sanctum
+- [x] Theorist's Sanctum
 - [x] Theorix Annex
 - [x] Theorix Charm
 - [x] Theorix Metamage
@@ -264,20 +264,20 @@
 - [x] Undulating Witness
 - [x] Unflinching Hortimancer
 - [x] Unsummon
-- [ ] Variable Chaser
-- [ ] Verdant Kraken
+- [x] Variable Chaser
+- [x] Verdant Kraken
 - [x] Vigorbloom Annex
 - [x] Vigorbloom Charm
 - [x] Vigorbloom Vanguard
-- [ ] Vindictive Triumph
+- [x] Vindictive Triumph
 - [x] Vinelasher Adept
-- [ ] Violent Echoes
+- [x] Violent Echoes
 - [x] Void Extrapolator
 - [x] Vraska's Final Mercy
-- [ ] Vraska, Soul of Stone
+- [x] Vraska, Soul of Stone
 - [x] Vraska, the Cutting Glare
-- [ ] Warrior's Blades
-- [ ] Way of the Cryomancer
+- [x] Warrior's Blades
+- [x] Way of the Cryomancer
 - [x] Way of the Deathbringer
 - [x] Way of the Healer
 - [x] Way of the Mentor
@@ -295,8 +295,8 @@
 - [x] Wrecking Gecko
 - [x] Yargle, Glutton of Urborg
 - [x] Yargle, Goliath of Otaria
-- [ ] Yoshimaru, Beloved Companion
+- [x] Yoshimaru, Beloved Companion
 - [x] Yoshimaru, Scrappy Stray
 - [x] Your Fate Ends Here
-- [ ] Yuriko, Blade of the Mighty
+- [x] Yuriko, Blade of the Mighty
 - [x] Yuriko, Hope from the Shadows

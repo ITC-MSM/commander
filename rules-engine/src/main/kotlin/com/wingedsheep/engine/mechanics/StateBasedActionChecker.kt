@@ -2,6 +2,7 @@ package com.wingedsheep.engine.mechanics
 
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.DecisionHandler
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.sba.StateBasedActionRegistry
 import com.wingedsheep.engine.mechanics.sba.creature.CreatureSbaModule
 import com.wingedsheep.engine.mechanics.sba.game.GameSbaModule
@@ -33,9 +34,10 @@ class StateBasedActionChecker(
      * Backward-compatible constructor used by existing call sites.
      */
     constructor(
+        zones: ZoneTransitionService,
         decisionHandler: DecisionHandler = DecisionHandler(),
         cardRegistry: com.wingedsheep.engine.registry.CardRegistry
-    ) : this(buildDefaultRegistry(decisionHandler, cardRegistry))
+    ) : this(buildDefaultRegistry(zones, decisionHandler, cardRegistry))
 
     /**
      * Check and apply all state-based actions until none apply.
@@ -130,13 +132,14 @@ class StateBasedActionChecker(
         const val MAX_SBA_ITERATIONS = 1000
 
         fun buildDefaultRegistry(
+            zones: ZoneTransitionService,
             decisionHandler: DecisionHandler = DecisionHandler(),
             cardRegistry: com.wingedsheep.engine.registry.CardRegistry
         ): StateBasedActionRegistry {
             val registry = StateBasedActionRegistry()
-            registry.registerModule(PlayerSbaModule())
-            registry.registerModule(CreatureSbaModule())
-            registry.registerModule(PermanentSbaModule(decisionHandler, cardRegistry))
+            registry.registerModule(PlayerSbaModule(zones))
+            registry.registerModule(CreatureSbaModule(zones))
+            registry.registerModule(PermanentSbaModule(zones, decisionHandler, cardRegistry))
             registry.registerModule(ZoneSbaModule())
             registry.registerModule(GameSbaModule())
             return registry

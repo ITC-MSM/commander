@@ -441,7 +441,8 @@
                                 "zone": "Library",
                                 "filter": "creature green"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -674,7 +675,8 @@
                         "zone": "Library",
                         "filter": "land"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",

@@ -3,7 +3,6 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.AlternativeCostType
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.PaymentStrategy
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DashedComponent
@@ -250,7 +249,7 @@ class DashMechanicTest : FunSpec({
 
         val dashed = driver.findPermanent(player, "Dash Test Creature")!!
 
-        val transitionResult = ZoneTransitionService.moveToZone(
+        val transitionResult = driver.zones.moveToZone(
             state = driver.state,
             entityId = dashed,
             destinationZone = Zone.GRAVEYARD

@@ -66,6 +66,27 @@ class HasDealtDamagePredicateTest : ScenarioTestBase() {
                 }
             }
 
+            val combatLifetime = StatePredicate.HasDealtDamage(combatOnly = true)
+            val combatThisTurn = StatePredicate.HasDealtDamage(thisTurnOnly = true, combatOnly = true)
+
+            test("combatOnly ignores a marker that only ever recorded noncombat damage") {
+                val pinged = ComponentContainer().with(HasDealtDamageComponent(5))
+                hasDealtDamage(pinged, currentTurn = 5, predicate = lifetime) shouldBe true
+                hasDealtDamage(pinged, currentTurn = 5, predicate = combatLifetime) shouldBe false
+                hasDealtDamage(pinged, currentTurn = 5, predicate = combatThisTurn) shouldBe false
+            }
+
+            test("combatOnly reads the combat stamp for both windows") {
+                val marked = ComponentContainer().with(
+                    HasDealtDamageComponent(lastDealtDamageTurn = 5, lastDealtCombatDamageTurn = 3)
+                )
+                hasDealtDamage(marked, currentTurn = 5, predicate = combatLifetime) shouldBe true
+                withClue("A noncombat stamp this turn doesn't make the combat damage this turn's") {
+                    hasDealtDamage(marked, currentTurn = 5, predicate = combatThisTurn) shouldBe false
+                }
+                hasDealtDamage(marked, currentTurn = 3, predicate = combatThisTurn) shouldBe true
+            }
+
             test("the passive marker never satisfies the active predicate") {
                 val damaged = ComponentContainer().with(WasDealtDamageThisTurnComponent)
                 hasDealtDamage(damaged, currentTurn = 5, predicate = lifetime) shouldBe false
@@ -96,7 +117,7 @@ class HasDealtDamagePredicateTest : ScenarioTestBase() {
                 game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
 
                 game.getLifeTotal(2) shouldBe 18
-                game.marker(bears) shouldBe HasDealtDamageComponent(damageTurn)
+                game.marker(bears) shouldBe HasDealtDamageComponent(damageTurn, lastDealtCombatDamageTurn = damageTurn)
             }
 
             test("combat damage to a creature stamps the blocker that dealt it") {
@@ -117,7 +138,7 @@ class HasDealtDamagePredicateTest : ScenarioTestBase() {
                 game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
 
                 withClue("The blocker dealt combat damage to the attacker") {
-                    game.marker(giant) shouldBe HasDealtDamageComponent(damageTurn)
+                    game.marker(giant) shouldBe HasDealtDamageComponent(damageTurn, lastDealtCombatDamageTurn = damageTurn)
                 }
                 withClue("The attacker died, so its own stamp went with it (CR 400.7)") {
                     game.isOnBattlefield("Grizzly Bears") shouldBe false
@@ -155,7 +176,7 @@ class HasDealtDamagePredicateTest : ScenarioTestBase() {
                         ?.getCount(CounterType.LOYALTY) shouldBe 2
                 }
                 withClue("The attacker dealt that damage, so it carries this turn's stamp") {
-                    game.marker(bears) shouldBe HasDealtDamageComponent(damageTurn)
+                    game.marker(bears) shouldBe HasDealtDamageComponent(damageTurn, lastDealtCombatDamageTurn = damageTurn)
                 }
             }
 
@@ -193,7 +214,7 @@ class HasDealtDamagePredicateTest : ScenarioTestBase() {
                     game.getLifeTotal(1) shouldBe 18
                 }
                 withClue("The attacker dealt damage this turn — to two players, in fact") {
-                    game.marker(bears) shouldBe HasDealtDamageComponent(damageTurn)
+                    game.marker(bears) shouldBe HasDealtDamageComponent(damageTurn, lastDealtCombatDamageTurn = damageTurn)
                 }
             }
 
@@ -239,6 +260,43 @@ class HasDealtDamagePredicateTest : ScenarioTestBase() {
                 }
             }
 
+            test("later noncombat damage keeps the earlier combat stamp") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Prodigal Sorcerer", summoningSickness = false)
+                    .withCardOnBattlefield(2, "Hill Giant")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                    .build()
+
+                val sorcerer = game.findPermanent("Prodigal Sorcerer")!!
+                val giant = game.findPermanent("Hill Giant")!!
+                val damageTurn = game.state.turnNumber
+                game.declareAttackers(mapOf("Prodigal Sorcerer" to 2)).error shouldBe null
+                game.declareNoBlockers()
+                game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
+                game.getLifeTotal(2) shouldBe 19
+
+                // Prodigal Sorcerer is tapped from attacking; untap it to ping.
+                game.state = game.state.updateEntity(sorcerer) {
+                    it.without<com.wingedsheep.engine.state.components.battlefield.TappedComponent>()
+                }
+                game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = sorcerer,
+                        abilityId = sorcererAbilityId,
+                        targets = listOf(ChosenTarget.Permanent(giant))
+                    )
+                ).error shouldBe null
+                game.resolveStack()
+
+                withClue("The ping restamps the any-damage turn and carries the combat stamp forward") {
+                    game.marker(sorcerer) shouldBe
+                        HasDealtDamageComponent(damageTurn, lastDealtCombatDamageTurn = damageTurn)
+                }
+            }
+
             test("the stamp keeps the lifetime window open across a turn boundary but closes the per-turn one") {
                 val game = scenario()
                     .withPlayers("Player", "Opponent")
@@ -253,7 +311,7 @@ class HasDealtDamagePredicateTest : ScenarioTestBase() {
                 game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
 
                 val damageTurn = game.state.turnNumber
-                game.marker(bears) shouldBe HasDealtDamageComponent(damageTurn)
+                game.marker(bears) shouldBe HasDealtDamageComponent(damageTurn, lastDealtCombatDamageTurn = damageTurn)
 
                 // Roll into the opponent's turn.
                 game.passUntilPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)

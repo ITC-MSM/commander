@@ -113,6 +113,7 @@ class LegalActionEnricher(
             mandatoryBlockerAssignments = action.mandatoryBlockerAssignments,
             hasXCost = action.hasXCost,
             maxAffordableX = action.maxAffordableX,
+            maxAdditionalManaForCounters = action.maxAdditionalManaForCounters,
             minX = action.minX,
             isManaAbility = action.isManaAbility,
             requiresManaColorChoice = action.requiresManaColorChoice,

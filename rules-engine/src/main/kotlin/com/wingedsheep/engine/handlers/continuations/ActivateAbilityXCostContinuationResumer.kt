@@ -8,6 +8,7 @@ import com.wingedsheep.engine.core.ActivateAbilityExileFromGraveyardContinuation
 import com.wingedsheep.engine.core.ActivateAbilityVariablePermanentsContinuation
 import com.wingedsheep.engine.core.ActivateAbilityExileXFromGraveyardContinuation
 import com.wingedsheep.engine.core.ActivateAbilitySacrificeContinuation
+import com.wingedsheep.engine.core.ActivateAbilityPutOnLibraryContinuation
 import com.wingedsheep.engine.core.ActivateAbilityTapXTargetsContinuation
 import com.wingedsheep.engine.core.CancelDecisionResponse
 import com.wingedsheep.engine.core.CardsSelectedResponse
@@ -57,6 +58,7 @@ class ActivateAbilityXCostContinuationResumer(
         resumer(ActivateAbilityTapXTargetsContinuation::class, ::resumeTapXTargets),
         resumer(ActivateAbilityExileFromGraveyardContinuation::class, ::resumeExileFromGraveyard),
         resumer(ActivateAbilitySacrificeContinuation::class, ::resumeSacrifice),
+        resumer(ActivateAbilityPutOnLibraryContinuation::class, ::resumePutOnLibrary),
         resumer(ActivateAbilityVariablePermanentsContinuation::class, ::resumeVariablePermanents),
         resumer(ActivateAbilityControllerTargetContinuation::class, ::resumeControllerTargets)
     )
@@ -241,6 +243,39 @@ class ActivateAbilityXCostContinuationResumer(
         val replay = action.copy(
             costPayment = (action.costPayment ?: AdditionalCostPayment())
                 .copy(sacrificedPermanents = response.selectedCards)
+        )
+        return reenter(handler.execute(state, replay), checkForMore)
+    }
+
+    /**
+     * Resume after the player picks which hand card(s) to put on top of their library for a
+     * `CostAtom.PutFromHandOnTopOfLibrary` cost (Leashling). Fills the choice into
+     * `costPayment.cardsPutOnLibrary` and re-enters the handler to pay and put the ability on the
+     * stack. A cancel backs out cleanly — nothing has been paid yet.
+     */
+    private fun resumePutOnLibrary(
+        state: GameState,
+        continuation: ActivateAbilityPutOnLibraryContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response is CancelDecisionResponse) {
+            return ExecutionResult.success(state.withPriority(continuation.action.playerId))
+        }
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(state, "Expected card-selection response for ActivateAbility PutFromHandOnTopOfLibrary")
+        }
+        val selected = response.selectedCards
+        if (selected.size != continuation.count || selected.toSet().size != selected.size) {
+            return ExecutionResult.error(state, "Expected ${continuation.count} distinct card(s), got ${selected.size}")
+        }
+        if (selected.any { it !in continuation.candidates }) {
+            return ExecutionResult.error(state, "Selected card is not in the list of valid candidates")
+        }
+        val action = continuation.action
+        val replay = action.copy(
+            costPayment = (action.costPayment ?: AdditionalCostPayment())
+                .copy(cardsPutOnLibrary = selected)
         )
         return reenter(handler.execute(state, replay), checkForMore)
     }

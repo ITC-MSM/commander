@@ -461,25 +461,47 @@ data class BlockTax(
 }
 
 /**
- * This creature can attack as though it didn't have defender, as long as a condition is met.
- * "As long as this creature has a counter on it, it can attack as though it didn't have defender."
+ * Creatures matching [filter] can attack as though they didn't have defender, as long as
+ * [condition] holds (always, when it is null).
  *
- * Checked at attack declaration time. The condition is evaluated with "you" = the creature's
- * controller. The filter defaults to the source creature itself.
+ *  - Self scope (the default) — "As long as this creature has a counter on it, it can attack as
+ *    though it didn't have defender." (Faithbound Judge, Shipwreck Sentry.)
+ *  - Battlefield scope — "Creatures you control can attack as though they didn't have defender."
+ *    (Ghalta the Immovable): `CanAttackDespiteDefender(filter = GroupFilter.AllCreaturesYouControl)`.
+ *    The group filter is matched against the would-be attacker with the permanent carrying this
+ *    ability as predicate source, so `youControl()` means that permanent's controller.
  *
- * @property condition The condition under which the defender restriction is bypassed
+ * Checked at attack declaration time by `DefenderBypass`, never through projection: it is a rule
+ * modification (CR 702.3b's restriction lifted), not a characteristic, so the affected set is
+ * re-asked each time attackers are declared. The condition is evaluated with the permanent
+ * carrying this ability as source and its controller as "you".
+ *
+ * @property condition The condition under which the defender restriction is bypassed; null = always
  * @property filter What this ability applies to
  */
 @SerialName("CanAttackDespiteDefender")
 @Serializable
 data class CanAttackDespiteDefender(
-    val condition: Condition,
+    val condition: Condition? = null,
     val filter: GroupFilter = GroupFilter.source()
 ) : StaticAbility {
-    override val description: String = "can attack as though it didn't have defender as long as ${condition.description}"
+    override val description: String = buildString {
+        if (filter.scope is Scope.Self) {
+            append("can attack as though it didn't have defender")
+        } else {
+            append(filter.description.replaceFirstChar(Char::uppercaseChar))
+            append(" can attack as though they didn't have defender")
+        }
+        if (condition != null) append(" as long as ${condition.description}")
+    }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
-        return if (newFilter !== filter) copy(filter = newFilter) else this
+        val newCondition = condition?.applyTextReplacement(replacer)
+        return if (newFilter !== filter || newCondition !== condition) {
+            copy(filter = newFilter, condition = newCondition)
+        } else {
+            this
+        }
     }
 }
 

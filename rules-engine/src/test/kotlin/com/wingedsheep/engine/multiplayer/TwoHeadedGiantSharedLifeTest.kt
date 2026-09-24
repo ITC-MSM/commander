@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.LifeChangeReason
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.life.GainLifeExecutor
 import com.wingedsheep.engine.handlers.effects.life.LoseLifeExecutor
 import com.wingedsheep.engine.handlers.effects.life.SetLifeTotalExecutor
@@ -41,6 +42,7 @@ import io.kotest.matchers.shouldBe
 class TwoHeadedGiantSharedLifeTest : FunSpec({
 
     fun registry(): CardRegistry = CardRegistry().also { it.register(TestCards.all) }
+    val zones = ZoneTransitionService(registry())
 
     /** Boot a 2HG game; returns state + the four player ids (p0,p1 = team 0; p2,p3 = team 1). */
     fun boot(): Pair<GameState, List<EntityId>> {
@@ -102,7 +104,7 @@ class TwoHeadedGiantSharedLifeTest : FunSpec({
 
     test("damage to a teammate reduces the shared team total") {
         val (state, p) = boot()
-        val result = DamageUtils.dealDamageToTarget(state, p[0], 6, sourceId = null)
+        val result = DamageUtils.dealDamageToTarget(zones, state, p[0], 6, sourceId = null)
         result.state.lifeTotal(p[0]) shouldBe 24
         result.state.lifeTotal(p[1]) shouldBe 24
         result.state.lifeTotal(p[2]) shouldBe 30

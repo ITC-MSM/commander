@@ -51,7 +51,8 @@ val FabledPassage = card("Fabled Passage") {
                 // Search library for basic land
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.BasicLand),
-                    storeAs = "searchable"
+                    storeAs = "searchable",
+                    search = true
                 ),
                 SelectFromCollectionEffect(
                     from = "searchable",

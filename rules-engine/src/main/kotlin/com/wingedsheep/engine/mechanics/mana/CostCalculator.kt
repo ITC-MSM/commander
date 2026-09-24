@@ -1281,6 +1281,7 @@ class CostCalculator(
         is CardPredicate.ToughnessEqualsDynamic -> false
             is CardPredicate.PowerGreaterThanEntity -> false
             is CardPredicate.PowerAtMostEntity -> false
+            is CardPredicate.CouldEnchant -> false
             is CardPredicate.PowerLessThanEntity -> false
             // A printed card's power never exceeds its own base power statically (they're equal).
             CardPredicate.PowerGreaterThanBase -> false

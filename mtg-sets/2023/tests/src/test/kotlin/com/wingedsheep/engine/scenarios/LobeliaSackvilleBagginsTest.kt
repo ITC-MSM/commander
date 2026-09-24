@@ -46,7 +46,7 @@ class LobeliaSackvilleBagginsTest : FunSpec({
 
         // Opponent's 2/2 in their graveyard, Gap 20 marker set by ZoneTransitionService.
         val oppBear = driver.putCreatureOnBattlefield(opp, "Grizzly Bears")
-        val mv = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val mv = driver.zones.moveToZone(
             state = driver.state,
             entityId = oppBear,
             destinationZone = Zone.GRAVEYARD

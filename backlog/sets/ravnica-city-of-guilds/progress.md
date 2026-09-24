@@ -3,7 +3,7 @@
 Branch: `worktree-rav-completion`. Baseline: `4f09fec7e2`. Draft PR: #2236.
 
 The goal is all 291 cards, their required engine functionality, and full set verification.
-The initial source inventory was 239/291; the current inventory is **260/291**, with 31 missing.
+The initial source inventory was 239/291; the current inventory is **291/291** — every card is implemented; full-set verification (`verify-set`) remains.
 The checklist is an inventory, not proof of rules correctness. Existing generated definitions
 also need field and behavior review before completion can be claimed.
 

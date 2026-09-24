@@ -91,7 +91,8 @@ val SayItsName = card("Say Its Name") {
                     player = Player.You,
                     filter = GameObjectFilter.Any.named("Altanak, the Thrice-Called")
                 ),
-                storeAs = "altanak"
+                storeAs = "altanak",
+                search = true
             ),
             SelectFromCollectionEffect(
                 from = "altanak",

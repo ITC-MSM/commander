@@ -54,7 +54,8 @@ val HoardingDragon = card("Hoarding Dragon") {
             listOf(
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Artifact),
-                    storeAs = "hoardSearchable"
+                    storeAs = "hoardSearchable",
+                    search = true
                 ),
                 SelectFromCollectionEffect(
                     from = "hoardSearchable",

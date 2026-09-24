@@ -38,7 +38,7 @@ class ShortcutToMushroomsTest : FunSpec({
         val target = driver.putCreatureOnBattlefield(active, "Grizzly Bears")
 
         // Move bear to graveyard this turn (sets the per-player LTB tracker).
-        val moveResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val moveResult = driver.zones.moveToZone(
             state = driver.state,
             entityId = bear,
             destinationZone = Zone.GRAVEYARD

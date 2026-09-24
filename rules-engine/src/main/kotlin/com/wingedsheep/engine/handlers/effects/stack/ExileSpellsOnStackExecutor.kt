@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -13,6 +14,7 @@ import kotlin.reflect.KClass
 
 /** Exiles the matching spells without countering them. */
 class ExileSpellsOnStackExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
 ) : EffectExecutor<ExileSpellsOnStackEffect> {
     override val effectType: KClass<ExileSpellsOnStackEffect> = ExileSpellsOnStackEffect::class
@@ -28,7 +30,7 @@ class ExileSpellsOnStackExecutor(
             !effect.opponentsOnly || spell.casterId != context.controllerId
         }
 
-        val resolver = StackResolver(cardRegistry = cardRegistry)
+        val resolver = StackResolver(zones, cardRegistry = cardRegistry)
         var currentState = state
         val events = mutableListOf<GameEvent>()
         for (spellId in spellIds) {

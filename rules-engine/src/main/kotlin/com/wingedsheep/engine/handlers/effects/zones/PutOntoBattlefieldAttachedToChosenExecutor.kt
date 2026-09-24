@@ -48,6 +48,7 @@ import kotlin.reflect.KClass
  * Auras and Equipment.
  */
 class PutOntoBattlefieldAttachedToChosenExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val targetFinder: TargetFinder
 ) : EffectExecutor<PutOntoBattlefieldAttachedToChosenEffect> {
@@ -110,7 +111,7 @@ class PutOntoBattlefieldAttachedToChosenExecutor(
             return if (isEquipment) {
                 val fromZone = findCurrentZone(state, cardId)
                     ?: return EffectResult.success(state)
-                val transition = ZoneTransitionService.moveToZone(
+                val transition = zones.moveToZone(
                     state, cardId, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = controllerId),
                     fromZone

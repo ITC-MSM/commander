@@ -71,9 +71,27 @@ export function ChooseColorDecisionUI({
   const submitColorDecision = useGameStore((s) => s.submitColorDecision)
   const [hoveredColor, setHoveredColor] = useState<string | null>(null)
   const [collapsed, setCollapsed] = useState(false)
+  // "The color or colors of your choice": toggle any nonempty set, then confirm.
+  const maxColors = decision.maxColors ?? 1
+  const multiSelect = maxColors > 1
+  const [selected, setSelected] = useState<readonly string[]>([])
 
   const handleColorClick = (color: string) => {
-    submitColorDecision(decision.id, color)
+    if (!multiSelect) {
+      submitColorDecision(decision.id, color)
+      return
+    }
+    setSelected((prev) => {
+      if (prev.includes(color)) return prev.filter((c) => c !== color)
+      if (prev.length >= maxColors) return prev
+      return [...prev, color]
+    })
+  }
+
+  const handleConfirm = () => {
+    const [first] = selected
+    if (first === undefined) return
+    submitColorDecision(decision.id, first, selected)
   }
 
   if (collapsed) {
@@ -175,7 +193,8 @@ export function ChooseColorDecisionUI({
         {decision.availableColors.map((color) => {
           const config = COLOR_CONFIG[color]
           const displayName = ColorDisplayNames[color as keyof typeof ColorDisplayNames] ?? color
-          const isHovered = hoveredColor === color
+          const isSelected = selected.includes(color)
+          const isHovered = hoveredColor === color || isSelected
           const symbol = COLOR_TO_SYMBOL[color]
 
           return (
@@ -184,7 +203,10 @@ export function ChooseColorDecisionUI({
               onClick={() => handleColorClick(color)}
               onMouseEnter={() => setHoveredColor(color)}
               onMouseLeave={() => setHoveredColor(null)}
+              {...(multiSelect ? { 'aria-pressed': isSelected } : {})}
               style={{
+                outline: isSelected ? '3px solid rgba(255, 255, 255, 0.85)' : 'none',
+                outlineOffset: 2,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -225,6 +247,30 @@ export function ChooseColorDecisionUI({
           )
         })}
       </div>
+
+      {multiSelect && (
+        <button
+          onClick={handleConfirm}
+          disabled={selected.length === 0}
+          style={{
+            padding: '8px 28px',
+            fontSize: 'var(--font-md)',
+            fontWeight: 600,
+            borderRadius: 8,
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            background: selected.length === 0 ? 'rgba(60, 60, 70, 0.6)' : 'var(--accent-primary, #3a7bd5)',
+            color: 'var(--text-primary)',
+            cursor: selected.length === 0 ? 'not-allowed' : 'pointer',
+            opacity: selected.length === 0 ? 0.6 : 1,
+          }}
+        >
+          {selected.length === 0
+            ? 'Select at least one color'
+            : `Confirm ${selected
+                .map((c) => ColorDisplayNames[c as keyof typeof ColorDisplayNames] ?? c)
+                .join(', ')}`}
+        </button>
+      )}
     </div>
   )
 }

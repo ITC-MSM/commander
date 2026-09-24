@@ -245,32 +245,7 @@ Cards: Boros Signet, Dimir Signet, Golgari Signet, Selesnya Signet.
 
 ## Remaining card-specific investigations
 
-These are source-backed leads, not claims that every card needs a new executor.
-
-| Cards | Required investigation or capability |
-|---|---|
-| Mausoleum Turnkey | Opponent-chosen targets on triggers: TriggerProcessor currently substitutes the controller and CardLinter rejects the unsupported shape. |
-| Quickchange | Choice of any nonempty subset of colors; the current color decision is singular. |
-| Dream Leash | Casting-only tapped target restriction, independent from resolution legality. |
-| Chant of Vitu-Ghazi | Turn-long prevention from all creatures, with life gained from actual prevented damage. |
-| Concerted Effort | Propagation of actual protection and landwalk variants as well as ordinary keywords. |
-| Belltower Sphinx | Retain damage-source controller information for its self-damaged trigger. |
-| Auratouched Mage, Flickerform | Legal attachment search, owner-controlled Aura return, and source-left fallback. |
-| Eye of the Storm | Linked spell-card exile, copy choices controlled by the triggering caster, and repeated optional casts. |
-| Spawnbroker | Existing ExchangeControl plus cross-target power filtering; prove both-target legality and exchange atomicity. |
-| Sins of the Past | Targeted graveyard casting permission with duration and exile replacement, without moving the card prematurely. |
-| Molten Sentry | Coin flip as an entry replacement with persistent stats and keyword. |
-| Warp World | Per-owner counts including tokens, simultaneous entry batches, enchantments entering afterward, and bottom ordering. |
-| Blood Funnel | Optional creature sacrifice and counter-on-nonpayment, composed with existing reduction and counter effects. |
-| Shadow of Doubt | Search prohibition in the shared library-search path. |
-| Szadek, Lord of Secrets | One damage replacement produces counters and mills the damaged player; independent replacements cannot both consume the same damage. |
-| Crown of Convergence | Continuously compare creature colors with the current top library card. |
-| Circu, Dimir Lobotomist | Name matching over the whole linked exile pile for casting restrictions. |
-| Spectral Searchlight | Non-targeting player choice followed by that player's color choice, preserving mana-ability resolution. |
-| Sunforger, Leashling | Unattach-equipment and hand-to-library costs, paid before resolution. |
-| Brightflame | Aggregate actual damage dealt after prevention/replacement before life gain. |
-| Master Warcraft | Attack/block declaration choice ownership across engine, server, and client. |
-| Grifter’s Blade | Enter attached as a replacement, rather than an entry trigger. |
-| Chorus of the Conclave | Optional arbitrary extra mana for creature spells, carried into entry counters. |
-| Mindleech Mass | Existing hand selection and free-cast pipeline; prove timing and continuation behavior. |
-| Gaze of the Gorgon | Combat-history tracking and delayed destruction alongside regeneration. |
+None — every card in the set is implemented. The last sixteen (Auratouched Mage, Chant of Vitu-Ghazi,
+Chorus of the Conclave, Concerted Effort, Dream Leash, Eye of the Storm, Flickerform, Gaze of the Gorgon,
+Leashling, Master Warcraft, Quickchange, Shadow of Doubt, Sins of the Past, Spectral Searchlight,
+Szadek, Lord of Secrets, Warp World) shipped together; see the PR for the engine support each needed.

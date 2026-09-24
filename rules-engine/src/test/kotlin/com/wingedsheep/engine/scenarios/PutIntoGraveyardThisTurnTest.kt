@@ -85,13 +85,13 @@ class PutIntoGraveyardThisTurnTest : FunSpec({
         val player = driver.activePlayer!!
 
         val card = driver.putCardInHand(player, "Grizzly Bears")
-        val toLibrary = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val toLibrary = driver.zones.moveToZone(
             state = driver.state,
             entityId = card,
             destinationZone = Zone.LIBRARY
         )
         driver.replaceState(toLibrary.state)
-        val toGraveyard = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val toGraveyard = driver.zones.moveToZone(
             state = driver.state,
             entityId = card,
             destinationZone = Zone.GRAVEYARD
@@ -110,7 +110,7 @@ class PutIntoGraveyardThisTurnTest : FunSpec({
         val player = driver.activePlayer!!
 
         val card = driver.putCardInHand(player, "Grizzly Bears")
-        val toGraveyard = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val toGraveyard = driver.zones.moveToZone(
             state = driver.state,
             entityId = card,
             destinationZone = Zone.GRAVEYARD
@@ -137,7 +137,7 @@ class PutIntoGraveyardThisTurnTest : FunSpec({
         val player = driver.activePlayer!!
 
         val bear = driver.putCreatureOnBattlefield(player, "Grizzly Bears")
-        val toGraveyard = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val toGraveyard = driver.zones.moveToZone(
             state = driver.state,
             entityId = bear,
             destinationZone = Zone.GRAVEYARD
@@ -145,7 +145,7 @@ class PutIntoGraveyardThisTurnTest : FunSpec({
         driver.replaceState(toGraveyard.state)
         driver.matchesAnyOrigin(bear) shouldBe true
 
-        val toExile = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val toExile = driver.zones.moveToZone(
             state = driver.state,
             entityId = bear,
             destinationZone = Zone.EXILE
@@ -164,7 +164,7 @@ class PutIntoGraveyardThisTurnTest : FunSpec({
         val bear = driver.putCardInHand(player, "Grizzly Bears")
         fun move(dest: Zone) {
             driver.replaceState(
-                com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                driver.zones.moveToZone(
                     state = driver.state, entityId = bear, destinationZone = dest
                 ).state
             )

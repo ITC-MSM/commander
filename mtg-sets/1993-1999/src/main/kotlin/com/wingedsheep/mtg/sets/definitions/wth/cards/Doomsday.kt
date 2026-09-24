@@ -45,7 +45,8 @@ val Doomsday = card("Doomsday") {
                     CardSource.FromMultipleZones(
                         zones = listOf(Zone.LIBRARY, Zone.GRAVEYARD),
                         player = Player.You
-                    )
+                    ),
+                    search = true
                 )
                 val split = chooseExactlySplit(
                     count = 5,

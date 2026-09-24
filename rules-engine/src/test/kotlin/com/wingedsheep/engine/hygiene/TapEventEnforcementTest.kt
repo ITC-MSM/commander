@@ -67,7 +67,7 @@ class TapEventEnforcementTest : FunSpec({
             "com/wingedsheep/engine/core/TapHelpers.kt",
             // Permanent spells entering the battlefield tapped: the "enters tapped" replacement and
             // sneak's enters-tapped-and-attacking (CR 506.3a) — entering tapped is not a transition.
-            "com/wingedsheep/engine/mechanics/stack/StackResolver.kt",
+            "com/wingedsheep/engine/mechanics/stack/PermanentEntry.kt",
             // Tokens created tapped enter tapped; not a tap transition.
             "com/wingedsheep/engine/handlers/effects/token/CreatePredefinedTokenExecutor.kt",
             "com/wingedsheep/engine/handlers/effects/token/TokenCreationReplacementHelper.kt",

@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -26,6 +27,7 @@ import com.wingedsheep.engine.core.Outcome
  * Players with empty hands are treated as not discarding a creature.
  */
 class EachPlayerDiscardsOrLoseLifeExecutor(
+    private val zones: ZoneTransitionService,
     private val decisionHandler: DecisionHandler = DecisionHandler()
 ) : EffectExecutor<EachPlayerDiscardsOrLoseLifeEffect> {
 
@@ -84,8 +86,7 @@ class EachPlayerDiscardsOrLoseLifeExecutor(
             // Shared discard path so a card-intrinsic discard replacement (madness, CR 702.35a)
             // applies. `isCreature` is read above, off the pre-move state, because the card may not
             // land in the graveyard at all.
-            val discardResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                .discardCards(state, playerId, listOf(cardId), causedByControllerId = context.controllerId)
+            val discardResult = zones.discardCards(state, playerId, listOf(cardId), causedByControllerId = context.controllerId)
             val newState = discardResult.state
             val events = discardResult.events
             val newDiscardedCreature = discardedCreature + (playerId to isCreature)

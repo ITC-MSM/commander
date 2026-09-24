@@ -31,6 +31,13 @@ data class SpellOnStackComponent(
     val wasBlightPaid: Boolean = false,  // For BlightOrPay additional cost — true if blight path was taken
     val wasWaterbendPaid: Boolean = false,  // For optional spell waterbend additional cost (Avatar) — true if "you may waterbend {N}" was paid; readable via WaterbendWasPaid
     /**
+     * Extra counters owed to the permanent this spell becomes, bought with the optional "pay any
+     * amount of mana" additional cost of an `AdditionalManaForEntryCounters` static (Chorus of the
+     * Conclave). Fixed when the cost is paid, so the counters arrive even if the granting permanent
+     * has left the battlefield before the spell resolves. Null when nothing was paid.
+     */
+    val additionalEntryCounters: AdditionalEntryCounters? = null,
+    /**
      * The opponent promised this spell's gift additional cost (CR 702.174a), or null when the gift
      * wasn't promised. A resolving permanent carries the fact onward in its cast-choices bag
      * (ChoiceSlot.GIFT_PROMISED + ChoiceSlot.OPPONENT) so its gift trigger and
@@ -176,6 +183,16 @@ data class SpellOnStackComponent(
      */
     val castTimeFlags: Set<String> = emptySet()
 ) : Component
+
+/**
+ * [count] counters of [counterType] a resolving permanent spell enters with, bought as an additional
+ * cost while casting (see [SpellOnStackComponent.additionalEntryCounters]).
+ */
+@Serializable
+data class AdditionalEntryCounters(
+    val counterType: com.wingedsheep.sdk.scripting.events.CounterTypeFilter,
+    val count: Int
+)
 
 /**
  * Marks an entity as a triggered ability on the stack.

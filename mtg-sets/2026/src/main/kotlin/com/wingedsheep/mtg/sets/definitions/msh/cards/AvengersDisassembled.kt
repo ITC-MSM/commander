@@ -68,6 +68,7 @@ val AvengersDisassembled = card("Avengers Disassembled") {
                                     filter = GameObjectFilter.BasicLand,
                                 ),
                                 storeAs = "searchable",
+                                search = true,
                             ),
                             SelectFromCollectionEffect(
                                 from = "searchable",

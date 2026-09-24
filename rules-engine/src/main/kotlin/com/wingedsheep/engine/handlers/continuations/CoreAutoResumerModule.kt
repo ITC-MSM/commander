@@ -65,6 +65,7 @@ class CoreAutoResumerModule(
                 val announce = !continuation.announcementApplied
                 if (continuation.isDrawStep) {
                     val turnManager = com.wingedsheep.engine.core.TurnManager(
+                        services.zones,
                         cardRegistry = services.cardRegistry,
                         effectExecutor = services.effectExecutorRegistry::execute,
                         replacementProcessor = services.replacementEffectProcessor

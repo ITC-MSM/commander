@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.zones.ExileOpponentsGraveyardsExecutor
 import com.wingedsheep.engine.mechanics.sba.zone.TokensInWrongZonesCheck
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -42,6 +43,7 @@ import com.wingedsheep.engine.core.Outcome
  * regression there — them accidentally honouring the origin zone — shows up here.
  */
 class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
+    val zones = ZoneTransitionService(CardRegistry())
 
     val ownerId = EntityId.generate()
     val casterId = EntityId.generate()
@@ -80,7 +82,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         var newState = state.withEntity(cardId, container)
         newState = newState.addToZone(ZoneKey(ownerId, from), cardId)
-        newState = ZoneTransitionService.moveToZone(newState, cardId, Zone.EXILE).state
+        newState = zones.moveToZone(newState, cardId, Zone.EXILE).state
 
         val linked = newState.getEntity(sourceId)?.get<LinkedExileComponent>()?.exiledIds ?: emptyList()
         newState = newState.updateEntity(sourceId) { c -> c.with(LinkedExileComponent(linked + cardId)) }
@@ -91,8 +93,9 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
     fun registry(): EffectExecutorRegistry {
         val cardRegistry = com.wingedsheep.engine.registry.CardRegistry()
-        val reg = EffectExecutorRegistry(cardRegistry = cardRegistry)
-        reg.registerModule(LibraryExecutors(cardRegistry))
+        val zones = ZoneTransitionService(cardRegistry)
+        val reg = EffectExecutorRegistry(zones, cardRegistry = cardRegistry)
+        reg.registerModule(LibraryExecutors(zones, cardRegistry))
         return reg
     }
 
@@ -104,7 +107,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
         val (exiled, cardId) = exileFrom(baseState(), Zone.GRAVEYARD, "Bear")
         exiled.getEntity(cardId)?.get<ExiledFromZoneComponent>()?.zone shouldBe Zone.GRAVEYARD
 
-        val back = ZoneTransitionService.moveToZone(exiled, cardId, Zone.HAND).state
+        val back = zones.moveToZone(exiled, cardId, Zone.HAND).state
         back.getEntity(cardId)?.get<ExiledFromZoneComponent>().shouldBeNull()
     }
 
@@ -202,7 +205,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
     test("a card that already left exile by other means is not returned") {
         val (exiled, cardId) = exileFrom(baseState(), Zone.HAND, "Bear")
         // Something else moved it out of exile — into the graveyard — before the return.
-        val state = ZoneTransitionService.moveToZone(exiled, cardId, Zone.GRAVEYARD).state
+        val state = zones.moveToZone(exiled, cardId, Zone.GRAVEYARD).state
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
@@ -218,7 +221,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
         // leaves-the-battlefield trigger's return still finds the pile.
         val onBattlefield = baseState().addToZone(ZoneKey(casterId, Zone.BATTLEFIELD), sourceId)
         val (exiled, cardId) = exileFrom(onBattlefield, Zone.HAND, "Bear")
-        val state = ZoneTransitionService.moveToZone(exiled, sourceId, Zone.GRAVEYARD).state
+        val state = zones.moveToZone(exiled, sourceId, Zone.GRAVEYARD).state
         state.getZone(ZoneKey(casterId, Zone.BATTLEFIELD)).shouldBeEmpty()
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
@@ -263,7 +266,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
         // "it doesn't change zones, but it becomes a new object that has just been exiled" — so
         // the re-stamped origin is EXILE itself.
         val (once, cardId) = exileFrom(baseState(), Zone.HAND, "Twice Exiled")
-        var state = ZoneTransitionService.moveToZone(once, cardId, Zone.EXILE).state
+        var state = zones.moveToZone(once, cardId, Zone.EXILE).state
         state.getEntity(cardId)?.get<ExiledFromZoneComponent>()?.zone shouldBe Zone.EXILE
         // A marker that an exile → exile round trip through ZoneTransitionService would strip.
         state = state.updateEntity(cardId) { c -> c.with(SuspendedComponent) }

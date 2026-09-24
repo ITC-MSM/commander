@@ -694,6 +694,11 @@ class DynamicAmountEvaluator(
                             ?.get<com.wingedsheep.engine.state.components.player.CreatureCardsPutIntoGraveyardThisTurnComponent>()
                             ?.count ?: 0
                     }
+                    TurnTracker.CARDS_PUT_INTO_GRAVEYARD_FROM_LIBRARY -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.CardsPutIntoGraveyardFromLibraryThisTurnComponent>()
+                            ?.count ?: 0
+                    }
                     TurnTracker.CARDS_DRAWN -> playerIds.sumOf { playerId ->
                         state.getEntity(playerId)
                             ?.get<com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent>()
@@ -1036,12 +1041,16 @@ class DynamicAmountEvaluator(
         // self is the enchanted creature, not the Aura source). For a creature's own CDA there is
         // no affected entity, so it falls back to the source — the creature itself.
         val selfId = context.affectedEntityId ?: context.sourceId
+        // "…if you control at least five other Forests" after "Whenever a Forest you control
+        // enters" — "other" is relative to the permanent that triggered the ability.
+        val triggeringId = if (amount.excludeTriggeringEntity) context.triggeringEntityId else null
 
         val matchingEntities = playerIds.flatMap { playerId ->
             state.getBattlefield()
                 .filter { entityId ->
                     // Exclude self if requested (e.g., "other creatures you control")
                     if (amount.excludeSelf && entityId == selfId) return@filter false
+                    if (triggeringId != null && entityId == triggeringId) return@filter false
                     controllerOf(state, projection, entityId) == playerId
                 }
                 .filter { entityId ->
@@ -1115,6 +1124,18 @@ class DynamicAmountEvaluator(
                     state.getEntity(entityId)?.get<CardComponent>()?.typeLine?.subtypes?.map { it.value }?.toSet()
                         ?: emptySet()
                 }.intersect(BASIC_LAND_SUBTYPES)
+            }.size
+            // CR 205.3j — only a planeswalker contributes, and a planeswalker that is also a
+            // creature carries creature types too (CR 205.3d), which are not planeswalker types.
+            Aggregation.DISTINCT_PLANESWALKER_SUBTYPES -> matchingEntities.flatMapTo(mutableSetOf<String>()) { entityId ->
+                val card = state.getEntity(entityId)?.get<CardComponent>()
+                val isPlaneswalker = projection.getTypes(entityId).takeIf { it.isNotEmpty() }
+                    ?.contains("PLANESWALKER")
+                    ?: (card?.typeLine?.cardTypes?.contains(com.wingedsheep.sdk.core.CardType.PLANESWALKER) == true)
+                if (!isPlaneswalker) return@flatMapTo emptySet()
+                projection.getSubtypes(entityId).ifEmpty {
+                    card?.typeLine?.subtypes?.map { it.value }?.toSet() ?: emptySet()
+                }.filterNotTo(mutableSetOf()) { it in CREATURE_TYPE_NAMES }
             }.size
             // Counters are physically stored on the permanent (base state, not layered), so read
             // CountersComponent directly. The map only holds kinds with a positive count
@@ -1208,6 +1229,16 @@ class DynamicAmountEvaluator(
                     val subtypes: Set<String> = state.getEntity(entityId)?.get<CardComponent>()?.typeLine?.subtypes?.map { it.value }?.toSet()
                         ?: emptySet()
                     subtypes.intersect(BASIC_LAND_SUBTYPES)
+                }.size
+            }
+            Aggregation.DISTINCT_PLANESWALKER_SUBTYPES -> {
+                matchingEntities.flatMapTo(mutableSetOf<String>()) { entityId ->
+                    val typeLine = state.getEntity(entityId)?.get<CardComponent>()?.typeLine
+                    if (typeLine == null || com.wingedsheep.sdk.core.CardType.PLANESWALKER !in typeLine.cardTypes) {
+                        emptySet()
+                    } else {
+                        typeLine.subtypes.map { it.value }.filterNotTo(mutableSetOf()) { it in CREATURE_TYPE_NAMES }
+                    }
                 }.size
             }
             Aggregation.DISTINCT_COUNTER_TYPES -> {

@@ -7,6 +7,7 @@ import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.battle.Battles
 import com.wingedsheep.engine.mechanics.sba.SbaOrder
 import com.wingedsheep.engine.mechanics.sba.SbaZoneMovementHelper
@@ -45,7 +46,7 @@ import com.wingedsheep.sdk.model.EntityId
  * candidates the SBA loop pauses on a [ChooseOptionDecision], the same way
  * [CommanderZoneChoiceCheck] does, and only one battle is resolved per pass.
  */
-class BattleProtectorCheck : StateBasedActionCheck {
+class BattleProtectorCheck(private val zones: ZoneTransitionService) : StateBasedActionCheck {
     override val name = "704.5x/y Battle Protector"
     override val order = SbaOrder.BATTLE_PROTECTOR
 
@@ -75,7 +76,7 @@ class BattleProtectorCheck : StateBasedActionCheck {
             if (!needsChoice) continue
 
             if (eligible.isEmpty()) {
-                val result = SbaZoneMovementHelper.putPermanentInGraveyard(newState, entityId, cardComponent)
+                val result = SbaZoneMovementHelper.putPermanentInGraveyard(zones, newState, entityId, cardComponent)
                 newState = result.newState
                 events.addAll(result.events)
                 continue

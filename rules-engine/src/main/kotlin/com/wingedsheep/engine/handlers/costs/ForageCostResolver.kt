@@ -126,12 +126,13 @@ object ForageCostResolver {
      *     the historical default) and otherwise exiling the first three cards.
      */
     fun pay(
+        zones: ZoneTransitionService,
         state: GameState,
         playerId: EntityId,
         exileChoices: List<EntityId> = emptyList(),
         sacrificeChoices: List<EntityId> = emptyList(),
         excludeCardId: EntityId? = null,
-    ): Result = payMode(state, playerId, exileChoices, sacrificeChoices, excludeCardId).foraged(playerId)
+    ): Result = payMode(zones, state, playerId, exileChoices, sacrificeChoices, excludeCardId).foraged(playerId)
 
     /**
      * The forage event, appended to whichever mode was actually paid.
@@ -147,6 +148,7 @@ object ForageCostResolver {
     }
 
     private fun payMode(
+        zones: ZoneTransitionService,
         state: GameState,
         playerId: EntityId,
         exileChoices: List<EntityId>,
@@ -157,36 +159,36 @@ object ForageCostResolver {
 
         val validExile = exileChoices.filter { it in candidates.exileCards }
         if (validExile.size >= EXILE_COUNT) {
-            return exile(state, validExile.take(EXILE_COUNT))
+            return exile(zones, state, validExile.take(EXILE_COUNT))
         }
 
         val chosenFood = sacrificeChoices.firstOrNull { it in candidates.foods }
         if (chosenFood != null) {
-            return sacrifice(state, playerId, chosenFood)
+            return sacrifice(zones, state, playerId, chosenFood)
         }
 
-        if (candidates.canSacrifice) return sacrifice(state, playerId, candidates.foods.first())
-        if (candidates.canExile) return exile(state, candidates.exileCards.take(EXILE_COUNT))
+        if (candidates.canSacrifice) return sacrifice(zones, state, playerId, candidates.foods.first())
+        if (candidates.canExile) return exile(zones, state, candidates.exileCards.take(EXILE_COUNT))
         return Result.Failure("Cannot forage: need three cards in your graveyard or a Food")
     }
 
-    private fun exile(state: GameState, cardIds: List<EntityId>): Result {
+    private fun exile(zones: ZoneTransitionService, state: GameState, cardIds: List<EntityId>): Result {
         var newState = state
         val events = mutableListOf<GameEvent>()
         for (cardId in cardIds) {
-            val transition = ZoneTransitionService.moveToZone(newState, cardId, Zone.EXILE)
+            val transition = zones.moveToZone(newState, cardId, Zone.EXILE)
             newState = transition.state
             events.addAll(transition.events)
         }
         return Result.Success(newState, events)
     }
 
-    private fun sacrifice(state: GameState, playerId: EntityId, foodId: EntityId): Result {
+    private fun sacrifice(zones: ZoneTransitionService, state: GameState, playerId: EntityId, foodId: EntityId): Result {
         val container = state.getEntity(foodId)
         val foodName = container?.get<CardComponent>()?.name ?: "Food"
         val foodController = container?.get<ControllerComponent>()?.playerId ?: playerId
         val tracked = ZoneTransitionService.trackPermanentSacrifice(state, listOf(foodId), foodController)
-        val transition = ZoneTransitionService.moveToZone(tracked, foodId, Zone.GRAVEYARD)
+        val transition = zones.moveToZone(tracked, foodId, Zone.GRAVEYARD)
         val events = buildList {
             add(PermanentsSacrificedEvent(foodController, listOf(foodId), listOf(foodName)))
             addAll(transition.events)

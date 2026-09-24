@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.effects.zones
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.WarpExiledComponent
@@ -24,7 +25,7 @@ import kotlin.reflect.KClass
  * Used by the warp mechanic's delayed trigger that fires at the beginning
  * of the next end step.
  */
-class WarpExileExecutor : EffectExecutor<WarpExileEffect> {
+class WarpExileExecutor(private val zones: ZoneTransitionService) : EffectExecutor<WarpExileEffect> {
 
     override val effectType: KClass<WarpExileEffect> = WarpExileEffect::class
 
@@ -37,6 +38,7 @@ class WarpExileExecutor : EffectExecutor<WarpExileEffect> {
             ?: return EffectResult.success(state) // Permanent may have already left the battlefield
 
         val transitionResult = moveTrackedBattlefieldObject(
+            zones,
             state,
             targetId,
             Zone.EXILE,

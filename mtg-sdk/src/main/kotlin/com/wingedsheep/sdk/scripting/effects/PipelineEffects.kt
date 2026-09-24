@@ -842,6 +842,11 @@ enum class CardOrder {
  * @property lookAudience For a non-public library look (`revealed = false`), who privately sees
  *   the cards. Defaults to [LookAudience.Controller] (Scry / Surveil / look-at-top-N). Ignored
  *   when [revealed] is `true` (a public reveal shows everyone) or for non-library sources.
+ * @property search This gather *is* a search of a library (CR 701.23) — the "search your library
+ *   for …" step, not a bulk move of a whole library (Jace, the Mind Sculptor's −12) or a look at
+ *   its top. A gather is the only place a search can be told apart from those, so the flag rides
+ *   here: when the searching player (the effect's controller) can't search libraries
+ *   ([CantSearchLibrariesEffect]), library cards are left out of the gathered collection.
  */
 @SerialName("GatherCards")
 @Serializable
@@ -850,6 +855,7 @@ data class GatherCardsEffect(
     val storeAs: String,
     val revealed: Boolean = false,
     val lookAudience: LookAudience = LookAudience.Controller,
+    val search: Boolean = false,
 ) : Effect {
     override val description: String = buildString {
         if (revealed) append("Reveal ") else append("Look at ")
@@ -1227,7 +1233,17 @@ data class MoveCollectionEffect(
      * the rest stay where they are. Lets a single gathered/revealed pile be split by type —
      * e.g. revealed lands → battlefield, the rest → graveyard (Sméagol, The Ring Goes South).
      */
-    val filter: GameObjectFilter? = null
+    val filter: GameObjectFilter? = null,
+    /**
+     * For a move onto the battlefield: the permanent every **Aura** in the collection enters
+     * attached to — "put that Aura card onto the battlefield attached to it" (Auratouched Mage),
+     * "return the other cards exiled this way … attached to that creature" (Flickerform). The effect
+     * names the host, so no enchant choice is offered (CR 303.4f). An Aura whose printed enchant
+     * restriction that host doesn't satisfy — or every Aura, when the host is no longer on the
+     * battlefield — can't enter and stays in its current zone (CR 303.4g). Non-Aura cards move
+     * normally. Null (the default) leaves each Aura's host to the player's choice.
+     */
+    val attachTo: EffectTarget? = null
 ) : Effect {
     override val description: String = buildString {
         if (revealed) append("Reveal and put ") else append("Put ")
@@ -1411,7 +1427,13 @@ data class EachPlayerChoosesCreatureTypeEffect(
 @Serializable
 data class SelectTargetEffect(
     val requirement: TargetRequirement,
-    val storeAs: String = "pipelineTarget"
+    val storeAs: String = "pipelineTarget",
+    /**
+     * `true` for a plain *choice* that isn't targeting at all ("choose a player" — Spectral
+     * Searchlight): hexproof and shroud don't limit it, since only targeting is restricted by them
+     * (CR 702.11b / 702.18a). The requirement's other filters still apply.
+     */
+    val nonTargeting: Boolean = false
 ) : Effect {
     override val description: String = "Choose ${requirement.description}"
 

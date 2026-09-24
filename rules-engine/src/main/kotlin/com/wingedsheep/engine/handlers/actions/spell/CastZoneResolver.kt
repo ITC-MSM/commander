@@ -972,6 +972,7 @@ class CastZoneResolver(
                 is CardPredicate.PowerEqualsX,
                 is CardPredicate.PowerAtLeastX,
                 is CardPredicate.ToughnessAtMostX,
+                is CardPredicate.CouldEnchant,
                 is CardPredicate.PowerAtMostEntity,
                 is CardPredicate.PowerGreaterThanEntity,
                 is CardPredicate.PowerLessThanEntity,

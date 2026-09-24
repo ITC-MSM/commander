@@ -59,7 +59,8 @@ val GrimReminder = card("Grim Reminder") {
     spell {
         effect = Effects.Pipeline {
             val searchable = gather(
-                CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Nonland)
+                CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Nonland),
+                search = true
             )
             val found = chooseUpTo(
                 1,

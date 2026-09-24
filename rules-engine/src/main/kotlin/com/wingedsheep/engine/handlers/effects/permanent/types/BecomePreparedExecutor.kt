@@ -32,7 +32,7 @@ class BecomePreparedExecutor(
         effect: BecomePreparedEffect,
         context: EffectContext
     ): EffectResult {
-        val targetId = context.resolveTarget(effect.target)
+        val targetId = context.resolveTarget(effect.target, state)
             ?: return EffectResult.success(state)
 
         if (targetId !in state.getBattlefield()) {

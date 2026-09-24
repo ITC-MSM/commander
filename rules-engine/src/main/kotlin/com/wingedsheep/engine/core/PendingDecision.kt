@@ -346,7 +346,13 @@ data class ChooseColorDecision(
     override val playerId: EntityId,
     override val prompt: String,
     override val context: DecisionContext,
-    val availableColors: Set<Color> = Color.entries.toSet()
+    val availableColors: Set<Color> = Color.entries.toSet(),
+    /**
+     * How many distinct colors the answer may name. `1` is the ordinary single-color choice; a
+     * larger value is "the color or colors of your choice" (Quickchange) — the player picks any
+     * nonempty set of up to this many colors and answers with [ColorChosenResponse.colors].
+     */
+    val maxColors: Int = 1
 ) : PendingDecision
 
 /**
@@ -740,8 +746,16 @@ data class ModesChosenResponse(
 @SerialName("ColorChosenResponse")
 data class ColorChosenResponse(
     override val decisionId: String,
-    val color: Color
-) : DecisionResponse
+    val color: Color,
+    /**
+     * The full selection for a multi-color [ChooseColorDecision] (`maxColors > 1`); must contain
+     * [color]. Empty for an ordinary single-color answer, where [color] is the whole choice.
+     */
+    val colors: List<Color> = emptyList()
+) : DecisionResponse {
+    /** Every chosen color: [colors] when a multi-color answer was given, otherwise just [color]. */
+    val allColors: Set<Color> get() = if (colors.isEmpty()) setOf(color) else colors.toSet()
+}
 
 /**
  * Response to ChooseNumberDecision.

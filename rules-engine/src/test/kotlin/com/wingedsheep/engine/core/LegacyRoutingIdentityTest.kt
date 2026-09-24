@@ -38,7 +38,7 @@ class LegacyRoutingIdentityTest : ScenarioTestBase() {
     init {
         test("a legacy pending UUID decision resumes before allocating the first new routing handle") {
             val game = scenario().withPlayers().build()
-            val paused = EffectHandler(cardRegistry = cardRegistry).execute(
+            val paused = EffectHandler(zones, cardRegistry = cardRegistry).execute(
                 game.state,
                 MayEffect(MayEffect(Effects.GainLife(2))),
                 EffectContext(sourceId = null, controllerId = game.player1Id)

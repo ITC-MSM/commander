@@ -165,7 +165,8 @@
                                 "zone": "Library",
                                 "filter": "land Mountain|Plains"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -995,7 +996,8 @@
                                 "zone": "Library",
                                 "filter": "land"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -2055,7 +2057,8 @@
                                     "zone": "Library",
                                     "filter": "land Plains"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -2314,7 +2317,8 @@
                                 "zone": "Library",
                                 "filter": "land Plains|Swamp"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -2532,7 +2536,8 @@
                                 "zone": "Library",
                                 "filter": "land Forest|Island"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -3154,7 +3159,8 @@
                                 "zone": "Library",
                                 "filter": "land Island|Mountain"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -4424,7 +4430,8 @@
                                 "zone": "Library",
                                 "filter": "land Swamp|Forest"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",

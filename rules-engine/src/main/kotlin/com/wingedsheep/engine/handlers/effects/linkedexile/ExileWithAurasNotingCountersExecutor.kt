@@ -28,7 +28,7 @@ import kotlin.reflect.KClass
  * The return is handled by [ReturnNotedExileTappedWithAurasExecutor], fired from the source's
  * leaves-the-battlefield and becomes-untapped triggers.
  */
-class ExileWithAurasNotingCountersExecutor : EffectExecutor<ExileWithAurasNotingCountersEffect> {
+class ExileWithAurasNotingCountersExecutor(private val zones: ZoneTransitionService) : EffectExecutor<ExileWithAurasNotingCountersEffect> {
 
     override val effectType: KClass<ExileWithAurasNotingCountersEffect> =
         ExileWithAurasNotingCountersEffect::class
@@ -69,7 +69,7 @@ class ExileWithAurasNotingCountersExecutor : EffectExecutor<ExileWithAurasNoting
         // principal recorded first.
         for (id in listOf(creatureId) + auraIds) {
             if (id !in newState.getBattlefield()) continue
-            val transition = ZoneTransitionService.moveToZone(
+            val transition = zones.moveToZone(
                 newState, id, Zone.EXILE, ZoneEntryOptions(skipZoneChangeRedirect = true)
             )
             newState = transition.state

@@ -273,10 +273,17 @@ data class ExileTargetSpellEffect(
     val makePlotted: Boolean = false,
     val fixedAlternativeManaCost: ManaCost? = null,
     val emitAirbend: Boolean = false,
-    val linkToSource: Boolean = false
+    val linkToSource: Boolean = false,
+    /**
+     * Which spell is exiled: the chosen spell target ([CounterTargetSource.Chosen], the default),
+     * or the spell that fired the trigger ([CounterTargetSource.TriggeringEntity]) — "whenever a
+     * player casts an instant or sorcery card, exile it" (Eye of the Storm), which targets
+     * nothing. The same axis [CounterEffect.targetSource] carries for Decree of Silence.
+     */
+    val spell: CounterTargetSource = CounterTargetSource.Chosen
 ) : Effect {
     override val description: String = buildString {
-        append("Exile target spell")
+        append(if (spell == CounterTargetSource.TriggeringEntity) "Exile that spell" else "Exile target spell")
         if (makePlotted) append(". It becomes plotted")
         if (fixedAlternativeManaCost != null) {
             append(". Its owner may cast it for $fixedAlternativeManaCost rather than its mana cost")

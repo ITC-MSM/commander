@@ -101,8 +101,8 @@ class TargetFinder(
         pipelineContext: PredicateContext? = null
     ): List<EntityId> {
         return when (requirement) {
-            is TargetPlayer -> findPlayerTargets(state, requirement, controllerId, sourceId)
-            is TargetOpponent -> findOpponentTargets(state, requirement, controllerId, sourceId)
+            is TargetPlayer -> findPlayerTargets(state, requirement, controllerId, sourceId, ignoreTargetingRestrictions)
+            is TargetOpponent -> findOpponentTargets(state, requirement, controllerId, sourceId, ignoreTargetingRestrictions)
             is AnyTarget -> {
                 val candidates = findAnyTargets(state, controllerId, sourceId, targetingSourceType)
                 if (requirement.filter == GameObjectFilter.Any) candidates else {
@@ -137,11 +137,13 @@ class TargetFinder(
         state: GameState,
         requirement: TargetPlayer,
         controllerId: EntityId,
-        sourceId: EntityId?
+        sourceId: EntityId?,
+        ignoreTargetingRestrictions: Boolean = false
     ): List<EntityId> {
         return state.turnOrder.filter { playerId ->
-            state.hasEntity(playerId) && !playerHasShroud(state, playerId) &&
-                !playerHasHexproofAgainst(state, playerId, controllerId) &&
+            state.hasEntity(playerId) &&
+                (ignoreTargetingRestrictions ||
+                    (!playerHasShroud(state, playerId) && !playerHasHexproofAgainst(state, playerId, controllerId))) &&
                 PlayerTargetRestriction.isSatisfied(state, requirement.restriction, playerId, controllerId, sourceId)
         }
     }
@@ -150,10 +152,11 @@ class TargetFinder(
         state: GameState,
         requirement: TargetOpponent,
         controllerId: EntityId,
-        sourceId: EntityId?
+        sourceId: EntityId?,
+        ignoreTargetingRestrictions: Boolean = false
     ): List<EntityId> {
-        return state.turnOrder.filter { it != controllerId && state.hasEntity(it) && !playerHasShroud(state, it) &&
-            !playerHasHexproof(state, it) &&
+        return state.turnOrder.filter { it != controllerId && state.hasEntity(it) &&
+            (ignoreTargetingRestrictions || (!playerHasShroud(state, it) && !playerHasHexproof(state, it))) &&
             PlayerTargetRestriction.isSatisfied(state, requirement.restriction, it, controllerId, sourceId) }
     }
 

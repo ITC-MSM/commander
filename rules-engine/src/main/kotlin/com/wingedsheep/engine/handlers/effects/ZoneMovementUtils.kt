@@ -114,19 +114,6 @@ object ZoneMovementUtils {
     private val predicateEvaluator = PredicateEvaluator()
 
     /**
-     * Token executor used by [applyReplacementAdditionalEffect] for a replacement's
-     * "…instead. When you do, create a token" rider (Head of the Hunt).
-     *
-     * Wired by [com.wingedsheep.engine.core.EngineServices] so the rider mints through the same
-     * executor an ability would, with the card and token-art registries attached — mirroring
-     * `ZoneTransitionService.cardRegistry`. The default stand-in keeps this object usable
-     * unwired (unit tests, gym rollouts); tokens then fall back to the engine-wide generic art
-     * for their creature type.
-     */
-    var tokenExecutor: com.wingedsheep.engine.handlers.effects.token.CreateTokenExecutor =
-        com.wingedsheep.engine.handlers.effects.token.CreateTokenExecutor()
-
-    /**
      * Destinations that the commander zone-change replacement can intercept (CR 903.9).
      * Battlefield, stack, and command itself are intentionally excluded — commanders enter
      * the battlefield like any other permanent, can sit on the stack while resolving, and
@@ -560,7 +547,12 @@ object ZoneMovementUtils {
      * @param canRegenerate If false, regeneration shields are not checked (e.g. Wrath of God)
      * @return The execution result with updated state and events
      */
-    fun destroyPermanent(state: GameState, entityId: EntityId, canRegenerate: Boolean = true): EffectResult {
+    fun destroyPermanent(
+        zones: ZoneTransitionService,
+        state: GameState,
+        entityId: EntityId,
+        canRegenerate: Boolean = true
+    ): EffectResult {
         val container = state.getEntity(entityId)
             ?: return EffectResult.error(state, "Entity not found: $entityId")
 
@@ -604,7 +596,7 @@ object ZoneMovementUtils {
         }
 
         // Delegate to ZoneTransitionService
-        val result = ZoneTransitionService.moveToZone(state, entityId, Zone.GRAVEYARD)
+        val result = zones.moveToZone(state, entityId, Zone.GRAVEYARD)
         return EffectResult.success(result.state, result.events)
     }
 
@@ -617,14 +609,14 @@ object ZoneMovementUtils {
      * @param targetZone The destination zone type
      * @return The execution result with updated state and events
      */
-    fun moveCardToZone(state: GameState, entityId: EntityId, targetZone: Zone): EffectResult {
+    fun moveCardToZone(zones: ZoneTransitionService, state: GameState, entityId: EntityId, targetZone: Zone): EffectResult {
         val container = state.getEntity(entityId)
             ?: return EffectResult.error(state, "Entity not found")
 
         container.get<CardComponent>()
             ?: return EffectResult.error(state, "Not a card")
 
-        val result = ZoneTransitionService.moveToZone(state, entityId, targetZone)
+        val result = zones.moveToZone(state, entityId, targetZone)
         return EffectResult.success(result.state, result.events)
     }
 
@@ -953,6 +945,7 @@ object ZoneMovementUtils {
      *   fine — nothing here requires the source to still be there.
      */
     fun applyReplacementAdditionalEffect(
+        zones: ZoneTransitionService,
         state: GameState,
         effect: com.wingedsheep.sdk.scripting.effects.Effect,
         controllerId: EntityId?,
@@ -1006,7 +999,7 @@ object ZoneMovementUtils {
             // replacement's controller — the rider's "you" — so a token minted while an opponent's
             // creature is redirected still lands on the shield controller's side.
             val cid = controllerId ?: return state to emptyList()
-            val result = tokenExecutor.execute(
+            val result = zones.riderTokenExecutor.execute(
                 state,
                 effect,
                 com.wingedsheep.engine.handlers.EffectContext(sourceId = sourceId, controllerId = cid)
@@ -1169,14 +1162,14 @@ object ZoneMovementUtils {
      * @param targetZone The destination zone type
      * @return The execution result with updated state and events
      */
-    fun movePermanentToZone(state: GameState, entityId: EntityId, targetZone: Zone): EffectResult {
+    fun movePermanentToZone(zones: ZoneTransitionService, state: GameState, entityId: EntityId, targetZone: Zone): EffectResult {
         val container = state.getEntity(entityId)
             ?: return EffectResult.error(state, "Entity not found")
 
         container.get<CardComponent>()
             ?: return EffectResult.error(state, "Not a card")
 
-        val result = ZoneTransitionService.moveToZone(state, entityId, targetZone)
+        val result = zones.moveToZone(state, entityId, targetZone)
         return EffectResult.success(result.state, result.events)
     }
 }

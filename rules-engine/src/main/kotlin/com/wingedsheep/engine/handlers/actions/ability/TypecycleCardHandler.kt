@@ -1,4 +1,5 @@
 package com.wingedsheep.engine.handlers.actions.ability
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.sdk.dsl.Patterns
 
 import com.wingedsheep.engine.core.CardCycledEvent
@@ -38,10 +39,12 @@ import com.wingedsheep.engine.core.Outcome
  * then shuffle. Typecycling triggers cycling abilities per MTG rules.
  */
 class TypecycleCardHandler(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val manaSolver: ManaSolver,
     private val effectExecutorRegistry: EffectExecutorRegistry,
-    private val manaAbilitySideEffectExecutor: com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor
+    private val manaAbilitySideEffectExecutor: com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor,
+    private val castPermissionUtils: com.wingedsheep.engine.legalactions.utils.CastPermissionUtils? = null
 ) : ActionHandler<TypecycleCard> {
     override val actionType: KClass<TypecycleCard> = TypecycleCard::class
 
@@ -53,6 +56,12 @@ class TypecycleCardHandler(
         // Check if cycling is prevented by any permanent on the battlefield (e.g., Stabilizer)
         if (isCyclingPrevented(state)) {
             return "Cycling is prevented"
+        }
+
+        // Typecycling is an activated ability of the card in hand (CR 702.29e): an any-zone
+        // "players can't activate abilities" (Yuriko, Blade of the Mighty) forbids it.
+        if (castPermissionUtils?.isActivationPreventedForPlayer(state, action.cardId, action.playerId) == true) {
+            return "An effect prevents you from activating that ability right now"
         }
 
         val container = state.getEntity(action.cardId)
@@ -189,8 +198,7 @@ class TypecycleCardHandler(
         // card-intrinsic discard replacement applies (madness, CR 702.35a). Both events land
         // before CardCycledEvent, so a card that triggers on both (CR 702.29d) sees them in the
         // order they happened.
-        val discardResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-            .discardCards(currentState, action.playerId, listOf(action.cardId), asCyclingCost = true)
+        val discardResult = zones.discardCards(currentState, action.playerId, listOf(action.cardId), asCyclingCost = true)
         currentState = discardResult.state
         events.addAll(discardResult.events)
 
@@ -262,10 +270,12 @@ class TypecycleCardHandler(
     companion object {
         fun create(services: EngineServices): TypecycleCardHandler {
             return TypecycleCardHandler(
+                services.zones,
                 services.cardRegistry,
                 services.manaSolver,
                 services.effectExecutorRegistry,
-                services.manaAbilitySideEffectExecutor
+                services.manaAbilitySideEffectExecutor,
+                services.castPermissionUtils
             )
         }
     }

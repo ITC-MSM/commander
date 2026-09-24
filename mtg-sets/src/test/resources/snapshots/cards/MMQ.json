@@ -763,7 +763,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Mercenary mv<=2"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -843,7 +844,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Mercenary mv<=4"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -920,7 +922,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Mercenary mv<=3"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -1012,7 +1015,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Mercenary mv<=6"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -1089,7 +1093,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Mercenary mv<=1"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -1168,7 +1173,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Mercenary mv<=5"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -3773,7 +3779,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Rebel mv<=4"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -3851,7 +3858,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Rebel mv<=5"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -3929,7 +3937,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Rebel mv<=3"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -4006,7 +4015,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Rebel mv<=2"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -4086,7 +4096,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Rebel mv<=6"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -4724,7 +4735,8 @@
                                     "zone": "Library",
                                     "filter": "land Forest"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

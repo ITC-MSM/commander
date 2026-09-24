@@ -330,7 +330,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Rebel mv<=3"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -947,7 +948,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Goblin"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -1060,7 +1062,8 @@
                                     "zone": "Library",
                                     "filter": "name:Nesting Wurm"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -1149,7 +1152,8 @@
                         "zone": "Library",
                         "filter": "creature"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -1600,7 +1604,8 @@
                                 "zone": "Library",
                                 "filter": "Mercenary"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -1680,7 +1685,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Mercenary mv<=2"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -1780,7 +1786,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Merfolk"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -2127,7 +2134,8 @@
                         "zone": "Library",
                         "filter": "land Forest"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -2202,7 +2210,8 @@
                                 "zone": "Library",
                                 "filter": "permanent Elf"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -2274,7 +2283,8 @@
                                     "zone": "Library",
                                     "filter": "name:Skyshroud Sentinel"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

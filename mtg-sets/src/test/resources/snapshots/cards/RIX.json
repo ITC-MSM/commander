@@ -956,7 +956,8 @@
                                     "zone": "Library",
                                     "filter": "Pirate"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -1060,7 +1061,8 @@
                                     "zone": "Library",
                                     "filter": "Merfolk"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -1155,7 +1157,8 @@
                                     "zone": "Library",
                                     "filter": "Vampire"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",

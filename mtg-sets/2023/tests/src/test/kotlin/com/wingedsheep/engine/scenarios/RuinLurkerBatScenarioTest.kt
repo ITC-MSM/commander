@@ -5,7 +5,6 @@ import com.wingedsheep.engine.core.OrderedResponse
 import com.wingedsheep.engine.core.ReorderLibraryDecision
 import com.wingedsheep.engine.core.ScriedEvent
 import com.wingedsheep.engine.core.SelectCardsDecision
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.lci.cards.RuinLurkerBat
@@ -76,7 +75,7 @@ class RuinLurkerBatScenarioTest : FunSpec({
         // canonical "you descended this turn" event for a card with no real
         // discard outlet on the board.
         val bears = driver.putCardInHand(player, "Grizzly Bears")
-        val transition = ZoneTransitionService.moveToZone(
+        val transition = driver.zones.moveToZone(
             state = driver.state,
             entityId = bears,
             destinationZone = Zone.GRAVEYARD

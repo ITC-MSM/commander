@@ -201,7 +201,27 @@ unevenly.
 Enumerators generate candidates and filter them through it, and the view layer reads the result
 instead of recomputing it.
 
-## 4. Break up the god-methods — [MED–HIGH]
+## 4. Break up the god-methods — [MED–HIGH] ✅ Done (except activation cost plug-ins)
+
+> **Done (2026-09-24).**
+> - **Cost plug-ins.** Every `AdditionalCost` subtype (and every `CostAtom` it can carry) is a
+>   `SpellCostKind` with `canPay` / `enumerate` / `candidates` / `present` / `validate` / `lifeToPay` /
+>   `pay` hooks, dispatched only through `SpellCosts` (`mechanics/cost/spell/`).
+>   `SpellCostKindCoverageTest` fails the build on an unregistered subtype.
+>   `SelectionCostPresentation` is folded into the kinds.
+> - **Casting as stages.** `CastSpellHandler.execute` is announce → total cost (`CastCostTotaller`) →
+>   pay (`CastCostPayer`) → record and put on the stack (`CastRecords`) → cast triggers
+>   (`CastTriggers`); `validate` lives in `CastValidator`, one function per legality question. Unifying
+>   the total-cost stage fixed two validate/execute drifts: splice mana was validated but never
+>   charged, and per-mode mana was charged but never validated.
+> - **Activation.** `executeActivation` is staged collaborators (`handlers/actions/ability/`);
+>   restrictions go through the §3 `LegalityKernel`. **Not done:** activation still pays `AbilityCost` through `CostHandler`, not the spell
+>   cost kinds — sharing them means unifying the atom payers across the two cost contexts.
+> - **`StackResolver`** is a façade over `SpellCaster`, `PermanentSpellResolver`, `PermanentEntry`,
+>   `NonPermanentSpellResolver`, `AbilityResolver`, `ResolutionTargetValidator`, `SpellCounterer`.
+> - **`ClientStateTransformer`** is an orchestrator over per-concern projectors in
+>   `view/projection/`. Delirium and graveyard thresholds are derived properties on
+>   `CardDefinition` (`deliriumThreshold`, `graveyardThreshold`), no longer a JSON walk.
 
 **Problem.** The issue is methods, not just files. Every feature passes through these, so they attract
 merge conflicts and slow compiles:
@@ -328,12 +348,17 @@ other "target" Oracle text scripted without a target requirement. That can becom
 
 ## Smaller, real issues
 
-- **Global mutable singletons.**
+- ✅ **Global mutable singletons.** — DONE
   - `DamageUtils.cardRegistry`, `ZoneTransitionService.cardRegistry` and
     `ZoneTransitionService.staticAbilityHandler` are `lateinit var`s, and
     `ZoneMovementUtils.tokenExecutor` is a `var`. All are set from the `EngineServices` constructor.
   - With two engines in one JVM (server plus gym, or parallel tests), the last one constructed wins.
   - Pass them through the service graph instead.
+  - _Done: `ZoneTransitionService` is a per-engine instance (`EngineServices.zones`) holding the
+    card and token-art registries. The `ZoneMovementUtils`, `DamageUtils` and SBA helpers that move
+    cards take it as a parameter, and the executors, resumers and checks that call them receive it
+    by injection. `CardPredicate.CouldEnchant` reads the registry `PredicateEvaluator` was built
+    with. `EngineServicesIsolationTest` pins the two-engines case._
 - **Object graphs rebuilt during execution.**
   - `StackResolver(cardRegistry = …)` is constructed ad hoc at 14 sites outside `EngineServices`,
     including `CounterEffectExecutor`, `StormCopyEffectExecutor`, `ExileTargetSpellExecutor` and
@@ -383,12 +408,12 @@ other "target" Oracle text scripted without a target requirement. That can becom
 
 1. **Cheap, high leverage (weeks):**
    - ~~§1 fail-closed dispatch and its coverage tests~~ (done);
-   - remove the global singletons and the ad-hoc `StackResolver`s;
+   - ~~remove the global singletons~~ (done) and the ad-hoc `StackResolver`s;
    - delete the `ContextTarget(0)` defaults;
    - ~~the single `settle()` boundary from §2~~ (done).
 2. **Medium:**
    - ~~`ResolutionContext` and the sealed result type (§2)~~ (done);
    - ~~the legality kernel (§3)~~ (done);
-   - the staged casting pipeline with cost plug-ins (§4).
+   - ~~the staged casting pipeline with cost plug-ins (§4)~~ (done).
 3. **Large, codemod-driven:** SDK consolidation (§5), then generation (§6).
 4. **When gym throughput matters:** persistent collections and incremental projection.

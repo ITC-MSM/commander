@@ -38,7 +38,8 @@ val DinasGuidance = card("Dina's Guidance") {
     spell {
         effect = Effects.Pipeline {
             val pool = gather(
-                CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Creature)
+                CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Creature),
+                search = true
             )
             val found = chooseUpTo(
                 1,

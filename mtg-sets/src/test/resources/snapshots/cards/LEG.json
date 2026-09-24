@@ -266,6 +266,7 @@
                 },
                 "effect": {
                     "type": "PreventDamageShield",
+                    "recipientGroupIncludesController": true,
                     "sourceFilter": {
                         "type": "FromGroup",
                         "filter": {
@@ -3783,7 +3784,8 @@
                         "zone": "Library",
                         "filter": "basicland"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",

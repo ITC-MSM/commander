@@ -12,6 +12,7 @@ import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -35,7 +36,7 @@ import com.wingedsheep.engine.core.Outcome
  * - Empty library during iteration: process stops, damage is dealt for cards already put in hand
  * - No nonland card found: process stops (no card put in hand for that iteration)
  */
-class ExileFromTopRepeatingExecutor : EffectExecutor<ExileFromTopRepeatingEffect> {
+class ExileFromTopRepeatingExecutor(private val zones: ZoneTransitionService) : EffectExecutor<ExileFromTopRepeatingEffect> {
 
     override val effectType: KClass<ExileFromTopRepeatingEffect> = ExileFromTopRepeatingEffect::class
 
@@ -104,7 +105,7 @@ class ExileFromTopRepeatingExecutor : EffectExecutor<ExileFromTopRepeatingEffect
             }
 
             for (cardId in cardsToExile) {
-                val exileResult = ZoneMovementUtils.moveCardToZone(currentState, cardId, Zone.EXILE)
+                val exileResult = ZoneMovementUtils.moveCardToZone(zones, currentState, cardId, Zone.EXILE)
                 if (exileResult.outcome is Outcome.Done) {
                     currentState = exileResult.state
                     allEvents.addAll(exileResult.events)
@@ -113,7 +114,7 @@ class ExileFromTopRepeatingExecutor : EffectExecutor<ExileFromTopRepeatingEffect
 
             // Put match card in hand
             if (matchCard != null) {
-                val handResult = ZoneMovementUtils.moveCardToZone(currentState, matchCard, Zone.HAND)
+                val handResult = ZoneMovementUtils.moveCardToZone(zones, currentState, matchCard, Zone.HAND)
                 if (handResult.outcome is Outcome.Done) {
                     currentState = handResult.state
                     allEvents.addAll(handResult.events)
@@ -135,6 +136,7 @@ class ExileFromTopRepeatingExecutor : EffectExecutor<ExileFromTopRepeatingEffect
         if (cardsToHand > 0 && effect.damagePerCard > 0) {
             val totalDamage = cardsToHand * effect.damagePerCard
             val damageResult = DamageUtils.dealDamageToTarget(
+                zones,
                 currentState, controllerId, totalDamage, sourceId
             )
             currentState = damageResult.state

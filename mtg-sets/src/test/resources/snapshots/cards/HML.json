@@ -172,7 +172,8 @@
                         "zone": "Library",
                         "filter": "instant"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",

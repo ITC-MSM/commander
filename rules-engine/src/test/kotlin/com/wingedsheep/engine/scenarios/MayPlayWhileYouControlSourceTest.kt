@@ -322,7 +322,7 @@ class MayPlayWhileYouControlSourceTest : FunSpec({
         // Kill the source with the ability still on the stack. The ability resolves (CR 608.2) and
         // still exiles the card, but its "for as long as you control this creature" duration is
         // already over, so the grant never happens — the Master Thief case in CR 611.2b.
-        val moved = ZoneMovementUtils.moveCardToZone(driver.state, exiler, Zone.GRAVEYARD)
+        val moved = ZoneMovementUtils.moveCardToZone(driver.zones, driver.state, exiler, Zone.GRAVEYARD)
         driver.replaceState(moved.state)
         driver.bothPass()
 

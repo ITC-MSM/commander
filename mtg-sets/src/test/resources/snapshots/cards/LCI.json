@@ -3595,7 +3595,8 @@
                                         "zone": "Library",
                                         "filter": "basicland Plains"
                                     },
-                                    "storeAs": "searchable"
+                                    "storeAs": "searchable",
+                                    "search": true
                                 },
                                 {
                                     "type": "SelectFromCollection",
@@ -3920,7 +3921,8 @@
                                         ]
                                     }
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -4356,7 +4358,8 @@
                                     "zone": "Library",
                                     "filter": "land Cave"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -7187,7 +7190,8 @@
                                     "zone": "Library",
                                     "filter": "basicland Forest"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -8414,7 +8418,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -8527,7 +8532,8 @@
                                     "zone": "Library",
                                     "filter": "creature Dinosaur"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -13942,7 +13948,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -15829,7 +15836,8 @@
                                     ]
                                 }
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -21167,7 +21175,8 @@
                                                 "zone": "Library",
                                                 "filter": "basicland"
                                             },
-                                            "storeAs": "searchable"
+                                            "storeAs": "searchable",
+                                            "search": true
                                         },
                                         {
                                             "type": "SelectFromCollection",

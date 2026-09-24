@@ -60,7 +60,8 @@ val TheEnd = card("The End") {
                         player = Player.You,
                         filter = GameObjectFilter.Any.namedFromVariable(targetName)
                     ),
-                    name = "matches"
+                    name = "matches",
+                    search = true
                 )
                 val selected = chooseAnyNumber(
                     from = matches,

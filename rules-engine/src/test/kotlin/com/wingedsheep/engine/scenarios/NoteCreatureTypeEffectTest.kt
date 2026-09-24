@@ -160,6 +160,7 @@ class NoteCreatureTypeEffectTest : FunSpec({
         // fresh object. Per CR 400.7 the returning permanent has no memory of its previous existence,
         // so its noted set must start empty again — Elf must be selectable once more.
         val moved = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.moveCardToZone(
+            driver.zones,
             driver.state, source, Zone.GRAVEYARD
         )
         driver.replaceState(moved.state)

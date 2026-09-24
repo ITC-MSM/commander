@@ -2,6 +2,7 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.stack.StormCopyEffectExecutor
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -35,6 +36,7 @@ import com.wingedsheep.engine.core.Outcome
  * short-circuited and silently skipped the copy when no legal targets existed.
  */
 class StormIllegalTargetFizzleTest : FunSpec({
+    val zones = ZoneTransitionService(CardRegistry())
 
     fun buildState(
         p1: EntityId,
@@ -88,6 +90,7 @@ class StormIllegalTargetFizzleTest : FunSpec({
         )
 
         val executor = StormCopyEffectExecutor(
+            zones,
             cardRegistry = CardRegistry(),
             targetFinder = TargetFinder()
         )
@@ -129,6 +132,7 @@ class StormIllegalTargetFizzleTest : FunSpec({
         )
 
         val executor = StormCopyEffectExecutor(
+            zones,
             cardRegistry = CardRegistry(),
             targetFinder = TargetFinder()
         )

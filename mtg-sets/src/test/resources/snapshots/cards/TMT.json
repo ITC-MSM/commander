@@ -1348,7 +1348,8 @@
                                         "type": "FromZone",
                                         "zone": "Library"
                                     },
-                                    "storeAs": "searchable"
+                                    "storeAs": "searchable",
+                                    "search": true
                                 },
                                 {
                                     "type": "SelectFromCollection",
@@ -1456,7 +1457,8 @@
                                         "zone": "Library",
                                         "filter": "Food"
                                     },
-                                    "storeAs": "searchable"
+                                    "storeAs": "searchable",
+                                    "search": true
                                 },
                                 {
                                     "type": "SelectFromCollection",
@@ -2721,7 +2723,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -7180,7 +7183,8 @@
                         "zone": "Library",
                         "filter": "basicland"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -10905,7 +10909,8 @@
                         "type": "FromZone",
                         "zone": "Library"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",
@@ -12703,7 +12708,8 @@
                             ]
                         }
                     },
-                    "storeAs": "gathered0"
+                    "storeAs": "gathered0",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",

@@ -41,7 +41,7 @@ class BroodrageMycoidScenarioTest : FunSpec({
      * [RuinLurkerBatScenarioTest].
      */
     fun GameTestDriver.descend(entityId: EntityId) {
-        val result = ZoneTransitionService.moveToZone(
+        val result = zones.moveToZone(
             state = state,
             entityId = entityId,
             destinationZone = Zone.GRAVEYARD

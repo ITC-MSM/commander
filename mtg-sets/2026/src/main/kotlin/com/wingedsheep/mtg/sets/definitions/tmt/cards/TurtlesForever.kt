@@ -50,6 +50,7 @@ val TurtlesForever = card("Turtles Forever") {
                     player = Player.You,
                     filter = GameObjectFilter.Creature.legendary(),
                 ),
+                search = true,
             )
             val found = chooseExactly(
                 4, from = pool,

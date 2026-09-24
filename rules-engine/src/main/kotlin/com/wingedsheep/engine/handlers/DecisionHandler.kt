@@ -171,6 +171,7 @@ class DecisionHandler {
         phase: DecisionPhase = DecisionPhase.RESOLUTION,
         availableColors: Set<Color> = Color.entries.toSet(),
         answer: AnswerContinuation,
+        maxColors: Int = 1,
     ): ExecutionResult {
         return state.suspendForDecision(
             question = { decisionId -> ChooseColorDecision(
@@ -182,7 +183,8 @@ class DecisionHandler {
                     sourceName = sourceName,
                     phase = phase
                 ),
-                availableColors = availableColors
+                availableColors = availableColors,
+                maxColors = maxColors.coerceAtMost(availableColors.size).coerceAtLeast(1)
             ) },
             answer = answer,
         )

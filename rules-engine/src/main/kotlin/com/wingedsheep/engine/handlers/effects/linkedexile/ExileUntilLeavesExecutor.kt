@@ -34,7 +34,7 @@ import kotlin.reflect.KClass
  * (now includes cleanupCombatReferences, cleanupReverseAttachmentLink, and
  * removeFloatingEffectsTargeting which were previously missing).
  */
-class ExileUntilLeavesExecutor : EffectExecutor<ExileUntilLeavesEffect> {
+class ExileUntilLeavesExecutor(private val zones: ZoneTransitionService) : EffectExecutor<ExileUntilLeavesEffect> {
 
     override val effectType: KClass<ExileUntilLeavesEffect> = ExileUntilLeavesEffect::class
 
@@ -65,7 +65,7 @@ class ExileUntilLeavesExecutor : EffectExecutor<ExileUntilLeavesEffect> {
         }
 
         // Delegate zone movement to ZoneTransitionService
-        val transitionResult = ZoneTransitionService.moveToZone(
+        val transitionResult = zones.moveToZone(
             state, targetId, Zone.EXILE,
             ZoneEntryOptions(skipZoneChangeRedirect = true)
         )

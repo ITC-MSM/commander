@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.GameInitializer
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
@@ -66,7 +67,7 @@ class AgateBladeAssassinMultiplayerTest : FunSpec({
         // Execute the card's actual attack-trigger effect.
         val triggerEffect = AgateBladeAssassin.triggeredAbilities.first().effect
         val context = EffectContext(sourceId = assassinId, controllerId = players[0])
-        val result = EffectExecutorRegistry(cardRegistry = registry).execute(state, triggerEffect, context)
+        val result = EffectExecutorRegistry(ZoneTransitionService(registry), cardRegistry = registry).execute(state, triggerEffect, context)
 
         fun life(s: GameState, p: EntityId) = s.getEntity(p)?.get<LifeTotalComponent>()?.life
 

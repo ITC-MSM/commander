@@ -232,7 +232,7 @@ class ManaPaymentContinuationResumer(
                 )
             }
 
-            val (newState, events) = LifePaymentService.pay(state, playerId, continuation.lifeCost)
+            val (newState, events) = LifePaymentService.pay(services.zones, state, playerId, continuation.lifeCost)
                 ?: return ExecutionResult.error(state, "Paying player has no life total")
             // If this life cost was one component of a composite ward cost, charge the next
             // component before the spell is allowed to resolve.
@@ -380,7 +380,7 @@ class ManaPaymentContinuationResumer(
         newState = ZoneTransitionService.trackPermanentSacrifice(newState, selectedPermanents, continuation.payingPlayerId)
 
         for (permanentId in selectedPermanents) {
-            val transitionResult = ZoneTransitionService.moveToZone(newState, permanentId, Zone.GRAVEYARD)
+            val transitionResult = services.zones.moveToZone(newState, permanentId, Zone.GRAVEYARD)
             newState = transitionResult.state
             events.addAll(transitionResult.events)
         }
@@ -432,12 +432,15 @@ class ManaPaymentContinuationResumer(
                     controllerId = continuation.controllerId ?: continuation.payingPlayerId
                 )
             } else {
-                services.stackResolver.counterSpellOrAbility(state, continuation.spellEntityId)
+                services.stackResolver.counterSpellOrAbility(
+                    state, continuation.spellEntityId, countererId = continuation.controllerId
+                )
             }
             return checkForMore(counterResult.newState, counterResult.events)
         }
 
         val collected = CollectEvidenceResolver.collect(
+            services.zones,
             state,
             continuation.payingPlayerId,
             continuation.amount,
@@ -590,8 +593,10 @@ class ManaPaymentContinuationResumer(
             is CounterDestination.Exile -> services.stackResolver.counterSpellToExile(
                 state, spellEntityId, grantFreeCast = false, controllerId = controllerId
             )
-            CounterDestination.Hand -> services.stackResolver.counterSpellToHand(state, spellEntityId)
-            CounterDestination.Graveyard -> services.stackResolver.counterSpellOrAbility(state, spellEntityId)
+            CounterDestination.Hand ->
+                services.stackResolver.counterSpellToHand(state, spellEntityId, countererId = controllerId)
+            CounterDestination.Graveyard ->
+                services.stackResolver.counterSpellOrAbility(state, spellEntityId, countererId = controllerId)
         }
         return checkForMore(result.newState, precedingEvents + result.events)
     }
@@ -801,7 +806,7 @@ class ManaPaymentContinuationResumer(
         val next = com.wingedsheep.engine.handlers.effects.stack.WardCounterEffectExecutor
             .chargeWardCost(
                 state = state,
-                cardRegistry = services.cardRegistry,
+                zones = services.zones,
                 cost = remainingWardParts.first(),
                 remainingParts = remainingWardParts.drop(1),
                 spellEntityId = spellEntityId,
@@ -1456,7 +1461,7 @@ class ManaPaymentContinuationResumer(
                 )
                 val preState = ZoneTransitionService
                     .trackPermanentSacrifice(currentState, listOf(sourceId), sourceController)
-                val transition = ZoneTransitionService.moveToZone(
+                val transition = services.zones.moveToZone(
                     preState, sourceId, Zone.GRAVEYARD
                 )
                 currentState = transition.state

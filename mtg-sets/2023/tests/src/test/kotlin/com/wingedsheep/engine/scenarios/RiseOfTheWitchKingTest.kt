@@ -42,7 +42,7 @@ class RiseOfTheWitchKingTest : FunSpec({
         val oppBear = driver.putCreatureOnBattlefield(opp, "Grizzly Bears")
         // Pre-seed a permanent card in your graveyard for the rider to reanimate.
         val reanimatable = driver.putCreatureOnBattlefield(active, "Grizzly Bears")
-        val gv = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val gv = driver.zones.moveToZone(
             state = driver.state,
             entityId = reanimatable,
             destinationZone = Zone.GRAVEYARD
@@ -83,7 +83,7 @@ class RiseOfTheWitchKingTest : FunSpec({
         driver.putCreatureOnBattlefield(opp, "Grizzly Bears")
         // Stage a graveyard card so the SelectFromCollection prompt opens.
         val parked = driver.putCreatureOnBattlefield(active, "Grizzly Bears")
-        val gv = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val gv = driver.zones.moveToZone(
             state = driver.state,
             entityId = parked,
             destinationZone = Zone.GRAVEYARD
@@ -122,7 +122,7 @@ class RiseOfTheWitchKingTest : FunSpec({
         // A DIFFERENT permanent already in your graveyard, so the SelectFromCollection
         // prompt still opens — proving the pool is non-empty yet excludes the sacrificed card.
         val other = driver.putCreatureOnBattlefield(active, "Grizzly Bears")
-        val gv = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val gv = driver.zones.moveToZone(
             state = driver.state,
             entityId = other,
             destinationZone = Zone.GRAVEYARD
@@ -166,7 +166,7 @@ class RiseOfTheWitchKingTest : FunSpec({
         // Pre-seed a permanent in your graveyard: if the rider wrongly fired, it would be
         // offered for reanimation. It must stay put and no decision must open.
         val parked = driver.putCreatureOnBattlefield(active, "Grizzly Bears")
-        val gv = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+        val gv = driver.zones.moveToZone(
             state = driver.state,
             entityId = parked,
             destinationZone = Zone.GRAVEYARD

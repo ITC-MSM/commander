@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.mechanics.sba.creature
 
 import com.wingedsheep.engine.core.ExecutionResult
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.sba.SbaOrder
 import com.wingedsheep.engine.mechanics.sba.SbaZoneMovementHelper
 import com.wingedsheep.engine.mechanics.sba.StateBasedActionCheck
@@ -10,7 +11,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 /**
  * 704.5f - A creature with toughness 0 or less is put into its owner's graveyard.
  */
-class ZeroToughnessCheck : StateBasedActionCheck {
+class ZeroToughnessCheck(private val zones: ZoneTransitionService) : StateBasedActionCheck {
     override val name = "704.5f Zero Toughness"
     override val order = SbaOrder.ZERO_TOUGHNESS
 
@@ -33,6 +34,7 @@ class ZeroToughnessCheck : StateBasedActionCheck {
                 // Same simultaneity rule as LethalDamageCheck: battlefield-sourced death
                 // replacements are read off the pass-start state (CR 704.3 / 614.1).
                 val result = SbaZoneMovementHelper.putCreatureInGraveyard(
+                    zones,
                     newState, entityId, cardComponent, "zero toughness", passStartState
                 )
                 newState = result.newState

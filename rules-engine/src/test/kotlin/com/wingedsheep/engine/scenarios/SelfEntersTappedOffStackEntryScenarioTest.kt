@@ -86,7 +86,7 @@ class SelfEntersTappedOffStackEntryScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val land = graveyardCard(game.state, game.player1Id, "Jungle Hollow")
-                val moved = ZoneTransitionService.moveToZone(
+                val moved = zones.moveToZone(
                     game.state, land, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = game.player1Id)
                 )
@@ -105,7 +105,7 @@ class SelfEntersTappedOffStackEntryScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val forest = graveyardCard(game.state, game.player1Id, "Forest")
-                val moved = ZoneTransitionService.moveToZone(
+                val moved = zones.moveToZone(
                     game.state, forest, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = game.player1Id)
                 )
@@ -163,7 +163,7 @@ class SelfEntersTappedOffStackEntryScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val land = graveyardCard(game.state, game.player1Id, "Overgrown Farmland")
-                val moved = ZoneTransitionService.moveToZone(
+                val moved = zones.moveToZone(
                     game.state, land, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = game.player1Id)
                 )
@@ -181,7 +181,7 @@ class SelfEntersTappedOffStackEntryScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val land = graveyardCard(game.state, game.player1Id, "Overgrown Farmland")
-                val moved = ZoneTransitionService.moveToZone(
+                val moved = zones.moveToZone(
                     game.state, land, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = game.player1Id)
                 )
@@ -202,7 +202,7 @@ class SelfEntersTappedOffStackEntryScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val land = graveyardCard(game.state, game.player1Id, "Jungle Hollow")
-                val moved = ZoneTransitionService.moveToZone(
+                val moved = zones.moveToZone(
                     game.state, land, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = game.player1Id)
                 )
@@ -221,7 +221,7 @@ class SelfEntersTappedOffStackEntryScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val land = graveyardCard(game.state, game.player1Id, "Jungle Hollow")
-                val moved = ZoneTransitionService.moveToZone(
+                val moved = zones.moveToZone(
                     game.state, land, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = game.player1Id)
                 )
@@ -246,7 +246,7 @@ class SelfEntersTappedOffStackEntryScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val land = graveyardCard(game.state, game.player1Id, "Godless Shrine")
-                val moved = ZoneTransitionService.moveToZone(
+                val moved = zones.moveToZone(
                     game.state, land, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = game.player1Id)
                 )

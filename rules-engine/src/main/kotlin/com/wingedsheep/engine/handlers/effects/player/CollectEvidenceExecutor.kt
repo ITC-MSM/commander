@@ -8,6 +8,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.CollectEvidenceEffect
@@ -33,6 +34,7 @@ import kotlin.reflect.KClass
  * the effect ran unguarded, so it no-ops rather than exiling a partial, illegal payment.
  */
 class CollectEvidenceExecutor(
+    private val zones: ZoneTransitionService,
     private val decisionHandler: DecisionHandler
 ) : EffectExecutor<CollectEvidenceEffect> {
 
@@ -97,7 +99,7 @@ class CollectEvidenceExecutor(
         cards: List<com.wingedsheep.sdk.model.EntityId>,
         sourceName: String,
     ): EffectResult =
-        when (val result = CollectEvidenceResolver.collect(state, playerId, amount, cards, sourceName)) {
+        when (val result = CollectEvidenceResolver.collect(zones, state, playerId, amount, cards, sourceName)) {
             is CollectEvidenceResolver.Result.Success ->
                 EffectResult.success(result.state, result.events)
             is CollectEvidenceResolver.Result.Failure ->

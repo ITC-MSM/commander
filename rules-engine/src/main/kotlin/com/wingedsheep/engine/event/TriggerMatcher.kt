@@ -821,6 +821,8 @@ class TriggerMatcher(
             }
             // ExtraTurnEvent is only used as a replacement effect filter, not a trigger
             is EventPattern.ExtraTurnEvent -> false
+            // CounterSpellEvent is only used as a replacement effect filter (Guile), not a trigger
+            is EventPattern.CounterSpellEvent -> false
             // Batching trigger — handled in detectLibraryToGraveyardBatchTriggers
             is EventPattern.CardsPutIntoGraveyardFromLibraryEvent -> false
             // Batching trigger handled separately by detectAnyToGraveyardBatchTriggers
@@ -1898,6 +1900,16 @@ class TriggerMatcher(
         is SpellCastPredicate.PaidWithManaFromSubtype -> predicate.subtype in event.spentManaSubtypes
         is SpellCastPredicate.PaidWithManaFromSource -> sourceId in event.spentManaSourceIds
         SpellCastPredicate.IsModal -> event.chosenModesCount > 0
+        // "casts an instant or sorcery *card*": a cast copy of a card (CR 707.12) is a stack-style
+        // copy — `CopyOfComponent` with no pre-copy snapshot — or a prepare-spell copy; neither
+        // is a card (CR 707.10a sweeps them out of every non-stack zone for that reason).
+        SpellCastPredicate.IsCard -> {
+            val spell = state.getEntity(event.spellEntityId)
+            spell != null &&
+                spell.get<com.wingedsheep.engine.state.components.identity.CopyOfComponent>()
+                    ?.let { it.originalCardComponent == null } != true &&
+                !spell.has<com.wingedsheep.engine.state.components.battlefield.PreparedSpellCopyComponent>()
+        }
         SpellCastPredicate.HasXInCost ->
             state.getEntity(event.spellEntityId)?.get<CardComponent>()?.manaCost?.hasX == true
         SpellCastPredicate.TargetsSource -> castTargetEntities(event, state).contains(sourceId)
@@ -2257,6 +2269,9 @@ class TriggerMatcher(
             val entity = state.getEntity(entityId) ?: return false
             entity.has<FaceDownComponent>()
         }
+        // Relative to a referenced entity a trigger filter has no context to resolve; no trigger
+        // uses it, so fail closed rather than matching every creature.
+        is com.wingedsheep.sdk.scripting.predicates.StatePredicate.BlockedOrWasBlockedByEntityThisTurn -> false
         // Suspected (CR 701.60a) reads off the floating-effect list, which is available here, so a
         // "whenever a suspected creature …" trigger filter gates exactly instead of failing open.
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsSuspected ->

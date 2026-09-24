@@ -10,6 +10,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ProtectionComponent
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -318,6 +319,34 @@ internal class EffectApplicator(
                         val typeLine = state.getEntity(exiledId)?.get<CardComponent>()?.typeLine ?: continue
                         for (cardType in typeLine.cardTypes) {
                             values.keywords.add("PROTECTION_FROM_CARDTYPE_${cardType.name}")
+                        }
+                    }
+                }
+                is Modification.GrantKeywordsOfGraveyardCreatureCards -> {
+                    // Cairn Wanderer. A card in a graveyard has no projection entry and nothing on
+                    // the battlefield can grant it an ability, so its keywords are its printed ones:
+                    // the same base keywords and printed protections the projector starts a
+                    // permanent from.
+                    for (playerId in state.turnOrder) {
+                        for (cardId in state.getGraveyard(playerId)) {
+                            val container = state.getEntity(cardId) ?: continue
+                            val card = container.get<CardComponent>() ?: continue
+                            if (!card.typeLine.isCreature) continue
+                            for (keyword in card.baseKeywords) {
+                                if (keyword.name in mod.keywords ||
+                                    (mod.anyLandwalk && keyword.name.endsWith("WALK"))
+                                ) {
+                                    values.keywords.add(keyword.name)
+                                }
+                            }
+                            if (mod.anyProtection) {
+                                container.get<ProtectionComponent>()?.let { protection ->
+                                    protection.colors.forEach { values.keywords.add("PROTECTION_FROM_${it.name}") }
+                                    protection.subtypes.forEach { values.keywords.add("PROTECTION_FROM_SUBTYPE_${it.uppercase()}") }
+                                    protection.supertypes.forEach { values.keywords.add("PROTECTION_FROM_SUPERTYPE_${it.uppercase()}") }
+                                    protection.cardTypes.forEach { values.keywords.add("PROTECTION_FROM_CARDTYPE_$it") }
+                                }
+                            }
                         }
                     }
                 }

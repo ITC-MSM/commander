@@ -184,6 +184,7 @@ class WhileYouControlSourceDurationTest : FunSpec({
 
         // Move the stealer off the battlefield directly to its graveyard, mirroring a removal spell.
         val moved = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.moveCardToZone(
+            driver.zones,
             driver.state,
             stealer,
             com.wingedsheep.sdk.core.Zone.GRAVEYARD

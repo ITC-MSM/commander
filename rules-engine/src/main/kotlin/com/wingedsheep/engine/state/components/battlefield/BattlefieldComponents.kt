@@ -1294,9 +1294,18 @@ data object DamageUnpreventableThisTurnComponent : Component
  * memory of dealing damage (CR 400.7).
  *
  * [lastDealtDamageTurn] has no default: every stamp site must name the turn it is recording.
+ *
+ * [lastDealtCombatDamageTurn] is the same record narrowed to combat damage (to any recipient), for
+ * `HasDealtDamage(combatOnly = true)` — Ruric Thar, Magecrusher's "as long as they haven't dealt
+ * combat damage yet". Null means this object has never dealt combat damage. It survives a later
+ * noncombat stamp (the one stamp site carries it forward), and it goes with the marker on a zone
+ * change. Its default exists only so a serialized state from before the field reads back.
  */
 @Serializable
-data class HasDealtDamageComponent(val lastDealtDamageTurn: Int) : Component
+data class HasDealtDamageComponent(
+    val lastDealtDamageTurn: Int,
+    val lastDealtCombatDamageTurn: Int? = null
+) : Component
 
 /** Actual damage total, scoped to a turn and object incarnation, including resolving spells. */
 @Serializable

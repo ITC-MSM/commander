@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -22,6 +23,7 @@ import kotlin.reflect.KClass
  * then uses StormCopyTargetContinuation for remaining copies.
  */
 class StormCopyEffectExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
     private val targetFinder: TargetFinder = TargetFinder()
 ) : EffectExecutor<StormCopyEffect> {
@@ -37,7 +39,7 @@ class StormCopyEffectExecutor(
             return EffectResult.success(state)
         }
 
-        val stackResolver = StackResolver(cardRegistry = cardRegistry)
+        val stackResolver = StackResolver(zones, cardRegistry = cardRegistry)
 
         // Modal source (700.2g): targets live per-mode on the original's
         // [SpellOnStackComponent], not as a flat TargetsComponent. Modes are fixed
@@ -118,7 +120,7 @@ class StormCopyEffectExecutor(
     ): EffectResult {
         val sourceId = context.sourceId
             ?: return EffectResult.error(state, "Storm copy has no source spell to copy")
-        val stackResolver = StackResolver(cardRegistry = cardRegistry)
+        val stackResolver = StackResolver(zones, cardRegistry = cardRegistry)
 
         var currentState = state
         val allEvents = mutableListOf<GameEvent>()

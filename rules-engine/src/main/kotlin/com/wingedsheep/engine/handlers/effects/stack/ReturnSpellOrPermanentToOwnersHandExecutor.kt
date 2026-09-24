@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.zones.MoveToZoneEffectExecutor
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -31,6 +32,7 @@ import kotlin.reflect.KClass
  * If the target is no longer in a valid zone at resolution, the effect does nothing.
  */
 class ReturnSpellOrPermanentToOwnersHandExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry
 ) : EffectExecutor<ReturnSpellOrPermanentToOwnersHandEffect> {
 
@@ -42,6 +44,7 @@ class ReturnSpellOrPermanentToOwnersHandExecutor(
     // grows a battlefield destination, it fails here instead of silently skipping the entering
     // permanent's OnEnterRunEffect replacement.
     private val permanentBounce = MoveToZoneEffectExecutor(
+        zones,
         cardRegistry,
         effectExecutor = { _, _, _ ->
             error("ReturnSpellOrPermanentToOwnersHandExecutor bounces to hand; nothing enters the battlefield")

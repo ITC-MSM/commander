@@ -2,7 +2,6 @@ package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.DecisionHandler
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.drawing.EachPlayerDiscardsOrLoseLifeExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -55,7 +54,7 @@ class DiscardAndDrawContinuationResumer(
             return ExecutionResult.error(state, "Expected card selection response for hand size discard")
         }
 
-        val result = ZoneTransitionService.discardCards(state, continuation.playerId, response.selectedCards)
+        val result = services.zones.discardCards(state, continuation.playerId, response.selectedCards)
         // The hand-size discard (CR 514.1) interrupted the cleanup step: performCleanupStep
         // early-returned to ask for this discard before performing the CR 514.2 turn-based
         // actions. Finish them now — otherwise marked damage (notably deathtouch damage that an
@@ -85,7 +84,7 @@ class DiscardAndDrawContinuationResumer(
             state.getEntity(cardId)?.get<CardComponent>()?.isCreature == true
         }
 
-        val discardResult = ZoneTransitionService.discardCards(state, currentPlayerId, selectedCards)
+        val discardResult = services.zones.discardCards(state, currentPlayerId, selectedCards)
         val newState = discardResult.state
         val discardEvents: List<GameEvent> = discardResult.events
 
@@ -117,7 +116,7 @@ class DiscardAndDrawContinuationResumer(
             if (nextHand.size == 1) {
                 val cardId = nextHand.first()
                 val isCreature = newState.getEntity(cardId)?.get<CardComponent>()?.isCreature == true
-                val autoResult = ZoneTransitionService.discardCard(newState, nextPlayer, cardId)
+                val autoResult = services.zones.discardCard(newState, nextPlayer, cardId)
                 val autoDiscardedCreature = newDiscardedCreature + (nextPlayer to isCreature)
 
                 return continueEachPlayerDiscardsOrLoseLife(
@@ -213,7 +212,7 @@ class DiscardAndDrawContinuationResumer(
         if (nextHand.size == 1) {
             val cardId = nextHand.first()
             val isCreature = state.getEntity(cardId)?.get<CardComponent>()?.isCreature == true
-            val autoResult = ZoneTransitionService.discardCard(state, nextPlayer, cardId)
+            val autoResult = services.zones.discardCard(state, nextPlayer, cardId)
             val autoDiscardedCreature = continuation.discardedCreature + (nextPlayer to isCreature)
 
             return continueEachPlayerDiscardsOrLoseLife(

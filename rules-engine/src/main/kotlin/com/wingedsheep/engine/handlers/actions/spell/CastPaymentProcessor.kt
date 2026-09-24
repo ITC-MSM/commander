@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.handlers.CostHandler
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
@@ -60,6 +61,7 @@ data class PaymentResult(
  * AutoPay (solver taps lands), FromPool (use floating mana), or Explicit (specific sources).
  */
 class CastPaymentProcessor(
+    private val zones: ZoneTransitionService,
     private val manaSolver: ManaSolver,
     private val costHandler: CostHandler,
     private val manaAbilitySideEffectExecutor: ManaAbilitySideEffectExecutor
@@ -151,7 +153,7 @@ class CastPaymentProcessor(
             )
         }
         if (manaResult.error != null || lifePayments.isEmpty()) return manaResult
-        val lifePayment = LifePaymentService.pay(manaResult.state, action.playerId, lifeToPay)
+        val lifePayment = LifePaymentService.pay(zones, manaResult.state, action.playerId, lifeToPay)
             ?: return PaymentResult(state, emptyList(), "Unable to pay life for Phyrexian mana")
         return manaResult.copy(
             state = lifePayment.first,

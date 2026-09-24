@@ -241,7 +241,7 @@ class BecomesTargetPlayerAndAbilityAxesTest : FunSpec({
             // putTriggeredAbility is the third of the four target-declaration sites; drive it
             // directly rather than through a card so the assertion is about the site, not about
             // whichever trigger happened to be convenient.
-            val result = StackResolver(driver.cardRegistry).putTriggeredAbility(
+            val result = StackResolver(driver.zones, cardRegistry = driver.cardRegistry).putTriggeredAbility(
                 state = driver.state,
                 ability = TriggeredAbilityOnStackComponent(
                     sourceId = source,

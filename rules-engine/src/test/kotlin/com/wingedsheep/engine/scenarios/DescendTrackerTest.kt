@@ -75,7 +75,7 @@ class DescendTrackerTest : FunSpec({
     }
 
     fun GameTestDriver.move(entityId: EntityId, destination: Zone) {
-        val result = ZoneTransitionService.moveToZone(
+        val result = zones.moveToZone(
             state = state,
             entityId = entityId,
             destinationZone = destination

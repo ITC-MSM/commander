@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.effects.permanent.types
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
@@ -26,6 +27,7 @@ import kotlin.reflect.KClass
  * back face.
  */
 class ReturnSelfFromZoneTransformedExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry
 ) : EffectExecutor<ReturnSelfFromZoneTransformedEffect> {
 
@@ -57,6 +59,7 @@ class ReturnSelfFromZoneTransformedExecutor(
             ?: return EffectResult.success(state)
 
         val transition = returnDfcFace(
+            zones,
             workingState, cardRegistry, sourceId, DoubleFacedComponent.Face.BACK, tapped = effect.tapped
         )
         return EffectResult.success(transition.state, transition.events)

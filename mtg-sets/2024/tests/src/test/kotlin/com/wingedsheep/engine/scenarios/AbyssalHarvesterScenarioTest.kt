@@ -43,8 +43,8 @@ class AbyssalHarvesterScenarioTest : ScenarioTestBase() {
              * never stamps — which is exactly the distinction the ability cares about.
              */
             fun ScenarioTestBase.TestGame.landInGraveyardThisTurn(cardId: EntityId) {
-                state = ZoneTransitionService.moveToZone(state, cardId, Zone.HAND).state
-                state = ZoneTransitionService.moveToZone(state, cardId, Zone.GRAVEYARD).state
+                state = zones.moveToZone(state, cardId, Zone.HAND).state
+                state = zones.moveToZone(state, cardId, Zone.GRAVEYARD).state
             }
 
             test("exiles the targeted card and leaves a Nightmare token copy behind") {

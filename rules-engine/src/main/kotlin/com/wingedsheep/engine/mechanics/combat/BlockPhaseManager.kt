@@ -12,6 +12,7 @@ import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockedComponent
 import com.wingedsheep.engine.state.components.combat.BlockedThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.BlockedThisTurnComponent
+import com.wingedsheep.engine.state.components.combat.CombatPartnersThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -192,6 +193,10 @@ internal class BlockPhaseManager(
                     container.with(BlockedComponent(existing + blockerId))
                 }
             }
+
+            // Record the pairing on both sides as turn-scoped combat history ("blocked or was
+            // blocked by it this turn" — Gaze of the Gorgon).
+            newState = recordCombatPartners(newState, blockerId, attackerIds)
 
             // Stamp the "paired with a legendary in combat this turn" marker on each side
             // whose partner is legendary.
@@ -1169,5 +1174,19 @@ internal class BlockPhaseManager(
             },
             answer = continuation
         )
+    }
+
+    private fun recordCombatPartners(state: GameState, blockerId: EntityId, attackerIds: List<EntityId>): GameState {
+        var newState = state.updateEntity(blockerId) { container ->
+            val existing = container.get<CombatPartnersThisTurnComponent>()?.partnerIds ?: emptySet()
+            container.with(CombatPartnersThisTurnComponent(existing + attackerIds))
+        }
+        for (attackerId in attackerIds) {
+            newState = newState.updateEntity(attackerId) { container ->
+                val existing = container.get<CombatPartnersThisTurnComponent>()?.partnerIds ?: emptySet()
+                container.with(CombatPartnersThisTurnComponent(existing + blockerId))
+            }
+        }
+        return newState
     }
 }

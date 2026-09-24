@@ -9,6 +9,7 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.NumberChosenResponse
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
 
@@ -24,7 +25,7 @@ import com.wingedsheep.sdk.model.EntityId
  * Also owns the first hop of the chosen-X shape ([ChooseEvidenceAmountContinuation]): pick X, then
  * fall into the very same card-selection path with X as the floor.
  */
-class CollectEvidenceContinuationResumer : ContinuationResumerModule {
+class CollectEvidenceContinuationResumer(private val zones: ZoneTransitionService) : ContinuationResumerModule {
 
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
         resumer(CollectEvidenceContinuation::class, ::resumeCollectEvidence),
@@ -42,6 +43,7 @@ class CollectEvidenceContinuationResumer : ContinuationResumerModule {
         }
 
         val result = CollectEvidenceResolver.collect(
+            zones,
             state = state,
             playerId = continuation.playerId,
             amount = continuation.amount,
@@ -88,6 +90,7 @@ class CollectEvidenceContinuationResumer : ContinuationResumerModule {
             val cards = if (chosen == 0) emptyList() else candidates.cards
             return when (
                 val result = CollectEvidenceResolver.collect(
+                    zones,
                     state = state,
                     playerId = continuation.playerId,
                     amount = chosen,

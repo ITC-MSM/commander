@@ -6,7 +6,6 @@ import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.state.components.battlefield.WarpedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.WarpExiledComponent
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -517,7 +516,7 @@ class WarpMechanicTest : FunSpec({
         permanent shouldNotBe null
 
         // Step 5: kill the creature (send it directly to the graveyard)
-        val transitionResult = ZoneTransitionService.moveToZone(
+        val transitionResult = driver.zones.moveToZone(
             state = driver.state,
             entityId = permanent!!,
             destinationZone = Zone.GRAVEYARD

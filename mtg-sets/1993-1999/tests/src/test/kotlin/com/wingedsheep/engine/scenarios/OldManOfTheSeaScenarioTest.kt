@@ -296,6 +296,7 @@ class OldManOfTheSeaScenarioTest : FunSpec({
         projector.project(driver.state).getController(target) shouldBe activePlayer
 
         val sbaChecker = com.wingedsheep.engine.mechanics.StateBasedActionChecker(
+            driver.zones,
             cardRegistry = driver.cardRegistry
         )
 
@@ -385,6 +386,7 @@ class OldManOfTheSeaScenarioTest : FunSpec({
 
         // Run state-based actions and verify the Warrior is no longer attacking.
         val sbaChecker = com.wingedsheep.engine.mechanics.StateBasedActionChecker(
+            driver.zones,
             cardRegistry = driver.cardRegistry
         )
         val sbaResult = sbaChecker.checkAndApply(driver.state)

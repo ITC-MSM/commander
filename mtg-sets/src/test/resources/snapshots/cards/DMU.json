@@ -1842,7 +1842,8 @@
                                     "zone": "Library",
                                     "filter": "instant|sorcery mv=1"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -2365,7 +2366,8 @@
                                 "zone": "Library",
                                 "filter": "creature black"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",

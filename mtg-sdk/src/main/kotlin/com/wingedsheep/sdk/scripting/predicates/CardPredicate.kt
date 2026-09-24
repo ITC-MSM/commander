@@ -799,6 +799,22 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
     }
 
     /**
+     * An Aura card whose printed "Enchant …" restriction ([com.wingedsheep.sdk.model.CardScript.auraTarget])
+     * the referenced permanent satisfies — "search your library for an Aura card that could enchant
+     * it" (Auratouched Mage). Only the enchant restriction is read, not targeting legality: an Aura
+     * put onto the battlefield isn't cast and doesn't target (CR 303.4f), so hexproof and shroud
+     * don't matter. "You" in the restriction ("Enchant creature you control") is the evaluating
+     * controller — the player who would put the Aura onto the battlefield. A non-Aura never
+     * matches, and nor does an unresolvable reference.
+     */
+    @SerialName("CouldEnchant")
+    @Serializable
+    data class CouldEnchant(val reference: EntityReference) : CardPredicate {
+        override val description: String = "that could enchant ${reference.description}"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+    }
+
+    /**
      * Power less than or equal to the projected power of a referenced entity. Mirror of
      * [PowerGreaterThanEntity]; the entity is looked up via [PredicateContext]
      * (Source / Triggering / AffectedEntity) and the comparison reads its

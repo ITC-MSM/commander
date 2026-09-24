@@ -1,6 +1,5 @@
 package com.wingedsheep.engine.scenarios
 
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.mtg.sets.definitions.soi.cards.OdricLunarchMarshal
 import com.wingedsheep.sdk.core.Keyword
@@ -162,8 +161,7 @@ class OdricLunarchMarshalScenarioTest : ScenarioTestBase() {
                 }
 
                 // The creature that supplied first strike dies.
-                game.state = ZoneTransitionService
-                    .moveToZone(game.state, knight, Zone.GRAVEYARD).state
+                game.state = zones.moveToZone(game.state, knight, Zone.GRAVEYARD).state
 
                 withClue("the granted keyword survives — it is not re-checked each projection") {
                     game.state.projectedState.hasKeyword(lions, Keyword.FIRST_STRIKE) shouldBe true

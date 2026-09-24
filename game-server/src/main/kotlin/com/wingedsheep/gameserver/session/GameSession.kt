@@ -13,6 +13,7 @@ import com.wingedsheep.engine.view.LegalActionInfo
 import com.wingedsheep.gameserver.protocol.ServerMessage
 import com.wingedsheep.gameserver.priority.AutoPassManager
 import com.wingedsheep.engine.core.*
+import com.wingedsheep.engine.mechanics.combat.CombatDeclarationControl
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow
 import com.wingedsheep.engine.registry.CardRegistry
@@ -892,7 +893,16 @@ class GameSession(
         // device. Concede is excluded — the affected player can always concede regardless
         // of who's controlling them.
         val actionPlayerId = action.playerId
-        if (action !is Concede && playerId != actionPlayerId && state.actorFor(actionPlayerId) != playerId) {
+        // Master Warcraft: while another player has taken over a combat declaration, only they may
+        // submit it — not even the seat that owes it.
+        val combatDeclarer = if (action is DeclareAttackers || action is DeclareBlockers) {
+            CombatDeclarationControl.declarerFor(state, actionPlayerId)
+        } else null
+        if (combatDeclarer != null) {
+            if (combatDeclarer != playerId) {
+                return ActionResult.Failure("Another player chooses this combat declaration")
+            }
+        } else if (action !is Concede && playerId != actionPlayerId && state.actorFor(actionPlayerId) != playerId) {
             return ActionResult.Failure("Not authorized to submit actions for player $actionPlayerId")
         }
 
@@ -993,8 +1003,10 @@ class GameSession(
         // The baton holder is tried first so a hotseat client (the actor for every seat) keeps
         // driving exactly the seat the UI is focused on. Outside a shared-turns format
         // [GameState.priorityTeam] is the singleton baton holder and this is the old expression.
+        // A combat declaration taken over by Master Warcraft routes to its new declarer (and away
+        // from the seat's usual actor) — CombatDeclarationControl.inputActorFor.
         val actingSeat = (listOf(priorityPlayer) + state.priorityTeam.filter { it != priorityPlayer })
-            .firstOrNull { state.actorFor(it) == playerId }
+            .firstOrNull { CombatDeclarationControl.inputActorFor(state, it) == playerId }
             ?: return emptyList()
         if (state.pendingDecision != null) return emptyList()
         val engineActions = legalActionEnumerator.enumerate(state, actingSeat)
@@ -1040,7 +1052,7 @@ class GameSession(
         val playerMode = getPriorityMode(playerId)
         // "Can this connection act in the current priority window?" — the baton holder's seat, or
         // (CR 805.5) any seat on the baton holder's team under shared team turns.
-        val isActorForPriority = state.priorityTeam.any { state.actorFor(it) == playerId }
+        val isActorForPriority = state.priorityTeam.any { CombatDeclarationControl.inputActorFor(state, it) == playerId }
         val nextStopPoint = if (isActorForPriority && playerMode != PriorityMode.FULL_CONTROL) {
             // The same notion of "meaningful" the stop decision itself uses — otherwise the
             // button can promise a stop (say, at the opponent's end step for a spell we can't
@@ -1215,7 +1227,7 @@ class GameSession(
         // The actor is whoever is actually clicking — normally the priority player, or
         // the controller during a hijacked turn. Auto-pass settings track per-seat,
         // so consult the actor's preferences and the actor's legal-actions view.
-        val actorPlayer = state.actorFor(priorityPlayer)
+        val actorPlayer = CombatDeclarationControl.inputActorFor(state, priorityPlayer)
 
         // Check if player has full control enabled - never auto-pass
         val playerMode = getPriorityMode(actorPlayer)

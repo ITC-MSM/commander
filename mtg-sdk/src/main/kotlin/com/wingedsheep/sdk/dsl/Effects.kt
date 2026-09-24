@@ -74,6 +74,7 @@ import com.wingedsheep.sdk.scripting.effects.SuspectEffect
 import com.wingedsheep.sdk.scripting.effects.CantBlockGroupEffect
 import com.wingedsheep.sdk.scripting.effects.CantActivateLoyaltyAbilitiesEffect
 import com.wingedsheep.sdk.scripting.effects.CantCastSpellsEffect
+import com.wingedsheep.sdk.scripting.effects.CantSearchLibrariesEffect
 import com.wingedsheep.sdk.scripting.effects.CantCastSpellsFromNonHandZonesEffect
 import com.wingedsheep.sdk.scripting.effects.CantPlayCardsFromHandEffect
 import com.wingedsheep.sdk.scripting.effects.PreventLandPlaysThisTurnEffect
@@ -222,6 +223,7 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
+import com.wingedsheep.sdk.scripting.targets.TargetPlayer
 
 /**
  * Facade object providing convenient factory methods for creating atomic Effects.
@@ -256,15 +258,28 @@ object Effects {
      * Deal damage to a target.
      * No default — every damage effect must explicitly declare its target.
      */
-    fun DealDamage(amount: Int, target: EffectTarget, damageSource: EffectTarget? = null): Effect =
-        DealDamageEffect(amount, target, damageSource = damageSource)
+    fun DealDamage(
+        amount: Int,
+        target: EffectTarget,
+        damageSource: EffectTarget? = null,
+        excessDamageVariable: String? = null
+    ): Effect =
+        DealDamageEffect(
+            DynamicAmount.Fixed(amount), target,
+            damageSource = damageSource, excessDamageVariable = excessDamageVariable
+        )
 
     /**
      * Deal dynamic damage to a target.
      * Used for effects like "deal damage equal to the number of lands you control".
      */
-    fun DealDamage(amount: DynamicAmount, target: EffectTarget, damageSource: EffectTarget? = null): Effect =
-        DealDamageEffect(amount, target, damageSource = damageSource)
+    fun DealDamage(
+        amount: DynamicAmount,
+        target: EffectTarget,
+        damageSource: EffectTarget? = null,
+        excessDamageVariable: String? = null
+    ): Effect =
+        DealDamageEffect(amount, target, damageSource = damageSource, excessDamageVariable = excessDamageVariable)
 
     /**
      * Deal damage to a creature, dealing any excess (CR 120.4a — damage beyond lethal) to that
@@ -2242,6 +2257,8 @@ object Effects {
      * block — reads the chosen color from the effect context. The target may be a spell on the
      * stack or a permanent. Used by Blind Seer:
      * "{1}{U}: Target spell or permanent becomes the color of your choice until end of turn."
+     * Inside a [ChooseColorsThen] block it takes the whole chosen set (Quickchange: "the color or
+     * colors of your choice").
      */
     fun ChangeColorToChosen(
         target: EffectTarget = EffectTarget.ContextTarget(0),
@@ -2418,9 +2435,32 @@ object Effects {
         amount: Int = 1,
         restriction: ManaRestriction? = null,
         recipient: EffectTarget = EffectTarget.Controller,
+        colorChosenByRecipient: Boolean = false,
     ): Effect = AddManaOfChoiceEffect(
-        colorSet, DynamicAmount.Fixed(amount), restriction, recipient = recipient
+        colorSet, DynamicAmount.Fixed(amount), restriction, recipient = recipient,
+        colorChosenByRecipient = colorChosenByRecipient
     )
+
+    /**
+     * "Choose a player. That player adds [amount] mana of any color they choose." — a
+     * **non-targeting** player choice made as the ability resolves, then mana of the chosen
+     * player's chosen color into that player's pool (Spectral Searchlight). Because nothing is
+     * targeted this stays a mana ability (CR 605.1a) when used on a `{T}:` ability marked
+     * `manaAbility`. Choosing yourself is legal (ruling), in which case you pick the color.
+     */
+    fun ChoosePlayerThenTheyAddManaOfAnyColor(amount: Int = 1): Effect {
+        val chosen = "chosenManaRecipient"
+        return CompositeEffect(
+            listOf(
+                SelectTargetEffect(requirement = TargetPlayer(descriptionOverride = "a player"), storeAs = chosen, nonTargeting = true),
+                AddManaOfChoiceEffect(
+                    ManaColorSet.AnyColor, DynamicAmount.Fixed(amount),
+                    recipient = EffectTarget.PipelineTarget(chosen),
+                    colorChosenByRecipient = true
+                )
+            )
+        )
+    }
 
     /**
      * Dynamic-amount variant of [AddManaOfChoice].
@@ -2843,8 +2883,9 @@ object Effects {
      */
     fun Behold(
         filter: com.wingedsheep.sdk.scripting.GameObjectFilter,
-        ifBeheld: Effect? = null
-    ): Effect = com.wingedsheep.sdk.scripting.effects.BeholdEffect(filter, ifBeheld)
+        ifBeheld: Effect? = null,
+        otherwise: Effect? = null
+    ): Effect = com.wingedsheep.sdk.scripting.effects.BeholdEffect(filter, ifBeheld, otherwise)
 
     /**
      * Create Meteorite artifact tokens (Roxanne, Starfall Savant).
@@ -2958,6 +2999,29 @@ object Effects {
      */
     fun CreateHeartwood(count: Int = 1, tapped: Boolean = false, controller: EffectTarget? = null): Effect =
         CreatePredefinedTokenEffect("Heartwood", count, controller, tapped)
+
+    /**
+     * Create Lotus artifact tokens (Reality Fracture — Kwia Vigorbloom).
+     * A colorless "Artifact" named Lotus with "{T}, Sacrifice this token: Add three mana of any
+     * one color."
+     *
+     * @param count Number of tokens to create
+     * @param controller Who controls the tokens (null = spell controller)
+     */
+    fun CreateLotus(count: Int = 1, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Lotus", count, controller)
+
+    /**
+     * Create Forest Tentacle tokens (Reality Fracture — Verdant Kraken).
+     * A 3/3 green "Land Creature — Forest Tentacle"; its "{T}: Add {G}." is the Forest type's
+     * intrinsic mana ability (CR 305.6), subject to summoning sickness like any creature's.
+     *
+     * @param count Number of tokens to create
+     * @param tapped Whether the tokens enter the battlefield tapped
+     * @param controller Who controls the tokens (null = the ability's controller)
+     */
+    fun CreateForestTentacle(count: Int = 1, tapped: Boolean = false, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Forest Tentacle", count, controller, tapped)
 
     /**
      * Create Mutavault land tokens.
@@ -3138,6 +3202,17 @@ object Effects {
     ): Effect = ChooseColorThenEffect(then, prompt)
 
     /**
+     * Choose **one or more** colors — "the color or colors of your choice" — then run [then] with
+     * the whole chosen set exposed via the effect context (`chosenColors`). Pair with
+     * [ChangeColorToChosen] for Quickchange: "Target creature becomes the color or colors of your
+     * choice until end of turn." Colorless is never a choice: at least one color is picked.
+     */
+    fun ChooseColorsThen(
+        then: Effect,
+        prompt: String = "Choose one or more colors"
+    ): Effect = ChooseColorThenEffect(then, prompt, maxColors = Color.entries.size)
+
+    /**
      * Choose a number, then run [then] with the chosen number exposed via the effect
      * context (as X). Atomic effects and filters under [then] read it through
      * [com.wingedsheep.sdk.scripting.predicates.CardPredicate.ManaValueEqualsX] (via
@@ -3274,6 +3349,17 @@ object Effects {
         target: EffectTarget = EffectTarget.ContextTarget(0),
         duration: Duration = Duration.EndOfTurn
     ): Effect = GrantProtectionFromChosenColorEffect(target, duration)
+
+    /**
+     * [target] gains every protection ability some permanent in [group] has, read at resolution
+     * — the protection clause of Concerted Effort. Fan it over the group with [ForEachInGroup]
+     * and [EffectTarget.Self]. See [GrantProtectionsSharedByGroupEffect].
+     */
+    fun GrantProtectionsSharedByGroup(
+        group: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter,
+        target: EffectTarget = EffectTarget.Self,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = com.wingedsheep.sdk.scripting.effects.GrantProtectionsSharedByGroupEffect(group, target, duration)
 
     /**
      * Grant "protection from the card type of your choice" to a target (CR 702.16). The
@@ -3736,6 +3822,19 @@ object Effects {
             makePlotted = makePlotted,
             fixedAlternativeManaCost = fixedAlternativeManaCost,
             linkToSource = linkToSource
+        )
+
+    /**
+     * Exile the spell that fired this trigger — "whenever a player casts an instant or sorcery
+     * card, exile it" (Eye of the Storm). Not a counter, like [ExileTargetSpell]: the spell still
+     * fails to resolve because it left the stack, but nothing is targeted and no "countered"
+     * trigger fires. [linkToSource] = true records the card in the source's linked-exile pile
+     * (`CardSource.FromLinkedExile()`). A no-op when the spell already left the stack.
+     */
+    fun ExileTriggeringSpell(linkToSource: Boolean = false): Effect =
+        ExileTargetSpellEffect(
+            linkToSource = linkToSource,
+            spell = com.wingedsheep.sdk.scripting.effects.CounterTargetSource.TriggeringEntity
         )
 
     /**
@@ -4366,6 +4465,14 @@ object Effects {
         CantCastSpellsEffect(target, duration)
 
     /**
+     * Target player(s) can't search libraries for the duration (default: this turn). Pass
+     * `EffectTarget.PlayerRef(Player.Each)` for "Players can't search libraries this turn"
+     * (Shadow of Doubt). Blocks gathers marked `search = true`; see [CantSearchLibrariesEffect].
+     */
+    fun CantSearchLibraries(target: EffectTarget, duration: Duration = Duration.EndOfTurn): Effect =
+        CantSearchLibrariesEffect(target, duration)
+
+    /**
      * Target player can't play cards from their hand for the duration (default: until your
      * next turn). Blocks both casting spells and playing lands, but only from the hand —
      * cards in other zones (exile via a may-play permission, etc.) stay playable. The
@@ -4483,6 +4590,15 @@ object Effects {
      */
     fun HijackNextCombatPhase(target: EffectTarget = EffectTarget.PlayerRef(com.wingedsheep.sdk.scripting.references.Player.TargetOpponent)): Effect =
         HijackNextTurnEffect(target, com.wingedsheep.sdk.scripting.effects.HijackScope.NextCombatPhase)
+
+    /**
+     * "You choose which creatures attack this turn. You choose which creatures block this turn and
+     * how those creatures block." (Master Warcraft.) Moves every attack and block *declaration* this
+     * turn to the controller — nothing else. Pair with
+     * `castOnlyIf(Conditions.BeforeAttackersDeclared)` for the card's timing line.
+     */
+    fun ChooseAttackersAndBlockersThisTurn(): Effect =
+        com.wingedsheep.sdk.scripting.effects.ControlCombatDeclarationsThisTurnEffect
 
     /**
      * Grant a flat damage bonus to a player's sources this turn.
@@ -4620,6 +4736,27 @@ object Effects {
             scope = PreventionScope.CombatOnly,
             direction = PreventionDirection.FromTarget,
             sourceFilter = PreventionSourceFilter.FromGroup(source),
+            duration = duration
+        )
+
+    /**
+     * Prevent **all** damage — combat and noncombat — that would be dealt by sources matching
+     * [source] this turn: "prevent all damage that would be dealt by creatures this turn" (Ethereal
+     * Haze). The all-damage sibling of [PreventCombatDamageFrom]; the group is re-evaluated against
+     * projected state each time damage would be dealt, so a creature that enters later is covered.
+     *
+     * [gainLifeFromPrevented] adds "you gain life equal to the damage prevented this way" (Chant of
+     * Vitu-Ghazi): each time the shield prevents damage, its controller gains that much life.
+     */
+    fun PreventAllDamageFrom(
+        source: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter,
+        gainLifeFromPrevented: Boolean = false,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect =
+        PreventDamageEffect(
+            direction = PreventionDirection.FromTarget,
+            sourceFilter = PreventionSourceFilter.FromGroup(source),
+            gainLifeFromPrevented = gainLifeFromPrevented,
             duration = duration
         )
 

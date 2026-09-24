@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -24,6 +25,7 @@ import kotlin.reflect.KClass
  * whose resumer walks the remaining copies).
  */
 class CopyTargetSpellExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
     private val targetFinder: TargetFinder = TargetFinder()
 ) : EffectExecutor<CopyTargetSpellEffect> {
@@ -59,7 +61,7 @@ class CopyTargetSpellExecutor(
         val targetsComponent = container.get<TargetsComponent>()
         val targetRequirements = targetsComponent?.targetRequirements ?: emptyList()
 
-        val stackResolver = StackResolver(cardRegistry = cardRegistry)
+        val stackResolver = StackResolver(zones, cardRegistry = cardRegistry)
 
         // Token-side riders (CR 707.10f): keywords baked onto, and a delayed sacrifice trigger for,
         // the token the copy resolves into when the copied spell is a permanent spell. Stamped on
@@ -236,7 +238,7 @@ class CopyTargetSpellExecutor(
         keywordsForCopy: Set<String> = emptySet(),
         removeLegendary: Boolean = false,
         copyCount: Int = 1,
-        stackResolver: StackResolver = StackResolver(cardRegistry = cardRegistry)
+        stackResolver: StackResolver = StackResolver(zones, cardRegistry = cardRegistry)
     ): EffectResult {
 
         val legalTargetsMap = mutableMapOf<Int, List<EntityId>>()

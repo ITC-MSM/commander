@@ -80,7 +80,7 @@ class PyramidsScenarioTest : FunSpec({
         driver.markDamage(land, 3)
         driver.addRemoveDamageShield(land, active)
 
-        val result = ZoneMovementUtils.destroyPermanent(driver.state, land)
+        val result = ZoneMovementUtils.destroyPermanent(driver.zones, driver.state, land)
         driver.replaceState(result.state)
 
         // Land still on the battlefield.
@@ -106,12 +106,12 @@ class PyramidsScenarioTest : FunSpec({
         driver.addRemoveDamageShield(land, active)
 
         // First destroy is replaced — the land stays on the battlefield.
-        val first = ZoneMovementUtils.destroyPermanent(driver.state, land)
+        val first = ZoneMovementUtils.destroyPermanent(driver.zones, driver.state, land)
         driver.replaceState(first.state)
         driver.findPermanent(active, "Forest") shouldNotBe null
 
         // Second destroy with no shield left — the land really is destroyed.
-        val second = ZoneMovementUtils.destroyPermanent(driver.state, land)
+        val second = ZoneMovementUtils.destroyPermanent(driver.zones, driver.state, land)
         driver.replaceState(second.state)
         driver.findPermanent(active, "Forest") shouldBe null
     }
@@ -140,7 +140,7 @@ class PyramidsScenarioTest : FunSpec({
         driver.replaceState(driver.state.copy(floatingEffects = driver.state.floatingEffects + regen))
         driver.addRemoveDamageShield(creature, active)
 
-        val result = ZoneMovementUtils.destroyPermanent(driver.state, creature)
+        val result = ZoneMovementUtils.destroyPermanent(driver.zones, driver.state, creature)
         driver.replaceState(result.state)
 
         // Creature survived (one of the shields fired).
@@ -166,7 +166,7 @@ class PyramidsScenarioTest : FunSpec({
         driver.markDamage(creature, 3)
         driver.addRemoveDamageShield(creature, active)
 
-        val result = LethalDamageCheck().check(driver.state)
+        val result = LethalDamageCheck(driver.zones).check(driver.state)
         driver.replaceState(result.newState)
 
         // Survived the lethal-damage SBA because the shield fired.

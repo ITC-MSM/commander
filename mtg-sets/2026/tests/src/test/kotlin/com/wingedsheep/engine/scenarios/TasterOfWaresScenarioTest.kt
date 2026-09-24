@@ -145,6 +145,7 @@ class TasterOfWaresScenarioTest : ScenarioTestBase() {
                 // permission ends. The Hammer stays exiled; only the permission is revoked.
                 val taster = game.findPermanent("Taster of Wares")!!
                 game.state = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.moveCardToZone(
+                    zones,
                     game.state,
                     taster,
                     com.wingedsheep.sdk.core.Zone.GRAVEYARD

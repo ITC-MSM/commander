@@ -160,7 +160,12 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
             notBeforeTurn = notBeforeTurn,
             targetRequirement = effect.targetRequirement,
             additionalTargetRequirements = effect.additionalTargetRequirements,
-            fireOnPlayerId = fireOnPlayerId
+            fireOnPlayerId = fireOnPlayerId,
+            carriedCollections = effect.carryCollections.associateWith { name ->
+                (context.pipeline.storedCollections[name] ?: emptyList()).map { id ->
+                    com.wingedsheep.engine.handlers.CapturedObjectBinding(id, state.objectRef(id))
+                }
+            }
         )
 
         return EffectResult.success(stateWithRoutingId.addDelayedTrigger(delayedTrigger))

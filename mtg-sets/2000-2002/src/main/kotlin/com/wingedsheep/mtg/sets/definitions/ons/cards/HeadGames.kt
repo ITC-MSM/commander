@@ -46,7 +46,8 @@ val HeadGames = card("Head Games") {
                 ),
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.LIBRARY, Player.ContextPlayer(0)),
-                    storeAs = "searchable"
+                    storeAs = "searchable",
+                    search = true
                 ),
                 SelectFromCollectionEffect(
                     from = "searchable",

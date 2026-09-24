@@ -397,6 +397,15 @@ object LibraryPatterns {
     fun surveil(count: DynamicAmount): CompositeEffect = surveilPipeline(count)
 
     /**
+     * "Surveil [count]" that remembers which cards it put into the graveyard, stored under
+     * [storeGraveyardAs] for a later "if you put a card … into your graveyard this way" clause
+     * (Enlightened Confidant). Same expanded pipeline as [surveilPipeline] — `SurveiledEvent`
+     * included — with the graveyard move recording the cards it moved.
+     */
+    fun surveil(count: Int, storeGraveyardAs: String): CompositeEffect =
+        surveilPipeline(count, storeGraveyardAs)
+
+    /**
      * Expand a library *macro effect* ([ScryEffect] / [SurveilEffect]) to its underlying
      * Gather → Select → Move pipeline, or return `null` if [effect] is not a library macro.
      *
@@ -459,7 +468,7 @@ object LibraryPatterns {
      * Public so the engine's surveil macro executor can build and delegate to it; card definitions
      * should use [surveil] / [com.wingedsheep.sdk.dsl.Effects.Surveil] instead.
      */
-    fun surveilPipeline(count: Int): CompositeEffect = CompositeEffect(
+    fun surveilPipeline(count: Int, storeGraveyardAs: String? = null): CompositeEffect = CompositeEffect(
         listOfNotNull(
             GatherCardsEffect(
                 source = CardSource.TopOfLibrary(DynamicAmount.Fixed(count)),
@@ -475,7 +484,8 @@ object LibraryPatterns {
             ),
             MoveCollectionEffect(
                 from = "toGraveyard",
-                destination = CardDestination.ToZone(Zone.GRAVEYARD)
+                destination = CardDestination.ToZone(Zone.GRAVEYARD),
+                storeMovedAs = storeGraveyardAs
             ),
             MoveCollectionEffect(
                 from = "toTop",
@@ -548,7 +558,8 @@ object LibraryPatterns {
         effects.add(
             GatherCardsEffect(
                 source = CardSource.FromZone(Zone.LIBRARY, Player.You, filter),
-                storeAs = "searchable"
+                storeAs = "searchable",
+                search = true
             )
         )
 
@@ -608,7 +619,8 @@ object LibraryPatterns {
         effects.add(
             GatherCardsEffect(
                 source = CardSource.FromMultipleZones(zones, Player.You, filter),
-                storeAs = "searchable"
+                storeAs = "searchable",
+                search = Zone.LIBRARY in zones
             )
         )
 
@@ -870,7 +882,8 @@ object LibraryPatterns {
         effects = listOf(
             GatherCardsEffect(
                 source = CardSource.FromZone(Zone.LIBRARY, Player.You, filter),
-                storeAs = "searchable"
+                storeAs = "searchable",
+                search = true
             ),
             SelectFromCollectionEffect(
                 from = "searchable",

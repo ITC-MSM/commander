@@ -153,6 +153,19 @@ class GatedEffectExecutor(
                     return EffectResult.success(state)
                 }
             }
+            // "You may search your library … then shuffle" while the player can't search libraries
+            // (Shadow of Doubt): they can't choose to search, so nothing happens — not even the
+            // shuffle (the card's first ruling). Only a may whose action *leads* with the search is
+            // skipped; a search nested behind another optional action ("you may sacrifice …. If you
+            // do, search …") keeps its prompt, and the blocked search inside simply finds nothing.
+            if (leadsWithSearch(effect.then) &&
+                state.getEntity(context.controllerId)
+                    ?.has<com.wingedsheep.engine.state.components.player.CantSearchLibrariesComponent>() == true
+            ) {
+                return effect.otherwise
+                    ?.let { effectExecutor(state, it, context) }
+                    ?: EffectResult.success(state)
+            }
             // A declared feasibility that isn't met means the may-action is impossible — the player
             // "doesn't", so skip the prompt and run `otherwise` directly. This is the no-target
             // analogue of a targeted "may" with no legal targets falling to its else branch (e.g.
@@ -904,5 +917,13 @@ class GatedEffectExecutor(
             val postSize = state.zones[ZoneKey(owner, zone)]?.size ?: 0
             return postSize > snapshot.destinationZonePreSize
         }
+    }
+
+    /** True when [effect]'s first step is a library search (a `GatherCardsEffect(search = true)`). */
+    private fun leadsWithSearch(effect: Effect): Boolean = when (effect) {
+        is com.wingedsheep.sdk.scripting.effects.GatherCardsEffect -> effect.search
+        is com.wingedsheep.sdk.scripting.effects.CompositeEffect ->
+            effect.effects.firstOrNull()?.let { leadsWithSearch(it) } == true
+        else -> false
     }
 }

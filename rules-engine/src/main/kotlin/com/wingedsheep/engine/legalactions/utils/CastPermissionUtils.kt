@@ -967,13 +967,23 @@ class CastPermissionUtils(
      * can't activate abilities of artifacts, creatures, or enchantments." Mirrors
      * [isActivationPrevented] (Cursed Totem's who/when-blind block), but additionally scopes by
      * who is activating and when. Face-down permanents (no abilities) are skipped as granters.
+     *
+     * [abilityIsManaAbility] exempts the ability from a
+     * [nonManaAbilitiesOnly][PlayersCantActivateAbilities.nonManaAbilitiesOnly] prohibition. A
+     * [sourceId] that isn't on the battlefield (a graveyard, hand, exile or command-zone ability —
+     * cycling included) is only caught by a prohibition with
+     * [anyZone][PlayersCantActivateAbilities.anyZone] set; the others speak of permanents only.
+     * Yuriko, Blade of the Mighty: "During combat, players can't cast spells or activate
+     * abilities that aren't mana abilities."
      */
     fun isActivationPreventedForPlayer(
         state: GameState,
         sourceId: EntityId,
-        activatingPlayerId: EntityId
+        activatingPlayerId: EntityId,
+        abilityIsManaAbility: Boolean = false
     ): Boolean {
         val projected = state.projectedState
+        val sourceOnBattlefield = sourceId in state.getBattlefield()
         for (permanentId in state.getBattlefield()) {
             val container = state.getEntity(permanentId) ?: continue
             if (container.has<FaceDownComponent>()) continue
@@ -981,6 +991,8 @@ class CastPermissionUtils(
                 ?.let { cardRegistry.getCard(it.cardDefinitionId) } ?: continue
             for (sa in cardDef.script.staticAbilities) {
                 if (sa !is PlayersCantActivateAbilities) continue
+                if (sa.nonManaAbilitiesOnly && abilityIsManaAbility) continue
+                if (!sourceOnBattlefield && !sa.anyZone) continue
                 val controller = projected.getController(permanentId)
                     ?: container.get<ControllerComponent>()?.playerId
                     ?: continue

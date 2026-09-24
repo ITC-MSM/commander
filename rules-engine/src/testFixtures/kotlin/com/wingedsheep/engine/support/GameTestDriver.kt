@@ -56,7 +56,11 @@ import com.wingedsheep.sdk.model.EntityId
  */
 class GameTestDriver {
     val cardRegistry: CardRegistry = CardRegistry()
-    private val processor: ActionProcessor = ActionProcessor(cardRegistry)
+    private val services = com.wingedsheep.engine.core.EngineServices(cardRegistry)
+    private val processor: ActionProcessor = ActionProcessor(services)
+
+    /** The engine's zone service — for tests that move a card the way an effect would. */
+    val zones get() = services.zones
     private var _state: GameState = GameState()
     private val _events = mutableListOf<GameEvent>()
 
@@ -225,7 +229,6 @@ class GameTestDriver {
 
     // Lazily-built enumerator; stateless (takes current state), shared across calls.
     private val legalActionEnumerator by lazy {
-        val services = com.wingedsheep.engine.core.EngineServices(cardRegistry)
         com.wingedsheep.engine.legalactions.LegalActionEnumerator(
             services.cardRegistry, services.manaSolver, services.costCalculator,
             services.predicateEvaluator, services.conditionEvaluator, services.turnManager

@@ -83,7 +83,7 @@ class SacrificeAndPayContinuationResumer(
         }
 
         for (permanentId in selectedPermanents) {
-            val transitionResult = ZoneTransitionService.moveToZone(
+            val transitionResult = services.zones.moveToZone(
                 newState, permanentId, Zone.GRAVEYARD
             )
             newState = transitionResult.state
@@ -94,7 +94,7 @@ class SacrificeAndPayContinuationResumer(
 
         // If there are remaining players (from "each opponent" effects), process them
         if (continuation.remainingPlayers.isNotEmpty() && continuation.filter != null) {
-            val executor = ForceSacrificeExecutor()
+            val executor = ForceSacrificeExecutor(services.zones)
             val result = executor.processPlayers(
                 newState, continuation.remainingPlayers, continuation.filter,
                 continuation.count, continuation.sourceId
@@ -149,6 +149,7 @@ class SacrificeAndPayContinuationResumer(
         }
 
         val result = ForceExileMultiZoneExecutor.exileEntities(
+            services.zones,
             state, continuation.playerId, response.selectedCards
         )
 
@@ -276,7 +277,7 @@ class SacrificeAndPayContinuationResumer(
 
         // Player paid the cost — discard the selected cards through the shared discard path, so a
         // card-intrinsic discard replacement (madness, CR 702.35a) applies here too.
-        val result = ZoneTransitionService.discardCards(state, playerId, selectedCards)
+        val result = services.zones.discardCards(state, playerId, selectedCards)
         return checkForMore(result.state, result.events)
     }
 
@@ -300,6 +301,7 @@ class SacrificeAndPayContinuationResumer(
 
         // Player chose to pay - execute random discard
         val result = com.wingedsheep.engine.handlers.effects.player.PayOrSufferExecutor.executeRandomDiscard(
+            services.zones,
             state,
             continuation.playerId,
             continuation.filter,
@@ -330,6 +332,7 @@ class SacrificeAndPayContinuationResumer(
         }
 
         val result = com.wingedsheep.engine.handlers.effects.player.PayOrSufferExecutor.executeDiscardHand(
+            services.zones,
             state,
             continuation.playerId
         )
@@ -368,7 +371,7 @@ class SacrificeAndPayContinuationResumer(
         newState = ZoneTransitionService.trackPermanentSacrifice(newState, selectedPermanents, playerId)
 
         for (permanentId in selectedPermanents) {
-            val transitionResult = ZoneTransitionService.moveToZone(
+            val transitionResult = services.zones.moveToZone(
                 newState, permanentId, Zone.GRAVEYARD
             )
             newState = transitionResult.state
@@ -407,7 +410,7 @@ class SacrificeAndPayContinuationResumer(
         val events = mutableListOf<GameEvent>()
 
         for (permanentId in selectedPermanents) {
-            val transitionResult = ZoneTransitionService.moveToZone(newState, permanentId, Zone.HAND)
+            val transitionResult = services.zones.moveToZone(newState, permanentId, Zone.HAND)
             newState = transitionResult.state
             events.addAll(transitionResult.events)
         }
@@ -535,7 +538,7 @@ class SacrificeAndPayContinuationResumer(
 
         // Player chose to pay life
         val (newState, events) = LifePaymentService
-            .pay(state, continuation.playerId, continuation.requiredCount)
+            .pay(services.zones, state, continuation.playerId, continuation.requiredCount)
             ?: return ExecutionResult.error(state, "Player has no life total")
 
         return checkForMore(newState, events)
@@ -565,7 +568,7 @@ class SacrificeAndPayContinuationResumer(
         val playerId = continuation.playerId
         val count = MillAmountModifier.apply(state, playerId, continuation.requiredCount)
         val milled = state.getZone(ZoneKey(playerId, Zone.LIBRARY)).take(count)
-        val result = ZoneTransitionService.moveToZoneBatch(state, milled, Zone.GRAVEYARD)
+        val result = services.zones.moveToZoneBatch(state, milled, Zone.GRAVEYARD)
 
         return checkForMore(result.state, result.events)
     }
@@ -663,6 +666,7 @@ class SacrificeAndPayContinuationResumer(
         }
         val inner = continuation.inner
         val floated = ManaPaymentWindow.floatSelectedMana(
+            services.zones,
             state, inner.playerId, continuation.manaCost, response, continuation.availableSources, services
         )
         if (!floated.paid) return executePayOrSufferConsequence(floated.state, inner, checkForMore)
@@ -842,7 +846,7 @@ class SacrificeAndPayContinuationResumer(
                 events.add(PermanentsSacrificedEvent(playerId, selectedPermanents))
                 newState = ZoneTransitionService.trackPermanentSacrifice(newState, selectedPermanents, playerId)
                 for (permanentId in selectedPermanents) {
-                    val transitionResult = ZoneTransitionService.moveToZone(newState, permanentId, Zone.GRAVEYARD)
+                    val transitionResult = services.zones.moveToZone(newState, permanentId, Zone.GRAVEYARD)
                     newState = transitionResult.state
                     events.addAll(transitionResult.events)
                 }
@@ -858,7 +862,7 @@ class SacrificeAndPayContinuationResumer(
                 }
 
                 val (newState, paymentEvents) = LifePaymentService
-                    .pay(state, playerId, continuation.requiredCount)
+                    .pay(services.zones, state, playerId, continuation.requiredCount)
                     ?: return ExecutionResult.error(state, "Player has no life total")
                 val events = paymentEvents.toMutableList()
                 return runAnyPlayerMayPayConsequence(newState, continuation, continuation.consequence, events, checkForMore)

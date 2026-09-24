@@ -361,6 +361,22 @@ object DecisionValidators {
         if (response.color !in decision.availableColors) {
             return "Invalid color: ${response.color} is not available"
         }
+        if (response.colors.isNotEmpty()) {
+            // Multi-color answer ("the color or colors of your choice"): a nonempty set of
+            // distinct, offered colors, no larger than the decision allows, naming `color` too.
+            if (response.colors.size > decision.maxColors) {
+                return "Too many colors: at most ${decision.maxColors} may be chosen"
+            }
+            if (response.colors.toSet().size != response.colors.size) {
+                return "Duplicate colors in response"
+            }
+            response.colors.firstOrNull { it !in decision.availableColors }?.let {
+                return "Invalid color: $it is not available"
+            }
+            if (response.color !in response.colors) {
+                return "The primary color must be one of the chosen colors"
+            }
+        }
         return null
     }
 

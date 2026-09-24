@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.AbilityCounteredEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.stack.CounterAllOnStackExecutor
 import com.wingedsheep.engine.handlers.effects.stack.ExileSpellsOnStackExecutor
 import com.wingedsheep.engine.registry.CardRegistry
@@ -65,8 +66,9 @@ class SummaryDismissalScenarioTest : FunSpec({
         )
         val context = EffectContext(sourceId = summary, controllerId = caster)
         val registry = CardRegistry()
+        val zones = ZoneTransitionService(registry)
 
-        val exiled = ExileSpellsOnStackExecutor(registry).execute(
+        val exiled = ExileSpellsOnStackExecutor(zones, registry).execute(
             state,
             ExileSpellsOnStackEffect(),
             context,
@@ -77,7 +79,7 @@ class SummaryDismissalScenarioTest : FunSpec({
         exiled.state.getZone(ZoneKey(opponent, Zone.EXILE)) shouldContain otherSpell
         exiled.events.filterIsInstance<ZoneChangeEvent>().single().toZone shouldBe Zone.EXILE
 
-        val cleared = CounterAllOnStackExecutor(registry).execute(
+        val cleared = CounterAllOnStackExecutor(zones, registry).execute(
             exiled.state,
             CounterAllOnStackEffect(spells = false, abilities = true, opponentsOnly = false),
             context,

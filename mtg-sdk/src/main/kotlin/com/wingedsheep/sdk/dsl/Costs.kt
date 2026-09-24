@@ -157,6 +157,16 @@ object Costs {
      */
     val DiscardHand: AbilityCost = AbilityCost.DiscardHand
 
+    /**
+     * Put [count] cards matching [filter] from your hand on top of your library — Leashling's
+     * "Put a card from your hand on top of your library: …". Not a discard: nothing reaches the
+     * graveyard and no discard trigger fires.
+     */
+    fun PutFromHandOnTopOfLibrary(
+        count: Int = 1,
+        filter: GameObjectFilter = GameObjectFilter.Any
+    ): AbilityCost = AbilityCost.Atom(CostAtom.PutFromHandOnTopOfLibrary(count, filter))
+
     // =========================================================================
     // Mill Costs
     // =========================================================================

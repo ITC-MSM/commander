@@ -59,7 +59,8 @@ val AncientVendetta = card("Ancient Vendetta") {
                     player = Player.ContextPlayer(0),
                     filter = GameObjectFilter.Any.namedFromVariable(chosenName.key)
                 ),
-                name = "matches"
+                name = "matches",
+                search = true
             )
             // 3. Up to four of them — a ceiling, not a requirement.
             val toExile = chooseUpTo(

@@ -2,7 +2,7 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 275 / 291
+**Implemented:** 291 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
@@ -19,14 +19,14 @@
 ---
 
 ### White
-- [ ] Auratouched Mage
+- [x] Auratouched Mage
 - [x] Bathe in Light
 - [x] Benevolent Ancestor
 - [x] Blazing Archon
 - [x] Boros Fury-Shield
 - [x] Caregiver
-- [ ] Chant of Vitu-Ghazi
-- [ ] Concerted Effort
+- [x] Chant of Vitu-Ghazi
+- [x] Concerted Effort
 - [x] Conclave Equenaut
 - [x] Conclave Phalanx
 - [x] Conclave's Blessing
@@ -36,7 +36,7 @@
 - [x] Dromad Purebred
 - [x] Faith's Fetters
 - [x] Festival of the Guildpact
-- [ ] Flickerform
+- [x] Flickerform
 - [x] Gate Hound
 - [x] Ghosts of the Innocent
 - [x] Hour of Reckoning
@@ -65,10 +65,10 @@
 - [x] Copy Enchantment
 - [x] Dizzy Spell
 - [x] Drake Familiar
-- [ ] Dream Leash
+- [x] Dream Leash
 - [x] Drift of Phantasms
 - [x] Ethereal Usher
-- [ ] Eye of the Storm
+- [x] Eye of the Storm
 - [x] Flight of Fancy
 - [x] Flow of Ideas
 - [x] Followed Footsteps
@@ -82,7 +82,7 @@
 - [x] Mnemonic Nexus
 - [x] Muddle the Mixture
 - [x] Peel from Reality
-- [ ] Quickchange
+- [x] Quickchange
 - [x] Remand
 - [x] Snapping Drake
 - [x] Spawnbroker
@@ -128,7 +128,7 @@
 - [x] Sadistic Augermage
 - [x] Sewerdreg
 - [x] Shred Memory
-- [ ] Sins of the Past
+- [x] Sins of the Past
 - [x] Stinkweed Imp
 - [x] Strands of Undeath
 - [x] Thoughtpicker Witch
@@ -175,7 +175,7 @@
 - [x] Viashino Fangtail
 - [x] Viashino Slasher
 - [x] War-Torch Goblin
-- [ ] Warp World
+- [x] Warp World
 - [x] Wojek Embermage
 
 ### Green
@@ -226,7 +226,7 @@
 - [x] Boros Swiftblade
 - [x] Brightflame
 - [x] Centaur Safeguard
-- [ ] Chorus of the Conclave
+- [x] Chorus of the Conclave
 - [x] Circu, Dimir Lobotomist
 - [x] Clutch of the Undercity
 - [x] Congregation at Dawn
@@ -239,7 +239,7 @@
 - [x] Drooling Groodion
 - [x] Firemane Angel
 - [x] Flame-Kin Zealot
-- [ ] Gaze of the Gorgon
+- [x] Gaze of the Gorgon
 - [x] Glare of Subdual
 - [x] Gleancrawler
 - [x] Glimpse the Unthinkable
@@ -251,7 +251,7 @@
 - [x] Lightning Helix
 - [x] Loxodon Hierarch
 - [x] Lurking Informant
-- [ ] Master Warcraft
+- [x] Master Warcraft
 - [x] Mindleech Mass
 - [x] Moroii
 - [x] Perplex
@@ -269,12 +269,12 @@
 - [x] Selesnya Evangel
 - [x] Selesnya Guildmage
 - [x] Selesnya Sagittars
-- [ ] Shadow of Doubt
+- [x] Shadow of Doubt
 - [x] Shambling Shell
 - [x] Sisters of Stone Death
 - [x] Skyknight Legionnaire
 - [x] Sunhome Enforcer
-- [ ] Szadek, Lord of Secrets
+- [x] Szadek, Lord of Secrets
 - [x] Thundersong Trumpeter
 - [x] Tolsimir Wolfblood
 - [x] Twisted Justice
@@ -295,13 +295,13 @@
 - [x] Golgari Signet
 - [x] Grifter's Blade
 - [x] Junktroller
-- [ ] Leashling
+- [x] Leashling
 - [x] Nullstone Gargoyle
 - [x] Pariah's Shield
 - [x] Peregrine Mask
 - [x] Plague Boiler
 - [x] Selesnya Signet
-- [ ] Spectral Searchlight
+- [x] Spectral Searchlight
 - [x] Sunforger
 - [x] Terrarion
 - [x] Voyager Staff

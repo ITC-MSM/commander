@@ -52,7 +52,8 @@ val MyrIncubator = card("Myr Incubator") {
         ) {
             val searchable = gather(
                 CardSource.FromZone(Zone.LIBRARY, Player.You, GameObjectFilter.Artifact),
-                name = "myrIncubatorSearchable"
+                name = "myrIncubatorSearchable",
+                search = true
             )
 
             val found = chooseAnyNumber(

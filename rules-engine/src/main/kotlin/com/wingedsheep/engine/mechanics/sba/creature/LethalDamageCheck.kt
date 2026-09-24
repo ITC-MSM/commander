@@ -2,6 +2,7 @@ package com.wingedsheep.engine.mechanics.sba.creature
 
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.sba.SbaOrder
 import com.wingedsheep.engine.mechanics.sba.SbaZoneMovementHelper
 import com.wingedsheep.engine.mechanics.sba.StateBasedActionCheck
@@ -16,7 +17,7 @@ import com.wingedsheep.sdk.core.Keyword
  * Note: Indestructible creatures are not destroyed by lethal damage (Rule 702.12b).
  * Creatures with regeneration shields are regenerated instead of destroyed.
  */
-class LethalDamageCheck : StateBasedActionCheck {
+class LethalDamageCheck(private val zones: ZoneTransitionService) : StateBasedActionCheck {
     override val name = "704.5g/h Lethal Damage"
     override val order = SbaOrder.LETHAL_DAMAGE
 
@@ -84,6 +85,7 @@ class LethalDamageCheck : StateBasedActionCheck {
                 // battlefield iteration order decide it: a Head of the Hunt that traded with the
                 // creatures it was meant to exile happened to be moved first, so they died.
                 val result = SbaZoneMovementHelper.putCreatureInGraveyard(
+                    zones,
                     newState, entityId, cardComponent, "lethal damage", passStartState
                 )
                 newState = result.newState

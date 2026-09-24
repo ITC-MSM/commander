@@ -197,6 +197,7 @@ class SeasingerScenarioTest : FunSpec({
         projector.project(driver.state).getController(target) shouldBe bob
 
         val sbaChecker = com.wingedsheep.engine.mechanics.StateBasedActionChecker(
+            driver.zones,
             cardRegistry = driver.cardRegistry
         )
         driver.replaceState(sbaChecker.checkAndApply(driver.state).newState)

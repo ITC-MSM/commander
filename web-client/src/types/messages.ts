@@ -569,6 +569,8 @@ export interface DistributeDecision extends PendingDecisionBase {
 export interface ChooseColorDecision extends PendingDecisionBase {
   readonly type: 'ChooseColorDecision'
   readonly availableColors: readonly string[]
+  /** How many distinct colors may be chosen; >1 means "one or more" (toggle + confirm). */
+  readonly maxColors?: number
 }
 
 /**
@@ -883,6 +885,11 @@ export interface LegalActionInfo {
   readonly hasXCost?: boolean
   /** Maximum X value the player can afford (null if not X cost spell) */
   readonly maxAffordableX?: number
+  /**
+   * Set when the caster may pay "any amount of mana" as an additional cost (Chorus of the
+   * Conclave): the upper bound for the amount picker. Sent back as `additionalManaForCounters`.
+   */
+  readonly maxAdditionalManaForCounters?: number
   /** Minimum X value (usually 0) */
   readonly minX?: number
   /** Whether this is a mana ability (doesn't highlight card as playable) */

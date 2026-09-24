@@ -12,11 +12,9 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
 import com.wingedsheep.engine.legalactions.utils.CastPermissionUtils
-import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.StateBasedActionChecker
-import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.mechanics.combat.CombatManager
 import com.wingedsheep.engine.mechanics.mana.AlternativePaymentHandler
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
@@ -51,24 +49,14 @@ class EngineServices(
      */
     val tokenArtRegistry: TokenArtRegistry? = null,
 ) {
-    init {
-        DamageUtils.cardRegistry = cardRegistry
-        // ZoneTransitionService.applyBattlefieldEntry registers a permanent's static abilities
-        // and replacement effects on entry, so any code that moves a card to the battlefield
-        // (reanimation, exile returns, leyline starts) gets the same wiring the cast pipeline
-        // does. The handler is stateless beyond the registry, so a singleton is sufficient.
-        ZoneTransitionService.staticAbilityHandler = StaticAbilityHandler(cardRegistry)
-        ZoneTransitionService.cardRegistry = cardRegistry
-        // A zone-change replacement's "…instead. When you do, create a token" rider (Head of the
-        // Hunt) mints through the same executor an ability would, so the token gets the minting
-        // set's art and its static abilities rather than the bare generic fallback.
-        com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.tokenExecutor =
-            com.wingedsheep.engine.handlers.effects.token.CreateTokenExecutor(
-                staticAbilityHandler = StaticAbilityHandler(cardRegistry),
-                cardRegistry = cardRegistry,
-                tokenArtRegistry = tokenArtRegistry
-            )
-    }
+    /**
+     * The one zone-transition service for this engine. It carries the card and token-art
+     * registries every zone move needs (battlefield-entry setup, a zone-change rider's token), so
+     * it is threaded through the graph rather than parked in a global — two engines in one JVM
+     * (server plus gym, parallel tests) each keep their own.
+     */
+    val zones = ZoneTransitionService(cardRegistry, tokenArtRegistry)
+
     /**
      * The one replacement-effect processor for this game. Declared before anything that
      * consumes it so the whole graph — the draw path via [EffectExecutorRegistry] and
@@ -78,19 +66,22 @@ class EngineServices(
      */
     val replacementEffectProcessor = ReplacementEffectProcessor()
     val effectExecutorRegistry = EffectExecutorRegistry(
+        zones,
         cardRegistry = cardRegistry,
         tokenArtRegistry = tokenArtRegistry,
         replacementProcessor = replacementEffectProcessor
     )
     val manaAbilitySideEffectExecutor = ManaAbilitySideEffectExecutor(
+        zones,
         cardRegistry = cardRegistry,
         effectExecutor = effectExecutorRegistry::execute
     )
-    val combatManager = CombatManager(cardRegistry, manaAbilitySideEffectExecutor)
+    val combatManager = CombatManager(zones, cardRegistry, manaAbilitySideEffectExecutor)
     val triggerDetector = TriggerDetector(cardRegistry)
     val stateTriggerPoller = com.wingedsheep.engine.event.StateTriggerPoller(cardRegistry)
     val stackResolver = StackResolver(
-        effectHandler = EffectHandler(cardRegistry = cardRegistry, registry = effectExecutorRegistry),
+        zones,
+        effectHandler = EffectHandler(zones, cardRegistry = cardRegistry, registry = effectExecutorRegistry),
         cardRegistry = cardRegistry
     )
     val triggerProcessor = TriggerProcessor(cardRegistry = cardRegistry, stackResolver = stackResolver)
@@ -98,16 +89,17 @@ class EngineServices(
     val costCalculator = CostCalculator(cardRegistry)
     val grantedKeywordResolver = GrantedKeywordResolver(cardRegistry)
     val alternativePaymentHandler = AlternativePaymentHandler(grantedKeywordResolver)
-    val costHandler = CostHandler()
+    val costHandler = CostHandler(zones)
     val mulliganHandler = MulliganHandler(cardRegistry)
     val conditionEvaluator = ConditionEvaluator()
     val targetValidator = TargetValidator()
     val targetFinder = TargetFinder()
-    val predicateEvaluator = PredicateEvaluator()
+    val predicateEvaluator = PredicateEvaluator(cardRegistry)
     val castPermissionUtils = CastPermissionUtils(cardRegistry, predicateEvaluator, conditionEvaluator)
     val legalityKernel = LegalityKernel(cardRegistry, conditionEvaluator)
-    val sbaChecker = StateBasedActionChecker(cardRegistry = cardRegistry)
+    val sbaChecker = StateBasedActionChecker(zones, cardRegistry = cardRegistry)
     val turnManager = TurnManager(
+        zones,
         cardRegistry = cardRegistry,
         combatManager = combatManager,
         sbaChecker = sbaChecker,
@@ -115,7 +107,10 @@ class EngineServices(
         replacementProcessor = replacementEffectProcessor
     )
     val continuationHandler = ContinuationHandler(this)
-    val settler = Settler(triggerDetector, triggerProcessor, sbaChecker, stateTriggerPoller, turnManager)
+    val settler = Settler(
+        triggerDetector, triggerProcessor, sbaChecker, stateTriggerPoller, turnManager,
+        effectExecutor = effectExecutorRegistry::execute
+    )
 
     init {
         // Late wiring: every service in the graph is now constructed, so it's safe to

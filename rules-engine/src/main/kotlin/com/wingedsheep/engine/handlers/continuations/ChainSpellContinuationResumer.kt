@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.*
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.chain.ChainCopyExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -419,8 +420,7 @@ class ChainSpellContinuationResumer(
             is CostAtom.Discard -> {
                 // Shared discard path — a card-intrinsic discard replacement (madness,
                 // CR 702.35a) applies to a card discarded to pay a chained spell's cost too.
-                val discardResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                    .discardCards(newState, controllerId, selectedCards)
+                val discardResult = services.zones.discardCards(newState, controllerId, selectedCards)
                 newState = discardResult.state
                 events.addAll(discardResult.events)
             }

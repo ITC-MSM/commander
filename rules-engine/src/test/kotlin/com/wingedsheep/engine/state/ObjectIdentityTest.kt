@@ -37,6 +37,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 
 class ObjectIdentityTest : FunSpec({
+    val zones = ZoneTransitionService(CardRegistry())
     val owner = EntityId.generate()
     val other = EntityId.generate()
     val cardId = EntityId.generate()
@@ -81,7 +82,7 @@ class ObjectIdentityTest : FunSpec({
     test("actual exile to exile creates another object but duplicate addition does not") {
         val initial = inZone(Zone.EXILE)
         initial.addToZone(ZoneKey(owner, Zone.EXILE), cardId) shouldBe initial
-        val result = ZoneTransitionService.moveToZone(initial, cardId, Zone.EXILE)
+        val result = zones.moveToZone(initial, cardId, Zone.EXILE)
         result.state.objectRef(cardId) shouldNotBe initial.objectRef(cardId)
         result.state.nextObjectGeneration shouldBe initial.nextObjectGeneration + 1
         result.events.filterIsInstance<ZoneChangeEvent>().single().let {
@@ -99,7 +100,7 @@ class ObjectIdentityTest : FunSpec({
         reinserted.objectIdentities shouldBe initial.objectIdentities
         reinserted.nextObjectGeneration shouldBe initial.nextObjectGeneration
         reinserted.initializeObjectIdentities() shouldBe reinserted
-        val serviceReorder = ZoneTransitionService.moveToZone(initial, cardId, Zone.LIBRARY,
+        val serviceReorder = zones.moveToZone(initial, cardId, Zone.LIBRARY,
             ZoneEntryOptions(libraryPlacement = LibraryPlacement.Bottom))
         serviceReorder.state.getZone(key) shouldBe listOf(secondId, cardId)
         serviceReorder.state.objectRef(cardId) shouldBe initial.objectRef(cardId)
@@ -134,7 +135,7 @@ class ObjectIdentityTest : FunSpec({
         val resolving = initial.popFromStack().second.updateEntity(cardId) { card() }
         resolving.objectRef(cardId) shouldBe initial.objectRef(cardId)
         resolving.logicalZone(cardId)?.zoneType shouldBe Zone.STACK
-        val result = ZoneTransitionService.moveToZone(resolving, cardId, Zone.GRAVEYARD)
+        val result = zones.moveToZone(resolving, cardId, Zone.GRAVEYARD)
         val event = result.events.filterIsInstance<ZoneChangeEvent>().single()
         event.fromZone shouldBe Zone.STACK
         event.oldObject shouldBe initial.objectRef(cardId)
@@ -166,9 +167,9 @@ class ObjectIdentityTest : FunSpec({
 
     test("each event retains its own before and after refs across later round trips") {
         val initial = inZone(Zone.BATTLEFIELD)
-        val death = ZoneTransitionService.moveToZone(initial, cardId, Zone.GRAVEYARD)
-        val exile = ZoneTransitionService.moveToZone(death.state, cardId, Zone.EXILE)
-        val returnToYard = ZoneTransitionService.moveToZone(exile.state, cardId, Zone.GRAVEYARD)
+        val death = zones.moveToZone(initial, cardId, Zone.GRAVEYARD)
+        val exile = zones.moveToZone(death.state, cardId, Zone.EXILE)
+        val returnToYard = zones.moveToZone(exile.state, cardId, Zone.GRAVEYARD)
         val first = death.events.filterIsInstance<ZoneChangeEvent>().single()
         val second = exile.events.filterIsInstance<ZoneChangeEvent>().single()
         first.oldObject shouldBe initial.objectRef(cardId)
@@ -187,7 +188,7 @@ class ObjectIdentityTest : FunSpec({
                 newDestination = Zone.EXILE,
                 appliesTo = EventPattern.ZoneChangeEvent(from = Zone.BATTLEFIELD, to = Zone.GRAVEYARD)
             ))))).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), replacementId)
-        val result = ZoneTransitionService.moveToZone(initial, cardId, Zone.GRAVEYARD)
+        val result = zones.moveToZone(initial, cardId, Zone.GRAVEYARD)
         result.actualDestination shouldBe Zone.EXILE
         result.events.filterIsInstance<ZoneChangeEvent>().single().requestedDestination shouldBe Zone.GRAVEYARD
         result.state.nextObjectGeneration shouldBe initial.nextObjectGeneration + 1
@@ -206,7 +207,7 @@ class ObjectIdentityTest : FunSpec({
                 newDestination = Zone.BATTLEFIELD,
                 appliesTo = EventPattern.ZoneChangeEvent(from = Zone.BATTLEFIELD, to = Zone.GRAVEYARD)
             ))))).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), replacementId)
-        val result = ZoneTransitionService.moveToZone(initial, cardId, Zone.GRAVEYARD)
+        val result = zones.moveToZone(initial, cardId, Zone.GRAVEYARD)
         result.state shouldBe initial
         result.transitions shouldBe emptyList()
         result.events.filterIsInstance<ZoneChangeEvent>() shouldBe emptyList()
@@ -221,7 +222,7 @@ class ObjectIdentityTest : FunSpec({
                 additionalEffect = CreateTokenEffect(power = 1, toughness = 1,
                     colors = setOf(Color.GREEN), creatureTypes = setOf("Saproling"))
             ))))).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), replacementId)
-        val result = ZoneTransitionService.moveToZone(initial, cardId, Zone.GRAVEYARD)
+        val result = zones.moveToZone(initial, cardId, Zone.GRAVEYARD)
         result.transitions.count { it.cause == ZoneTransitionCause.PRIMARY } shouldBe 1
         result.transitions.single { it.cause == ZoneTransitionCause.PRIMARY }.newObject shouldBe
             result.state.objectRef(cardId)
@@ -234,7 +235,7 @@ class ObjectIdentityTest : FunSpec({
 
     test("prevented destruction allocates no destination object") {
         val initial = inZone(Zone.BATTLEFIELD, setOf(Keyword.INDESTRUCTIBLE))
-        val executor = MoveToZoneEffectExecutor(CardRegistry(), effectExecutor = { _, _, _ ->
+        val executor = MoveToZoneEffectExecutor(zones, CardRegistry(), effectExecutor = { _, _, _ ->
             error("unexpected entry effect")
         })
         val result = executor.execute(initial,
@@ -250,14 +251,14 @@ class ObjectIdentityTest : FunSpec({
             LibraryPlacement.NthFromTop(1), LibraryPlacement.Shuffled)) {
             val initial = inZone(Zone.HAND).withEntity(secondId, card())
                 .addToZone(ZoneKey(owner, Zone.LIBRARY), secondId)
-            val result = ZoneTransitionService.moveToZone(initial, cardId, Zone.LIBRARY,
+            val result = zones.moveToZone(initial, cardId, Zone.LIBRARY,
                 ZoneEntryOptions(libraryPlacement = placement))
             result.state.nextObjectGeneration shouldBe initial.nextObjectGeneration + 1
             result.state.objectRef(secondId) shouldBe initial.objectRef(secondId)
         }
         val initial = inZone(Zone.HAND).withEntity(secondId, card())
             .addToZone(ZoneKey(owner, Zone.HAND), secondId)
-        val batch = ZoneTransitionService.moveToZoneBatch(initial, listOf(cardId, secondId), Zone.GRAVEYARD)
+        val batch = zones.moveToZoneBatch(initial, listOf(cardId, secondId), Zone.GRAVEYARD)
         batch.transitions.map { it.oldObject }.toSet() shouldBe
             setOf(initial.objectRef(cardId), initial.objectRef(secondId))
         batch.transitions.size shouldBe 2
@@ -380,7 +381,7 @@ class ObjectIdentityTest : FunSpec({
 
     test("as-enters choice freezes entry refs through serialization and another visit") {
         val initial = inZone(Zone.HAND)
-        val entered = ZoneTransitionService.moveToZone(initial, cardId, Zone.BATTLEFIELD).state
+        val entered = zones.moveToZone(initial, cardId, Zone.BATTLEFIELD).state
         val paused = com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements.pauseForEntersWithChoice(
             state = entered, entityId = cardId, controllerId = owner,
             cardComponent = entered.getEntity(cardId)!!.get<CardComponent>()!!,
@@ -389,7 +390,7 @@ class ObjectIdentityTest : FunSpec({
         )!!
         val decoded = json.decodeFromString(GameState.serializer(),
             json.encodeToString(GameState.serializer(), paused.state))
-        val movedAgain = ZoneTransitionService.moveToZone(decoded, cardId, Zone.EXILE).state
+        val movedAgain = zones.moveToZone(decoded, cardId, Zone.EXILE).state
         val frame = (movedAgain.continuationStack.last() as com.wingedsheep.engine.core.Suspension)
             .answer as com.wingedsheep.engine.core.EntersWithChoiceOnBattlefieldContinuation
         frame.entryOldObject shouldBe initial.objectRef(cardId)
@@ -417,7 +418,7 @@ class ObjectIdentityTest : FunSpec({
         captured!!.objectReferences.source shouldBe initial.objectRef(cardId)
         captured!!.objectReferences.origin shouldBe initial.objectRef(cardId)
         captured!!.objectReferences.resolutionKey shouldBe "entry:$cardId:${initial.objectRef(cardId)!!.generation}"
-        val later = ZoneTransitionService.moveToZone(initial, cardId, Zone.EXILE).state
+        val later = zones.moveToZone(initial, cardId, Zone.EXILE).state
         captured!!.withCurrentObjectReferences(later).sourceReferenceLost shouldBe true
 
         val landDefinition = definition.copy(name = "Entry Identity Land", typeLine = TypeLine(cardTypes = setOf(CardType.LAND)))

@@ -1802,7 +1802,8 @@
                         "zone": "Library",
                         "filter": "planeswalker"
                     },
-                    "storeAs": "searchable"
+                    "storeAs": "searchable",
+                    "search": true
                 },
                 {
                     "type": "SelectFromCollection",

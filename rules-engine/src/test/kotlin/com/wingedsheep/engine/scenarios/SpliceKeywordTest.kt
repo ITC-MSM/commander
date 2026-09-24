@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.LifeChangedEvent
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.support.GameTestDriver
@@ -157,6 +158,8 @@ class SpliceKeywordTest : FunSpec({
         driver.submit(
             spliceCast(player, bolt, listOf(gain), listOf(ChosenTarget.Player(opponent)))
         ).error shouldBe null
+        // The splice cost is charged, not just checked: both mana are spent.
+        driver.state.getEntity(player)?.get<ManaPoolComponent>()?.red shouldBe 0
         driver.bothPass()
 
         // Both halves happened: the bolt's damage and the spliced life gain.

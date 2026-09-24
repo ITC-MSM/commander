@@ -1571,7 +1571,8 @@
                                     "zone": "Library",
                                     "filter": "Goblin"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -2343,6 +2344,58 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Cairn Wanderer
+{
+    "name": "Cairn Wanderer",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nAs long as a creature card with flying is in a graveyard, this creature has flying. The same is true for fear, first strike, double strike, deathtouch, haste, landwalk, lifelink, protection, reach, trample, shroud, and vigilance.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GainKeywordsOfGraveyardCreatureCards",
+                "keywords": [
+                    "FLYING",
+                    "FEAR",
+                    "FIRST_STRIKE",
+                    "DOUBLE_STRIKE",
+                    "DEATHTOUCH",
+                    "HASTE",
+                    "LIFELINK",
+                    "REACH",
+                    "TRAMPLE",
+                    "SHROUD",
+                    "VIGILANCE"
+                ],
+                "anyLandwalk": true,
+                "anyProtection": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "rarity": "RARE",
+        "artist": "Nils Hamm",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b870a7aa-0836-4e3e-8be9-3299bdaded81.jpg?1783942893",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Cairn Wanderer’s ability looks at all cards in all graveyards. It gains any landwalk abilities and any protection abilities."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -4635,7 +4688,8 @@
                                     "zone": "Library",
                                     "filter": "Elf"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -5142,7 +5196,8 @@
                                     "zone": "Library",
                                     "filter": "Faerie"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -5939,7 +5994,8 @@
                                     "zone": "Library",
                                     "filter": "Elemental"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -6556,7 +6612,8 @@
                                     "zone": "Library",
                                     "filter": "Giant"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -7297,6 +7354,107 @@
     ]
 }
 
+// Guile
+{
+    "name": "Guile",
+    "manaCost": "{3}{U}{U}{U}",
+    "typeLine": "Creature — Elemental Incarnation",
+    "oracleText": "This creature can't be blocked except by three or more creatures.\nIf a spell or ability you control would counter a spell, instead exile that spell and you may play that card without paying its mana cost.\nWhen Guile is put into a graveyard from anywhere, shuffle it into its owner's library.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Library",
+                            "fromZone": "Graveyard"
+                        },
+                        "ShuffleLibrary"
+                    ]
+                },
+                "activeZones": [
+                    "Graveyard"
+                ]
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedByFewerThan",
+                "minBlockers": 3
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "ExileCounteredSpellInstead",
+                "then": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CastFromCollectionWithoutPayingCost",
+                        "from": "exiledInsteadOfCountered"
+                    },
+                    "descriptionOverride": "You may play that card without paying its mana cost"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "rarity": "RARE",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2eec6ab7-afbe-46ea-a7a6-6b678256f33e.jpg?1783942902",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Guile's second ability replaces \"counter [a certain spell]\" with \"exile [a certain spell] and you may cast it without paying its mana cost.\" You have the option to cast it immediately upon its exile. If you choose not to, it remains exiled and you don't get another chance to cast it. If the spell or ability that tried to counter the spell has additional effects, it then continues to resolve."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Exiling the spell is mandatory. Casting it is not."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "A spell exiled this way was never actually countered."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If a spell or ability you control attempts to counter a spell that can't be countered, it doesn't. Since the spell wouldn't be countered, Guile's ability has no effect on it. The spell will continue to resolve normally."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The last ability triggers when the Incarnation is put into its owner’s graveyard from any zone, not just from on the battlefield."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Although this ability triggers when the Incarnation is put into a graveyard from the battlefield, it doesn’t *specifically* trigger on leaving the battlefield, so it doesn’t behave like other leaves-the-battlefield abilities. The ability will trigger from the graveyard."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the Incarnation had lost this ability while on the battlefield (due to Lignify, for example) and then was destroyed, the ability would still trigger and it would get shuffled into its owner’s library. However, if the Incarnation lost this ability when it was put into the graveyard (due to Yixlid Jailer, for example), the ability wouldn’t trigger and the Incarnation would remain in the graveyard."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the Incarnation is removed from the graveyard after the ability triggers but before it resolves, it will remain in its new zone when its owner shuffles their library. Similarly, if a replacement effect has the Incarnation move to a different zone instead of being put into the graveyard, the ability won’t trigger at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Hamletback Goliath
 {
     "name": "Hamletback Goliath",
@@ -7949,6 +8107,103 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Hostility
+{
+    "name": "Hostility",
+    "manaCost": "{3}{R}{R}{R}",
+    "typeLine": "Creature — Elemental Incarnation",
+    "oracleText": "Haste\nIf a spell you control would deal damage to an opponent, prevent that damage. Create a 3/1 red Elemental Shaman creature token with haste for each 1 damage prevented this way.\nWhen Hostility is put into a graveyard from anywhere, shuffle it into its owner's library.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Library",
+                            "fromZone": "Graveyard"
+                        },
+                        "ShuffleLibrary"
+                    ]
+                },
+                "activeZones": [
+                    "Graveyard"
+                ]
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "PreventDamage",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "RecipientOpponent",
+                    "source": "SourceSpellYouControl"
+                },
+                "onPrevented": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "ContextProperty",
+                        "key": "PREVENTED_DAMAGE_AMOUNT"
+                    },
+                    "power": 3,
+                    "toughness": 1,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Elemental",
+                        "Shaman"
+                    ],
+                    "keywords": [
+                        "HASTE"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "176",
+        "rarity": "RARE",
+        "artist": "Omar Rayyan",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5f560199-7703-4e2a-8e2d-5728f6efef46.jpg?1783942873",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The last ability triggers when the Incarnation is put into its owner’s graveyard from any zone, not just from on the battlefield."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Although this ability triggers when the Incarnation is put into a graveyard from the battlefield, it doesn’t *specifically* trigger on leaving the battlefield, so it doesn’t behave like other leaves-the-battlefield abilities. The ability will trigger from the graveyard."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the Incarnation had lost this ability while on the battlefield (due to Lignify, for example) and then was destroyed, the ability would still trigger and it would get shuffled into its owner’s library. However, if the Incarnation lost this ability when it was put into the graveyard (due to Yixlid Jailer, for example), the ability wouldn’t trigger and the Incarnation would remain in the graveyard."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the Incarnation is removed from the graveyard after the ability triggers but before it resolves, it will remain in its new zone when its owner shuffles their library. Similarly, if a replacement effect has the Incarnation move to a different zone instead of being put into the graveyard, the ability won’t trigger at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -9593,7 +9848,8 @@
                                     "zone": "Library",
                                     "filter": "Kithkin"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -10250,7 +10506,8 @@
                                 "type": "FromZone",
                                 "zone": "Library"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -10924,7 +11181,8 @@
                                     "zone": "Library",
                                     "filter": "Merfolk"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -13130,7 +13388,8 @@
                                     "zone": "Library",
                                     "filter": "creature"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -13401,6 +13660,91 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Purity
+{
+    "name": "Purity",
+    "manaCost": "{3}{W}{W}{W}",
+    "typeLine": "Creature — Elemental Incarnation",
+    "oracleText": "Flying\nIf noncombat damage would be dealt to you, prevent that damage. You gain life equal to the damage prevented this way.\nWhen Purity is put into a graveyard from anywhere, shuffle it into its owner's library.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Library",
+                            "fromZone": "Graveyard"
+                        },
+                        "ShuffleLibrary"
+                    ]
+                },
+                "activeZones": [
+                    "Graveyard"
+                ]
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "PreventDamage",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "You",
+                    "damageType": "DamageNonCombat"
+                },
+                "onPrevented": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "PREVENTED_DAMAGE_AMOUNT"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "37",
+        "rarity": "RARE",
+        "artist": "Warren Mahy",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/154a335d-188d-49c3-af6d-c8e702b4b3ba.jpg?1783942909",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The last ability triggers when the Incarnation is put into its owner’s graveyard from any zone, not just from on the battlefield."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Although this ability triggers when the Incarnation is put into a graveyard from the battlefield, it doesn’t *specifically* trigger on leaving the battlefield, so it doesn’t behave like other leaves-the-battlefield abilities. The ability will trigger from the graveyard."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the Incarnation had lost this ability while on the battlefield (due to Lignify, for example) and then was destroyed, the ability would still trigger and it would get shuffled into its owner’s library. However, if the Incarnation lost this ability when it was put into the graveyard (due to Yixlid Jailer, for example), the ability wouldn’t trigger and the Incarnation would remain in the graveyard."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the Incarnation is removed from the graveyard after the ability triggers but before it resolves, it will remain in its new zone when its owner shuffles their library. Similarly, if a replacement effect has the Incarnation move to a different zone instead of being put into the graveyard, the ability won’t trigger at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -14077,7 +14421,8 @@
                                     "zone": "Library",
                                     "filter": "land Forest"
                                 },
-                                "storeAs": "searchable"
+                                "storeAs": "searchable",
+                                "search": true
                             },
                             {
                                 "type": "SelectFromCollection",
@@ -17017,7 +17362,8 @@
                                 "zone": "Library",
                                 "filter": "Treefolk|Forest"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",
@@ -17294,6 +17640,106 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Vigor
+{
+    "name": "Vigor",
+    "manaCost": "{3}{G}{G}{G}",
+    "typeLine": "Creature — Elemental Incarnation",
+    "oracleText": "Trample\nIf damage would be dealt to another creature you control, prevent that damage. Put a +1/+1 counter on that creature for each 1 damage prevented this way.\nWhen Vigor is put into a graveyard from anywhere, shuffle it into its owner's library.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Library",
+                            "fromZone": "Graveyard"
+                        },
+                        "ShuffleLibrary"
+                    ]
+                },
+                "activeZones": [
+                    "Graveyard"
+                ]
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "PreventDamage",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": {
+                        "type": "RecipientMatching",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                {
+                                    "type": "StateNot",
+                                    "predicate": "IsSource"
+                                }
+                            ],
+                            "controllerPredicate": "ControlledByYou"
+                        }
+                    }
+                },
+                "onPrevented": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "PREVENTED_DAMAGE_AMOUNT"
+                    },
+                    "target": "TriggeringEntity"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "RARE",
+        "artist": "Jim Murray",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5cede0be-1bdd-4392-beaf-b83d0b780eb7.jpg?1783942857",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The last ability triggers when the Incarnation is put into its owner’s graveyard from any zone, not just from on the battlefield."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Although this ability triggers when the Incarnation is put into a graveyard from the battlefield, it doesn’t *specifically* trigger on leaving the battlefield, so it doesn’t behave like other leaves-the-battlefield abilities. The ability will trigger from the graveyard."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the Incarnation had lost this ability while on the battlefield (due to Lignify, for example) and then was destroyed, the ability would still trigger and it would get shuffled into its owner’s library. However, if the Incarnation lost this ability when it was put into the graveyard (due to Yixlid Jailer, for example), the ability wouldn’t trigger and the Incarnation would remain in the graveyard."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the Incarnation is removed from the graveyard after the ability triggers but before it resolves, it will remain in its new zone when its owner shuffles their library. Similarly, if a replacement effect has the Incarnation move to a different zone instead of being put into the graveyard, the ability won’t trigger at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -17655,7 +18101,8 @@
                                 "zone": "Library",
                                 "filter": "basicland"
                             },
-                            "storeAs": "searchable"
+                            "storeAs": "searchable",
+                            "search": true
                         },
                         {
                             "type": "SelectFromCollection",

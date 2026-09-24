@@ -8,6 +8,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.registry.CardRegistry
@@ -32,6 +33,7 @@ import kotlin.reflect.KClass
  * [CounterDestination], and [CounterCondition].
  */
 class CounterEffectExecutor(
+    private val zones: ZoneTransitionService,
     private val amountEvaluator: DynamicAmountEvaluator,
     private val cardRegistry: CardRegistry
 ) : EffectExecutor<CounterEffect> {
@@ -92,7 +94,7 @@ class CounterEffectExecutor(
         entityId: EntityId,
         context: EffectContext
     ): EffectResult {
-        val resolver = StackResolver(cardRegistry = cardRegistry)
+        val resolver = StackResolver(zones, cardRegistry = cardRegistry)
         // For SpellOrAbility, dispatch by what's actually on the stack at this entity:
         // a spell carries SpellOnStackComponent; activated/triggered abilities do not.
         val effectiveTarget = when (effect.target) {
@@ -104,11 +106,11 @@ class CounterEffectExecutor(
         return EffectResult.from(when (effectiveTarget) {
             CounterTarget.Ability -> resolver.counterAbility(state, entityId)
             CounterTarget.Spell -> when (val dest = effect.counterDestination) {
-                CounterDestination.Graveyard -> resolver.counterSpell(state, entityId)
+                CounterDestination.Graveyard -> resolver.counterSpell(state, entityId, context.controllerId)
                 is CounterDestination.Exile -> resolver.counterSpellToExile(
                     state, entityId, dest.grantFreeCast, context.controllerId
                 )
-                CounterDestination.Hand -> resolver.counterSpellToHand(state, entityId)
+                CounterDestination.Hand -> resolver.counterSpellToHand(state, entityId, context.controllerId)
             }
             CounterTarget.SpellOrAbility -> error("unreachable — resolved above")
         })

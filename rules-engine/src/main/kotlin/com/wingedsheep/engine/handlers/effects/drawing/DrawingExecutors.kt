@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ExecutorModule
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.Effect
 
@@ -18,6 +19,7 @@ import com.wingedsheep.sdk.scripting.effects.Effect
  * of draw replacement effects like Words of Wind).
  */
 class DrawingExecutors(
+    private val zones: ZoneTransitionService,
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator(),
     private val decisionHandler: DecisionHandler = DecisionHandler(),
     private val targetFinder: TargetFinder = TargetFinder(),
@@ -47,7 +49,7 @@ class DrawingExecutors(
         drawCardsExecutor,
         DrawUpToExecutor(decisionHandler),
         eachPlayerReturnsPermanentToHandExecutor,
-        EachPlayerDiscardsOrLoseLifeExecutor(decisionHandler),
+        EachPlayerDiscardsOrLoseLifeExecutor(zones, decisionHandler),
         ReplaceNextDrawWithExecutor(),
         EachPlayerDrawsForDamageDealtToSourceExecutor(drawCardsExecutor),
     )

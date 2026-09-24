@@ -303,6 +303,7 @@ class ConditionEvaluator(
             is EntityMatches,
             is ExiledAsCostHadSubtype,
             IsDay,
+            com.wingedsheep.sdk.scripting.conditions.BeforeAttackersDeclaredThisTurn,
             IsFirstCombatPhaseOfTurn,
             IsFirstEndStepOfTurn,
             IsFirstSpellPaidWithTreasureManaCastThisTurn,
@@ -450,6 +451,16 @@ class ConditionEvaluator(
             // player hasn't yet marked as an inserted extra (AddCombatPhaseEffect). Board-derived, so
             // it reads the same at resolution and under projection. The loop guard for the
             // "additional combat phase" riders (Balthier and Fran, Genji Glove, Raph & Leo).
+            // Before the declare attackers step of the turn's *first* combat (Master Warcraft's
+            // ruling): the step order puts every earlier step of the turn below DECLARE_ATTACKERS,
+            // and an inserted extra combat's beginning step is excluded by its marker.
+            is com.wingedsheep.sdk.scripting.conditions.BeforeAttackersDeclaredThisTurn -> {
+                state.step.ordinal < Step.DECLARE_ATTACKERS.ordinal &&
+                    state.activePlayerId?.let {
+                        state.getEntity(it)?.has<InAdditionalCombatPhaseComponent>()
+                    } != true
+            }
+
             is IsFirstCombatPhaseOfTurn -> {
                 state.phase == Phase.COMBAT &&
                     state.activePlayerId?.let {

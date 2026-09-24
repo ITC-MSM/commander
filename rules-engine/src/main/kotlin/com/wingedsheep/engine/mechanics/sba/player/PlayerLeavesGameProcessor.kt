@@ -3,6 +3,7 @@ package com.wingedsheep.engine.mechanics.sba.player
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEndReason
 import com.wingedsheep.engine.core.PlayerLeftGameEvent
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.mechanics.combat.CombatRemovalHelper
@@ -57,7 +58,7 @@ import com.wingedsheep.sdk.scripting.Duration
  */
 object PlayerLeavesGameProcessor {
 
-    fun process(state: GameState, leaver: EntityId, reason: GameEndReason): ExecutionResult {
+    fun process(zones: ZoneTransitionService, state: GameState, leaver: EntityId, reason: GameEndReason): ExecutionResult {
         var s = state
 
         // 1. End any effect granting the leaver control of an object (CR 800.4a). Removing
@@ -141,7 +142,7 @@ object PlayerLeavesGameProcessor {
         s = s.updateEntity(leaver) { it.with(PlayerLeftGameComponent) }
 
         // Leaving the game ends zone-return durations without producing a return trigger.
-        val returns = com.wingedsheep.engine.handlers.effects.ZoneReturnService.returnDepartedSources(s)
+        val returns = com.wingedsheep.engine.handlers.effects.ZoneReturnService.returnDepartedSources(zones, s)
         return ExecutionResult.success(
             returns.state,
             listOf(PlayerLeftGameEvent(leaver, reason, toRemove.size)) + returns.events

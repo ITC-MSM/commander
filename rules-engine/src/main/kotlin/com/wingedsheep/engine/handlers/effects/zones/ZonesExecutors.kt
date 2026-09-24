@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ExecutorModule
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -16,6 +17,7 @@ import java.util.concurrent.atomic.AtomicReference
  * adding or removing link bookkeeping.
  */
 class ZonesExecutors(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val targetFinder: TargetFinder = TargetFinder()
 ) : ExecutorModule {
@@ -40,21 +42,21 @@ class ZonesExecutors(
     }
 
     override fun executors(): List<EffectExecutor<*>> = listOf(
-        MoveToZoneEffectExecutor(cardRegistry, targetFinder, recursion),
-        ExileAndGrantOwnerPlayPermissionExecutor(),
-        WarpExileExecutor(),
-        MoveTrackedBattlefieldObjectExecutor(),
-        ForceExileMultiZoneExecutor(),
-        ForceSacrificeExecutor(),
-        SacrificeExecutor(),
-        SacrificeSelfExecutor(),
-        SacrificeTargetExecutor(),
+        MoveToZoneEffectExecutor(zones, cardRegistry, targetFinder, recursion),
+        ExileAndGrantOwnerPlayPermissionExecutor(zones),
+        WarpExileExecutor(zones),
+        MoveTrackedBattlefieldObjectExecutor(zones),
+        ForceExileMultiZoneExecutor(zones),
+        ForceSacrificeExecutor(zones),
+        SacrificeExecutor(zones),
+        SacrificeSelfExecutor(zones),
+        SacrificeTargetExecutor(zones),
         EmitExploitedEventExecutor(),
         ReturnCreaturesPutInGraveyardThisTurnExecutor(),
-        ReturnSameNamedFromGraveyardExecutor(),
+        ReturnSameNamedFromGraveyardExecutor(zones),
         ReturnSelfToBattlefieldAttachedExecutor(cardRegistry),
-        PutOntoBattlefieldAttachedToChosenExecutor(cardRegistry, targetFinder),
+        PutOntoBattlefieldAttachedToChosenExecutor(zones, cardRegistry, targetFinder),
         ExileOpponentsGraveyardsExecutor(),
-        DestroyAllEquipmentOnTargetExecutor()
+        DestroyAllEquipmentOnTargetExecutor(zones)
     )
 }

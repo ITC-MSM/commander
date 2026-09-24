@@ -47,6 +47,7 @@ import com.wingedsheep.engine.state.components.player.AdditionalEndStepsComponen
 import com.wingedsheep.engine.state.components.player.InAdditionalEndStepComponent
 import com.wingedsheep.engine.state.components.player.CantActivateLoyaltyAbilitiesComponent
 import com.wingedsheep.engine.state.components.player.CantCastSpellsComponent
+import com.wingedsheep.engine.state.components.player.CantSearchLibrariesComponent
 import com.wingedsheep.engine.state.components.player.CantCastFromNonHandZonesComponent
 import com.wingedsheep.engine.state.components.player.CantGainLifeComponent
 import com.wingedsheep.engine.state.components.player.DamageBonusComponent
@@ -59,6 +60,7 @@ import com.wingedsheep.engine.state.components.player.PlayerCantPlayFromHandComp
 import com.wingedsheep.engine.state.components.player.PlayerProtectionComponent
 import com.wingedsheep.engine.state.components.player.CardsLeftGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CreatureCardsPutIntoGraveyardThisTurnComponent
+import com.wingedsheep.engine.state.components.player.CardsPutIntoGraveyardFromLibraryThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LandDropsComponent
 import com.wingedsheep.engine.state.components.player.PermanentsEnteredUnderControlThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LifeGainedAmountThisTurnComponent
@@ -683,6 +685,10 @@ class CleanupPhaseManager(
                 if (cantCast?.removeOn == PlayerEffectRemoval.EndOfTurn) {
                     result = result.without<CantCastSpellsComponent>()
                 }
+                val cantSearch = result.get<CantSearchLibrariesComponent>()
+                if (cantSearch?.removeOn == PlayerEffectRemoval.EndOfTurn) {
+                    result = result.without<CantSearchLibrariesComponent>()
+                }
                 val cantCastNonHand = result.get<CantCastFromNonHandZonesComponent>()
                 if (cantCastNonHand?.removeOn == PlayerEffectRemoval.EndOfTurn) {
                     result = result.without<CantCastFromNonHandZonesComponent>()
@@ -749,6 +755,9 @@ class CleanupPhaseManager(
                 }
                 if (result.has<CreatureCardsPutIntoGraveyardThisTurnComponent>()) {
                     result = result.without<CreatureCardsPutIntoGraveyardThisTurnComponent>()
+                }
+                if (result.has<CardsPutIntoGraveyardFromLibraryThisTurnComponent>()) {
+                    result = result.without<CardsPutIntoGraveyardFromLibraryThisTurnComponent>()
                 }
                 if (result.has<FlippedCoinsThisTurnComponent>()) {
                     result = result.without<FlippedCoinsThisTurnComponent>()
@@ -869,6 +878,9 @@ class CleanupPhaseManager(
             if (container.has<BlockedOrWasBlockedByLegendaryThisTurnComponent>()) {
                 needsUpdate = true
             }
+            if (container.has<com.wingedsheep.engine.state.components.combat.CombatPartnersThisTurnComponent>()) {
+                needsUpdate = true
+            }
             if (container.has<DamageDealtByPlayersThisTurnComponent>()) {
                 needsUpdate = true
             }
@@ -906,6 +918,7 @@ class CleanupPhaseManager(
                         .without<DamageUnpreventableThisTurnComponent>()
                         .without<BlockedThisTurnComponent>()
                         .without<BlockedOrWasBlockedByLegendaryThisTurnComponent>()
+                        .without<com.wingedsheep.engine.state.components.combat.CombatPartnersThisTurnComponent>()
                         .without<DamageDealtByPlayersThisTurnComponent>()
                         .without<DamagedBySourcesThisTurnComponent>()
                         .without<DealtCombatDamageToPlayersThisTurnComponent>()

@@ -14,6 +14,7 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.actions.ActionHandler
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.drawing.DrawCardsExecutor
 import com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor
 import com.wingedsheep.engine.mechanics.mana.ManaPool
@@ -40,11 +41,13 @@ import com.wingedsheep.engine.core.Outcome
  * and draw a new card. It's an activated ability from hand.
  */
 class CycleCardHandler(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val manaSolver: ManaSolver,
     private val manaAbilitySideEffectExecutor: ManaAbilitySideEffectExecutor,
     private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)?,
-    private val replacementProcessor: ReplacementEffectProcessor = ReplacementEffectProcessor()
+    private val replacementProcessor: ReplacementEffectProcessor = ReplacementEffectProcessor(),
+    private val castPermissionUtils: com.wingedsheep.engine.legalactions.utils.CastPermissionUtils? = null
 ) : ActionHandler<CycleCard> {
     override val actionType: KClass<CycleCard> = CycleCard::class
 
@@ -56,6 +59,12 @@ class CycleCardHandler(
         // Check if cycling is prevented by any permanent on the battlefield (e.g., Stabilizer)
         if (isCyclingPrevented(state)) {
             return "Cycling is prevented"
+        }
+
+        // Cycling is an activated ability of the card in hand (CR 702.29a): an any-zone
+        // "players can't activate abilities" (Yuriko, Blade of the Mighty) forbids it.
+        if (castPermissionUtils?.isActivationPreventedForPlayer(state, action.cardId, action.playerId) == true) {
+            return "An effect prevents you from activating that ability right now"
         }
 
         val container = state.getEntity(action.cardId)
@@ -246,8 +255,7 @@ class CycleCardHandler(
         // cast (CR 702.35a), which is the classic Fiery Temper line. The discard event and the
         // zone change land before CardCycledEvent, so a card that triggers on both (CR 702.29d)
         // sees them in the order they happened.
-        val discardResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-            .discardCards(currentState, action.playerId, listOf(action.cardId), asCyclingCost = true)
+        val discardResult = zones.discardCards(currentState, action.playerId, listOf(action.cardId), asCyclingCost = true)
         currentState = discardResult.state
         events.addAll(discardResult.events)
 
@@ -292,11 +300,13 @@ class CycleCardHandler(
     companion object {
         fun create(services: EngineServices): CycleCardHandler {
             return CycleCardHandler(
+                services.zones,
                 services.cardRegistry,
                 services.manaSolver,
                 services.manaAbilitySideEffectExecutor,
                 services.effectExecutorRegistry::execute,
-                services.replacementEffectProcessor
+                services.replacementEffectProcessor,
+                services.castPermissionUtils
             )
         }
     }

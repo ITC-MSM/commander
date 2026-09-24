@@ -143,7 +143,9 @@ class HearthbornBattlerTest : FunSpec({
         driver.getLifeTotal(player2) shouldBe 17
     }
 
-    test("triggers when Hearthborn Battler itself is the second spell cast") {
+    test("does not trigger when Hearthborn Battler itself is the second spell cast") {
+        // CR 113.6: a creature card's triggered abilities function only on the battlefield, so the
+        // Battler on the stack can't see its own cast.
         val driver = createDriver()
         driver.initMirrorMatch(
             deck = Deck.of("Mountain" to 20, "Lightning Bolt" to 20),
@@ -163,23 +165,17 @@ class HearthbornBattlerTest : FunSpec({
         driver.passPriority(player2)
         driver.getLifeTotal(player2) shouldBe 17 // 20 - 3
 
-        // Cast Hearthborn Battler as the second spell — its own trigger should fire
+        // Cast Hearthborn Battler as the second spell — it is on the stack, so no trigger
         val hb = driver.putCardInHand(player1, "Hearthborn Battler")
         driver.giveMana(player1, Color.RED, 1)
         driver.giveColorlessMana(player1, 2)
         driver.castSpell(player1, hb, emptyList())
 
-        // Stack: trigger (top) + Hearthborn Battler (bottom)
-        // Trigger auto-targets only opponent in 2-player game.
-        driver.passPriority(player1)
-        driver.passPriority(player2)
-        // Trigger resolves: 17 - 2 = 15
-
-        // Resolve HB (enters battlefield with haste)
+        // Stack: Hearthborn Battler only. Resolve it (enters battlefield with haste).
         driver.passPriority(player1)
         driver.passPriority(player2)
 
-        driver.getLifeTotal(player2) shouldBe 15
+        driver.getLifeTotal(player2) shouldBe 17
     }
 
     test("does not trigger on third spell") {

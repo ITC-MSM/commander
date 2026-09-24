@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.DamageUtils.dealDamageToTarget
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.DealDamagePerEntityInZoneEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -19,7 +20,7 @@ import kotlin.reflect.KClass
  * Used for Dragonhawk, Fate's Tempest: "deal 2 damage to each opponent
  * for each of those cards that are still exiled."
  */
-class DealDamagePerEntityInZoneExecutor : EffectExecutor<DealDamagePerEntityInZoneEffect> {
+class DealDamagePerEntityInZoneExecutor(private val zones: ZoneTransitionService) : EffectExecutor<DealDamagePerEntityInZoneEffect> {
 
     override val effectType: KClass<DealDamagePerEntityInZoneEffect> = DealDamagePerEntityInZoneEffect::class
 
@@ -65,7 +66,7 @@ class DealDamagePerEntityInZoneExecutor : EffectExecutor<DealDamagePerEntityInZo
             var newState = readyState
             val events = mutableListOf<EngineGameEvent>()
             for (playerId in playerIds) {
-                val result = dealDamageToTarget(newState, playerId, totalDamage, sourceId, cantBePrevented = false)
+                val result = dealDamageToTarget(zones, newState, playerId, totalDamage, sourceId, cantBePrevented = false)
                 newState = result.newState
                 events.addAll(result.events)
             }
@@ -84,6 +85,6 @@ class DealDamagePerEntityInZoneExecutor : EffectExecutor<DealDamagePerEntityInZo
         )
         if (pause != null) return pause
 
-        return dealDamageToTarget(readyState, targetId, totalDamage, sourceId, cantBePrevented = false)
+        return dealDamageToTarget(zones, readyState, targetId, totalDamage, sourceId, cantBePrevented = false)
     }
 }

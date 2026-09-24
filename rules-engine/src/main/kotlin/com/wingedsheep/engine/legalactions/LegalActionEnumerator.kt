@@ -3,6 +3,7 @@ package com.wingedsheep.engine.legalactions
 import com.wingedsheep.engine.core.TurnManager
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.legalactions.enumerators.*
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
@@ -84,7 +85,8 @@ class LegalActionEnumerator(
         }
 
         // Normal priority: enumerate all action categories
-        return enumerators.flatMap { it.enumerate(context) }
+        return com.wingedsheep.engine.legalactions.enumerators.AdditionalManaForCountersOffer
+            .annotate(context, enumerators.flatMap { it.enumerate(context) })
     }
 
     /**
@@ -122,10 +124,13 @@ class LegalActionEnumerator(
             costCalculator: CostCalculator = CostCalculator(cardRegistry),
             predicateEvaluator: PredicateEvaluator = PredicateEvaluator(),
             conditionEvaluator: ConditionEvaluator = ConditionEvaluator(),
+            zones: ZoneTransitionService = ZoneTransitionService(cardRegistry),
             turnManager: TurnManager = TurnManager(
+                zones,
                 combatManager = com.wingedsheep.engine.mechanics.combat.CombatManager(
+                    zones,
                     cardRegistry,
-                    com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor.noOp(cardRegistry)
+                    com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor.noOp(zones)
                 ),
                 cardRegistry = cardRegistry
             )

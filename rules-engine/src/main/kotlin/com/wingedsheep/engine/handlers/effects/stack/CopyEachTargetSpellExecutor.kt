@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CantBeCopiedComponent
@@ -29,6 +30,7 @@ import kotlin.reflect.KClass
  * targets for the copies." (Display of Power).
  */
 class CopyEachTargetSpellExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry,
     private val targetFinder: TargetFinder = TargetFinder()
 ) : EffectExecutor<CopyEachTargetSpellEffect> {
@@ -46,7 +48,7 @@ class CopyEachTargetSpellExecutor(
             .map { it.spellEntityId }
             .distinct()
 
-        val stackResolver = StackResolver(cardRegistry = cardRegistry)
+        val stackResolver = StackResolver(zones, cardRegistry = cardRegistry)
         return EffectResult.from(
             driveCopyEachSpell(
                 state = state,

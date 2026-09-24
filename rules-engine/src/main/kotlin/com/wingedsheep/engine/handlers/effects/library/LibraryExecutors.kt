@@ -8,6 +8,7 @@ import com.wingedsheep.engine.handlers.actions.spell.CastSpellHandler
 import com.wingedsheep.engine.handlers.actions.land.PlayLandHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ExecutorModule
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -23,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference
  * services finish constructing.
  */
 class LibraryExecutors(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val targetFinder: TargetFinder? = null,
 ) : ExecutorModule {
@@ -72,11 +74,11 @@ class LibraryExecutors(
         GrantFreeCastTargetFromExileExecutor(),
         GatherUntilMatchExecutor(),
         RevealCollectionExecutor(),
-        ExileFromTopRepeatingExecutor(),
-        ExileLibraryUntilManaValueExecutor(),
-        ExileTopCardContestExecutor(),
-        CascadeExecutor(),
-        DiscoverExecutor(recursion),
+        ExileFromTopRepeatingExecutor(zones),
+        ExileLibraryUntilManaValueExecutor(zones),
+        ExileTopCardContestExecutor(zones),
+        CascadeExecutor(zones),
+        DiscoverExecutor(zones, recursion),
         CastFromCollectionWithoutPayingCostExecutor(
             castSpellHandlerProvider = {
                 castSpellHandlerRef.get()
@@ -103,14 +105,14 @@ class LibraryExecutors(
         ChooseCreatureTypePipelineExecutor(),
         ChooseOptionPipelineExecutor(cardRegistry = cardRegistry),
         NoteCreatureTypePipelineExecutor(),
-        GatherCardsExecutor(),
+        GatherCardsExecutor(cardRegistry),
         CopyCardIntoCollectionExecutor(),
         CopyCollectionIntoCollectionExecutor(),
         GrantSuspendExecutor(),
         SelectFromCollectionExecutor(cardRegistry = cardRegistry),
         ChoosePileExecutor(),
         SelectTargetPipelineExecutor(targetFinder = targetFinder ?: TargetFinder()),
-        MoveCollectionExecutor(cardRegistry = cardRegistry, targetFinder = targetFinder),
+        MoveCollectionExecutor(zones, cardRegistry = cardRegistry, targetFinder = targetFinder),
         FilterCollectionExecutor(),
         ChooseOnePerCategoryExecutor(),
         PutOnTopOrBottomOfLibraryExecutor(),

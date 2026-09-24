@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.copy.CopyExceptionApplier
 import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.mechanics.modal.ChosenModeMemory
@@ -404,8 +405,7 @@ class ModalAndCloneContinuationResumer(
         // "When you do, exile that card." (Superior Spider-Man) — exile the copied
         // graveyard card after the copy has been applied and the permanent has entered.
         if (continuation.exileCopiedCard && copyApplied && selectedCreatureId != null) {
-            val exileResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                .moveToZone(newState, selectedCreatureId, Zone.EXILE)
+            val exileResult = services.zones.moveToZone(newState, selectedCreatureId, Zone.EXILE)
             newState = exileResult.state
             events.addAll(exileResult.events)
         }
@@ -483,8 +483,7 @@ class ModalAndCloneContinuationResumer(
 
         // "When you do, exile that card." (graveyard copies) — exile the copied card afterward.
         if (copyApplied && continuation.exileCopiedCard && selectedId != null) {
-            val exileResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                .moveToZone(newState, selectedId, Zone.EXILE)
+            val exileResult = services.zones.moveToZone(newState, selectedId, Zone.EXILE)
             newState = exileResult.state
             outEvents.addAll(exileResult.events)
         }
@@ -881,7 +880,7 @@ class ModalAndCloneContinuationResumer(
         if (response.choice) {
             // Player chose to pay life
             val (afterPayment, paymentEvents) = LifePaymentService
-                .pay(newState, continuation.controllerId, continuation.lifeCost)
+                .pay(services.zones, newState, continuation.controllerId, continuation.lifeCost)
                 ?: return ExecutionResult.error(state, "Player has no life total")
             newState = afterPayment
             events.addAll(paymentEvents)
@@ -928,7 +927,7 @@ class ModalAndCloneContinuationResumer(
         if (response.choice) {
             // Player chose to pay life
             val (afterPayment, paymentEvents) = LifePaymentService
-                .pay(newState, continuation.controllerId, continuation.lifeCost)
+                .pay(services.zones, newState, continuation.controllerId, continuation.lifeCost)
                 ?: return ExecutionResult.error(state, "Player has no life total")
             newState = afterPayment
             events.addAll(paymentEvents)
@@ -1096,7 +1095,7 @@ class ModalAndCloneContinuationResumer(
         val events = mutableListOf<GameEvent>()
         val actuallyExiled = mutableListOf<com.wingedsheep.sdk.model.EntityId>()
         for (cardId in response.selectedCards) {
-            val transition = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+            val transition = services.zones.moveToZone(
                 newState, cardId, Zone.EXILE
             )
             newState = transition.state
@@ -1253,8 +1252,7 @@ class ModalAndCloneContinuationResumer(
         var newState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
             .trackPermanentSacrifice(state, sacrificed, controllerId)
         for (permanentId in sacrificed) {
-            val result = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                .moveToZone(newState, permanentId, com.wingedsheep.sdk.core.Zone.GRAVEYARD)
+            val result = services.zones.moveToZone(newState, permanentId, com.wingedsheep.sdk.core.Zone.GRAVEYARD)
             newState = result.state
             events.addAll(result.events)
         }

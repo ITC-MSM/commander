@@ -229,6 +229,66 @@
     ]
 }
 
+// Tarmogoyf
+{
+    "name": "Tarmogoyf",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Lhurgoyf",
+    "oracleText": "Tarmogoyf's power is equal to the number of card types among cards in all graveyards and its toughness is equal to that number plus 1.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateZone",
+                "player": "Each",
+                "zone": "Graveyard",
+                "aggregation": "DISTINCT_TYPES"
+            }
+        },
+        "toughness": {
+            "type": "DynamicWithOffset",
+            "source": {
+                "type": "AggregateZone",
+                "player": "Each",
+                "zone": "Graveyard",
+                "aggregation": "DISTINCT_TYPES"
+            },
+            "offset": 1
+        }
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "rarity": "RARE",
+        "artist": "Justin Murray",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6876d9e-0908-43ac-8542-09c7aa02b5ba.jpg?1783943094",
+        "rulings": [
+            {
+                "date": "2024-06-07",
+                "text": "Some older printings of this card reference the \"tribal\" card type in their reminder text. That card type's name has been replaced with \"kindred\". This change does not affect the gameplay function of those cards or of Tarmogoyf. (The same older printings of this card also fail to reference the \"battle\" card type, which didn't exist at the time, but Tarmogoyf's ability still counts that card type.)"
+            },
+            {
+                "date": "2021-03-19",
+                "text": "The ability that defines Tarmogoyf's power and toughness works in all zones, not just the battlefield. If Tarmogoyf is in your graveyard, it will count itself."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "Tarmogoyf counts card types, not cards. If the only card in all graveyards is a single artifact creature, Tarmogoyf will be 2/3. If the only cards in all graveyards are ten artifact creatures, Tarmogoyf will still be 2/3."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "The card types that can appear on cards in a graveyard are artifact, battle, creature, enchantment, instant, kindred, land, planeswalker, and sorcery. Legendary, basic, and snow are supertypes, not card types."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "If an instant or sorcery spell deals damage to Tarmogoyf or lowers its toughness, that spell is put into its owner's graveyard before state-based actions are performed. If that card is the first of its type to enter a graveyard, it will raise Tarmogoyf's toughness before the game checks to see if Tarmogoyf dies."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Thornweald Archer
 {
     "name": "Thornweald Archer",

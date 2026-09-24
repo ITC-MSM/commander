@@ -53,7 +53,8 @@ val MornsongAria = card("Mornsong Aria") {
                     listOf(
                         GatherCardsEffect(
                             source = CardSource.FromZone(Zone.LIBRARY, Player.TriggeringPlayer, GameObjectFilter.Any),
-                            storeAs = "searchable"
+                            storeAs = "searchable",
+                            search = true
                         ),
                         SelectFromCollectionEffect(
                             from = "searchable",

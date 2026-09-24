@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -41,6 +42,7 @@ import kotlin.reflect.KClass
  * copies at all.
  */
 class CopyTargetSpellOrAbilityExecutor(
+    private val zones: ZoneTransitionService,
     private val cardRegistry: CardRegistry,
     private val targetFinder: TargetFinder = TargetFinder()
 ) : EffectExecutor<CopyTargetSpellOrAbilityEffect> {
@@ -48,7 +50,7 @@ class CopyTargetSpellOrAbilityExecutor(
     override val effectType: KClass<CopyTargetSpellOrAbilityEffect> =
         CopyTargetSpellOrAbilityEffect::class
 
-    private val spellExecutor = CopyTargetSpellExecutor(cardRegistry, targetFinder)
+    private val spellExecutor = CopyTargetSpellExecutor(zones, cardRegistry, targetFinder)
     private val dynamicAmountEvaluator = DynamicAmountEvaluator()
 
     override fun execute(
@@ -77,7 +79,7 @@ class CopyTargetSpellOrAbilityExecutor(
                 EffectResult.from(
                     driveAbilityCopies(
                         state = state,
-                        stackResolver = StackResolver(cardRegistry = cardRegistry),
+                        stackResolver = StackResolver(zones, cardRegistry = cardRegistry),
                         targetFinder = targetFinder,
                         abilityEntityId = targetId,
                         controllerId = context.controllerId,

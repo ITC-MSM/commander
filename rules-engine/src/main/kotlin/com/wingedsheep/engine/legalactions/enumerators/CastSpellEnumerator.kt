@@ -11,7 +11,9 @@ import com.wingedsheep.engine.legalactions.ModalLegalEnumeration
 import com.wingedsheep.engine.legalactions.TapForGenericPermanentData
 import com.wingedsheep.engine.legalactions.TapForPowerCreatureData
 import com.wingedsheep.engine.legalactions.TargetInfo
-import com.wingedsheep.engine.legalactions.utils.SelectionCostPresentation
+import com.wingedsheep.engine.mechanics.cost.spell.SpellCostEnumeration
+import com.wingedsheep.engine.mechanics.cost.spell.SpellCostOffer
+import com.wingedsheep.engine.mechanics.cost.spell.SpellCosts
 import com.wingedsheep.engine.legalactions.utils.TargetEnumerationUtils
 import com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost
 import com.wingedsheep.engine.mechanics.EscalateCosts
@@ -209,266 +211,15 @@ class CastSpellEnumerator : ActionEnumerator {
             val grantedFlash = hasFlash || context.castPermissionUtils.hasGrantedFlash(state, cardId)
             if (!isInstant && !grantedFlash && !context.canPlaySorcerySpeed) continue
 
-            // Check additional cost payability
+            // Check additional cost payability — each cost kind contributes its candidates to one
+            // combined offer and says whether it can be paid.
             val additionalCosts = cardDef.script.additionalCosts
-            val sacrificeTargets = mutableListOf<EntityId>()
-            var variableSacrificeTargets = emptyList<EntityId>()
-            var variableSacrificeReduction = 0
-            var exileTargets = emptyList<EntityId>()
-            var exileMinCount = 0
-            var collectEvidenceCost: CostAtom.CollectEvidence? = null
-            var discardTargets = emptyList<EntityId>()
-            var discardCount = 0
-            var bounceTargets = emptyList<EntityId>()
-            var bounceCount = 0
-            var tapTargets = emptyList<EntityId>()
-            var tapCount = 0
-            var beholdTargets = emptyList<EntityId>()
-            var beholdCount = 0
-            var revealTargets = emptyList<EntityId>()
-            var revealCount = 0
-            var blightOrPayCost: AdditionalCost.BlightOrPay? = null
-            var blightCreatures = emptyList<EntityId>()
-            var blightVariableCost: AdditionalCost.BlightVariable? = null
-            var blightVariableCreatures = emptyList<EntityId>()
-            var blightVariableMaxX = 0
-            var payXLifeCost: AdditionalCost.PayXLife? = null
-            var payXLifeMaxX = 0
-            var orPayCost: AdditionalCost.OrPay? = null
-            var orPayTargets = emptyList<EntityId>()
-            var canPayAdditionalCosts = true
-            val flattenedCosts = additionalCosts.flatMap {
-                if (it is AdditionalCost.Composite) it.steps else listOf(it)
-            }
-            for (cost in flattenedCosts) {
-                when (cost) {
-                    is AdditionalCost.Atom -> when (val atom = cost.atom) {
-                        is CostAtom.Sacrifice -> {
-                            val validSacTargets = context.costUtils.findSacrificeTargets(state, playerId, atom)
-                            if (validSacTargets.size < atom.count) {
-                                canPayAdditionalCosts = false
-                            }
-                            sacrificeTargets.addAll(validSacTargets)
-                        }
-                        is CostAtom.ExileFrom -> {
-                            val validExileTargets = context.costUtils.findExileTargets(
-                                state, playerId, atom.filter, atom.zone,
-                                atom.anyPlayersZone, atom.singleZone, atom.count,
-                            )
-                            if (validExileTargets.size < atom.count) {
-                                canPayAdditionalCosts = false
-                            }
-                            exileTargets = validExileTargets
-                            exileMinCount = atom.count
-                        }
-                        // Collect evidence N as a *mandatory* cast cost (CR 701.59a) — Urgent
-                        // Necropsy. The optional linked form rides the kicker rail further down;
-                        // this is the plain `Costs.additional.CollectEvidence(...)` shape.
-                        is CostAtom.CollectEvidence -> {
-                            collectEvidenceCost = atom
-                            // CR 701.59b fails closed on a threshold that is already known: a
-                            // graveyard that can't reach it means the spell can't be cast at all.
-                            // A *target-derived* threshold isn't known yet — targets are announced
-                            // at CR 601.2c and the cost isn't determined until 601.2f — so the cast
-                            // is offered and an unreachable choice of targets is rejected at
-                            // validation, which is the 601.2e rewind the printed ruling describes.
-                            if (!com.wingedsheep.engine.handlers.costs.CostAtomAmounts
-                                    .dependsOnTargets(atom.amount) &&
-                                !com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
-                                    .canCollect(
-                                        state, playerId,
-                                        com.wingedsheep.engine.handlers.costs.CostAtomAmounts
-                                            .evaluate(state, atom.amount),
-                                        excludeCardId = cardId,
-                                    )
-                            ) {
-                                canPayAdditionalCosts = false
-                            }
-                        }
-                        is CostAtom.Discard -> {
-                            val handZone = ZoneKey(playerId, Zone.HAND)
-                            val handCards = state.getZone(handZone)
-                                .filter { it != cardId } // Exclude the card being cast
-                            val predicateContext = PredicateContext(controllerId = playerId)
-                            val validDiscards = if (atom.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) {
-                                handCards
-                            } else {
-                                handCards.filter { context.predicateEvaluator.matches(state, state.projectedState, it, atom.filter, predicateContext) }
-                            }
-                            if (validDiscards.size < atom.count) {
-                                canPayAdditionalCosts = false
-                            }
-                            discardTargets = validDiscards
-                            discardCount = atom.count
-                        }
-                        is CostAtom.ReturnToHand -> {
-                            // "As an additional cost to cast this spell, return [count]
-                            // permanent(s) matching [filter] you control to its owner's hand."
-                            // Mirrors the TapPermanents selection model (permanents you control,
-                            // no destruction), but the payment bounces instead of tapping.
-                            val validBounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter, atom.youControl)
-                            if (validBounceTargets.size < atom.count) {
-                                canPayAdditionalCosts = false
-                            }
-                            bounceTargets = validBounceTargets
-                            bounceCount = atom.count
-                        }
-                        is CostAtom.TapPermanents -> {
-                            // "As an additional cost to cast this spell, tap [count] untapped
-                            // [filter] you control" (e.g. Guardian of the Great Door). Mirrors the
-                            // ReturnToHand selection model above — permanents you control, chosen by
-                            // the caster — but the payment taps instead of bouncing. Without this
-                            // case the cost fell through to `else -> {}`, so no `AdditionalCostData`
-                            // reached the client: it couldn't prompt for the tap, yet the cast-time
-                            // validator still rejected the empty payment.
-                            val validTapTargets = context.costUtils.findAbilityTapTargets(state, playerId, atom.filter)
-                                .let { if (atom.excludeSelf) it.filter { id -> id != cardId } else it }
-                            if (validTapTargets.size < atom.count) {
-                                canPayAdditionalCosts = false
-                            }
-                            tapTargets = validTapTargets
-                            tapCount = atom.count
-                        }
-                        // "As an additional cost to cast this spell, reveal an Elf card from your
-                        // hand." The cards stay in hand (CR 701.20b) — the caster picks which to
-                        // publish, and nothing moves. The spell itself is on its way to the stack,
-                        // so it is excluded from its own candidate pool.
-                        is CostAtom.RevealFromHand -> {
-                            val predicateContext = PredicateContext(controllerId = playerId)
-                            val validReveals = state.getZone(ZoneKey(playerId, Zone.HAND))
-                                .filter { it != cardId }
-                                .filter {
-                                    atom.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any ||
-                                        context.predicateEvaluator.matches(
-                                            state, state.projectedState, it, atom.filter, predicateContext
-                                        )
-                                }
-                            if (validReveals.size < atom.count) {
-                                canPayAdditionalCosts = false
-                            }
-                            revealTargets = validReveals
-                            revealCount = atom.count
-                        }
-                        // Mana isn't produced as a spell additional cost today.
-                        else -> {}
-                    }
-                    is AdditionalCost.SacrificeCreaturesForCostReduction -> {
-                        // Always payable (0 sacrifices is valid)
-                        val validSacTargets = context.costUtils.findVariableSacrificeTargets(state, playerId, cost.filter)
-                        variableSacrificeTargets = validSacTargets
-                        variableSacrificeReduction = cost.costReductionPerCreature
-                    }
-                    is AdditionalCost.ExileVariableCards -> {
-                        val validExileTargets = context.costUtils.findExileTargets(state, playerId, cost.filter, cost.fromZone.toZone())
-                        if (validExileTargets.size < cost.minCount) {
-                            canPayAdditionalCosts = false
-                        }
-                        exileTargets = validExileTargets
-                        exileMinCount = cost.minCount
-                    }
-                    is AdditionalCost.Behold -> {
-                        // Find matching permanents on battlefield (projected) + matching cards in hand
-                        val projected = state.projectedState
-                        val predicateContext = PredicateContext(controllerId = playerId)
-                        val battlefieldMatches = projected.getBattlefieldControlledBy(playerId).filter { permId ->
-                            context.predicateEvaluator.matches(state, projected, permId, cost.filter, predicateContext)
-                        }
-                        val handZone = ZoneKey(playerId, Zone.HAND)
-                        val handMatches = state.getZone(handZone)
-                            .filter { it != cardId } // Exclude the card being cast
-                            .filter { context.predicateEvaluator.matches(state, state.projectedState, it, cost.filter, predicateContext) }
-                        val allTargets = battlefieldMatches + handMatches
-                        if (allTargets.size < cost.count) {
-                            canPayAdditionalCosts = false
-                        }
-                        beholdTargets = allTargets
-                        beholdCount = cost.count
-                    }
-                    is AdditionalCost.ExileFromStorage -> {
-                        // Payability determined by the preceding Behold cost
-                    }
-                    is AdditionalCost.BlightOrPay -> {
-                        // Always payable: player can always choose the "pay mana" path
-                        // Find creatures for the blight path
-                        blightOrPayCost = cost
-                        val projected = state.projectedState
-                        blightCreatures = projected.getBattlefieldControlledBy(playerId)
-                            .filter { projected.isCreature(it) && projected.canReceiveCounters(it) }
-                    }
-                    is AdditionalCost.BlightVariable -> {
-                        // Always payable when minCount = 0 (X = 0 is valid even with no
-                        // creatures). Surface the creature pool + cap so the client can
-                        // prompt the player for X and a creature.
-                        val projected = state.projectedState
-                        val ownCreatures = projected.getBattlefieldControlledBy(playerId)
-                            .filter { projected.isCreature(it) && projected.canReceiveCounters(it) }
-                        val maxToughness = ownCreatures.maxOfOrNull { projected.getToughness(it) ?: 0 } ?: 0
-                        if (maxToughness < cost.minCount) {
-                            canPayAdditionalCosts = false
-                        }
-                        blightVariableCost = cost
-                        blightVariableCreatures = ownCreatures
-                        blightVariableMaxX = maxToughness
-                    }
-                    is AdditionalCost.PayXLife -> {
-                        // Always payable when minCount = 0 (X = 0 is valid). Surface the cap (current
-                        // life total) so the client can bound the X slider (0..payXLifeMaxX).
-                        val currentLife = state.lifeTotal(playerId)
-                        if (currentLife < cost.minCount) {
-                            canPayAdditionalCosts = false
-                        }
-                        payXLifeCost = cost
-                        payXLifeMaxX = currentLife
-                    }
-                    is AdditionalCost.OrPay -> {
-                        // Always payable: the player can always choose the "pay mana" path.
-                        // Surface the candidates for the leg path, whichever cost it carries.
-                        orPayCost = cost
-                        orPayTargets = SelectionCostPresentation.candidates(
-                            state, playerId, cardId, cost.cost, context.costUtils, context.predicateEvaluator
-                        )
-                    }
-                    is AdditionalCost.ChooseEntity -> {
-                        // Search each (zone, filter) pair in `cost.zoneFilters`. Battlefield
-                        // uses projected state (continuous effects matter); hidden / card
-                        // zones use base state, mirroring the Behold convention.
-                        val projected = state.projectedState
-                        val predicateContext = PredicateContext(controllerId = playerId)
-                        val allTargets = cost.zoneFilters.flatMap { (zone, filter) ->
-                            when (zone) {
-                                Zone.BATTLEFIELD -> projected.getBattlefieldControlledBy(playerId)
-                                    .filter {
-                                        context.predicateEvaluator.matches(
-                                            state, projected, it, filter, predicateContext
-                                        )
-                                    }
-                                else -> state.getZone(ZoneKey(playerId, zone))
-                                    .filter { it != cardId } // exclude the spell being cast
-                                    .filter {
-                                        context.predicateEvaluator.matches(
-                                            state, state.projectedState, it, filter, predicateContext
-                                        )
-                                    }
-                            }
-                        }
-                        if (allTargets.isEmpty()) {
-                            canPayAdditionalCosts = false
-                        }
-                        beholdTargets = allTargets
-                        beholdCount = 1
-                    }
-                    is AdditionalCost.Choice -> {
-                        // Cost-vs-cost: castable only if at least one option is payable. The per-option
-                        // legal actions are produced by expandChoiceAdditionalCosts in post-processing.
-                        if (com.wingedsheep.engine.handlers.costs.ChoiceCostResolver
-                                .costInfos(state, playerId, cost, context.costUtils, cardId).isEmpty()) {
-                            canPayAdditionalCosts = false
-                        }
-                    }
-                    else -> {}
-                }
-            }
-            if (!canPayAdditionalCosts) continue
+            val offer = SpellCostOffer()
+            val costEnv = SpellCostEnumeration(context, cardId)
+            if (!SpellCosts.enumerateAll(costEnv, additionalCosts, offer)) continue
+            val blightOrPayCost = offer.blightOrPayCost
+            val orPayCost = offer.orPayCost
+            val collectEvidenceCost = offer.collectEvidenceCost
 
             // Calculate effective cost after reductions (e.g., Goblin Warchief).
             // Uses minimum possible cost so target-conditional reductions (e.g., Dire Downdraft)
@@ -476,8 +227,8 @@ class CastSpellEnumerator : ActionEnumerator {
             var effectiveCost = context.costCalculator.calculateMinPossibleCost(state, cardDef, playerId)
 
             // Apply maximum possible sacrifice cost reduction for affordability check
-            if (variableSacrificeTargets.isNotEmpty() && variableSacrificeReduction > 0) {
-                val maxReduction = variableSacrificeTargets.size * variableSacrificeReduction
+            if (offer.variableSacrificeTargets.isNotEmpty() && offer.variableSacrificeReduction > 0) {
+                val maxReduction = offer.variableSacrificeTargets.size * offer.variableSacrificeReduction
                 effectiveCost = effectiveCost.reduceGeneric(maxReduction)
             }
 
@@ -665,7 +416,7 @@ class CastSpellEnumerator : ActionEnumerator {
             } else false
 
             // Check blight path affordability (base cost without the extra mana, but needs a creature)
-            val canAffordBlightPath = if (blightOrPayCost != null && blightCreatures.isNotEmpty()) {
+            val canAffordBlightPath = if (blightOrPayCost != null && offer.blightCreatures.isNotEmpty()) {
                 context.manaSolver.canPay(state, playerId, blightBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
             } else false
 
@@ -673,7 +424,7 @@ class CastSpellEnumerator : ActionEnumerator {
             // enough candidates for the leg cost's own selection — permanents to sacrifice, cards to
             // discard/exile/behold, …).
             val canAffordOrPayPath = if (orPayCost != null &&
-                SelectionCostPresentation.canPay(state, playerId, cardId, orPayCost.cost, orPayTargets)
+                SpellCosts.canPayFrom(costEnv, orPayCost.cost, offer.orPayTargets)
             ) {
                 context.manaSolver.canPay(state, playerId, orPayBaseCost, spellContext = spellContext, precomputedSources = cachedSources)
             } else false
@@ -702,7 +453,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
             val targetReqs = buildList {
                 addAll(cardDef.script.targetRequirements)
-                cardDef.script.auraTarget?.let { add(it) }
+                cardDef.script.castAuraTarget?.let { add(it) }
             }
 
             // What each legal target would add to a target-derived collect-evidence threshold
@@ -724,16 +475,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
             // Build additional cost info for the client
             val costInfo = buildAdditionalCostData(
-                additionalCosts, sacrificeTargets, variableSacrificeTargets,
-                exileTargets, exileMinCount, discardTargets, discardCount,
-                bounceTargets, bounceCount,
-                tapTargets, tapCount,
-                beholdTargets, beholdCount,
-                revealTargets, revealCount,
-                blightVariableCost, blightVariableCreatures, blightVariableMaxX,
-                payXLifeCost, payXLifeMaxX,
-                collectEvidenceCost, evidenceTargetWeights,
-                state, playerId, cardId
+                additionalCosts, offer, evidenceTargetWeights, state, playerId, cardId
             )
 
             // Compute the "… or pay {N}" cast paths — one extra legal action each, carrying the
@@ -755,7 +497,7 @@ class CastSpellEnumerator : ActionEnumerator {
                     legCostInfo = AdditionalCostData(
                         description = "creature to blight",
                         costType = "Blight",
-                        validBlightTargets = blightCreatures,
+                        validBlightTargets = offer.blightCreatures,
                         blightAmount = blightOrPayCost.blightAmount
                     )
                 )
@@ -765,7 +507,7 @@ class CastSpellEnumerator : ActionEnumerator {
             // "Behold", …), so a plain sacrifice/discard/exile/behold cost and the or-pay variant
             // drive the exact same selection UI.
             val orPayPathInfo = if (canAffordOrPayPath && orPayCost != null) {
-                SelectionCostPresentation.costData(state, playerId, cardId, orPayCost.cost, orPayTargets)?.let { (label, legCostInfo) ->
+                SpellCosts.present(costEnv, orPayCost.cost, offer.orPayTargets)?.let { (label, legCostInfo) ->
                     orPayPath(label = label, baseCost = orPayBaseCost, legCostInfo = legCostInfo)
                 }
             } else null
@@ -1905,7 +1647,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
             val targetReqs = buildList {
                 addAll(cardDef.script.targetRequirements)
-                cardDef.script.auraTarget?.let { add(it) }
+                cardDef.script.castAuraTarget?.let { add(it) }
             }
 
             val conspireCostInfo = AdditionalCostData(
@@ -2005,7 +1747,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
             val targetReqs = buildList {
                 addAll(cardDef.script.targetRequirements)
-                cardDef.script.auraTarget?.let { add(it) }
+                cardDef.script.castAuraTarget?.let { add(it) }
             }
 
             val casualtyCostInfo = AdditionalCostData(
@@ -2130,7 +1872,7 @@ class CastSpellEnumerator : ActionEnumerator {
                 // same order the cast handler and the stack resolver slice the flat target list by.
                 val targetReqs = buildList {
                     addAll(cardDef.script.targetRequirements)
-                    cardDef.script.auraTarget?.let { add(it) }
+                    cardDef.script.castAuraTarget?.let { add(it) }
                     addAll(candidate.definition.script.targetRequirements)
                 }
                 val description = "Cast ${cardComponent.name} (Splice ${candidate.name})"
@@ -2254,92 +1996,45 @@ class CastSpellEnumerator : ActionEnumerator {
                 // Check additional cost payability (e.g., sacrifice a creature)
                 var kickerCostInfo: AdditionalCostData? = null
                 var canPayKickerAdditionalCost = true
-                if (additionalCostKicker?.additionalCost != null) {
-                    when (val cost = additionalCostKicker.additionalCost) {
-                        is AdditionalCost.Atom -> when (val atom = cost.atom) {
-                            is CostAtom.Sacrifice -> {
-                                val validSacTargets = context.costUtils.findSacrificeTargets(state, playerId, atom)
-                                if (validSacTargets.size < atom.count) {
-                                    canPayKickerAdditionalCost = false
-                                } else {
-                                    kickerCostInfo = AdditionalCostData(
-                                        description = atom.description.replaceFirstChar { it.uppercase() },
-                                        costType = "SacrificePermanent",
-                                        validSacrificeTargets = validSacTargets,
-                                        sacrificeCount = atom.count
+                val kickerAdditionalCost = additionalCostKicker?.additionalCost
+                if (kickerAdditionalCost != null) {
+                    when (val atom = (kickerAdditionalCost as? AdditionalCost.Atom)?.atom) {
+                        // "Tap any number of creatures you control with total power N or more"
+                        // — Teamwork N (CR 702.194a). The candidate pool and the threshold are
+                        // the crew/saddle payload; the caster's chosen ids come back as
+                        // `additionalCostPayment.variableCostPermanents`.
+                        is CostAtom.VariablePermanents -> {
+                            val projected = state.projectedState
+                            val candidates = VariablePermanentsCost.candidates(state, playerId, atom)
+                            // The cost info is published even when the threshold is out of
+                            // reach, so the greyed-out variant still tells the player what
+                            // teamwork would ask for; affordability is the separate flag.
+                            canPayKickerAdditionalCost = VariablePermanentsCost.canPay(state, playerId, atom)
+                            kickerCostInfo = AdditionalCostData(
+                                description = atom.description.replaceFirstChar { it.uppercase() },
+                                costType = "TapForTotalPower",
+                                tapForPowerRequired = atom.minMeasure,
+                                tapForPowerCreatures = candidates.map { creatureId ->
+                                    TapForPowerCreatureData(
+                                        entityId = creatureId,
+                                        name = state.getEntity(creatureId)?.get<CardComponent>()?.name ?: "Unknown",
+                                        power = projected.getPower(creatureId) ?: 0
                                     )
                                 }
-                            }
-                            // CR 701.59b — the collect-evidence branch is only payable when the
-                            // graveyard's *total mana value* reaches N. The resolver also builds
-                            // the picker payload, whose candidate pool is the whole graveyard and
-                            // whose real constraint is the mana-value floor, not a card count.
-                            is CostAtom.CollectEvidence -> {
-                                // The optional rail is enumerated before targets exist, so only a
-                                // statically-priced threshold can be gated here; nothing prints a
-                                // target-derived one as an optional cost (Urgent Necropsy's is
-                                // mandatory — see the mandatory branch above).
-                                val info = com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
-                                    .costInfo(
-                                        state, playerId,
-                                        com.wingedsheep.engine.handlers.costs.CostAtomAmounts
-                                            .evaluate(state, atom.amount),
-                                        excludeCardId = cardId,
-                                    )
-                                if (info == null) canPayKickerAdditionalCost = false
-                                else kickerCostInfo = info
-                            }
-                            // "Tap any number of creatures you control with total power N or more"
-                            // — Teamwork N (CR 702.194a). The candidate pool and the threshold are
-                            // the crew/saddle payload; the caster's chosen ids come back as
-                            // `additionalCostPayment.variableCostPermanents`.
-                            is CostAtom.VariablePermanents -> {
-                                val projected = state.projectedState
-                                val candidates = VariablePermanentsCost.candidates(state, playerId, atom)
-                                // The cost info is published even when the threshold is out of
-                                // reach, so the greyed-out variant still tells the player what
-                                // teamwork would ask for; affordability is the separate flag.
-                                canPayKickerAdditionalCost = VariablePermanentsCost.canPay(state, playerId, atom)
-                                kickerCostInfo = AdditionalCostData(
-                                    description = atom.description.replaceFirstChar { it.uppercase() },
-                                    costType = "TapForTotalPower",
-                                    tapForPowerRequired = atom.minMeasure,
-                                    tapForPowerCreatures = candidates.map { creatureId ->
-                                        TapForPowerCreatureData(
-                                            entityId = creatureId,
-                                            name = state.getEntity(creatureId)?.get<CardComponent>()?.name ?: "Unknown",
-                                            power = projected.getPower(creatureId) ?: 0
-                                        )
-                                    }
-                                )
-                            }
-                            else -> {}
+                            )
                         }
-                        is AdditionalCost.Behold -> {
-                            // Behold a matching permanent you control or reveal a matching
-                            // card from hand (e.g. Molten Exhale's "behold a Dragon" flash
-                            // unlock). Mirrors the mandatory-additional-cost Behold path.
-                            val projected = state.projectedState
-                            val predicateContext = PredicateContext(controllerId = playerId)
-                            val battlefieldMatches = projected.getBattlefieldControlledBy(playerId).filter { permId ->
-                                context.predicateEvaluator.matches(state, projected, permId, cost.filter, predicateContext)
-                            }
-                            val handMatches = state.getZone(ZoneKey(playerId, Zone.HAND))
-                                .filter { it != cardId }
-                                .filter { context.predicateEvaluator.matches(state, state.projectedState, it, cost.filter, predicateContext) }
-                            val beholdTargets = battlefieldMatches + handMatches
-                            if (beholdTargets.size < cost.count) {
+                        // Every other cost is offered through its own kind's picker: payable when its
+                        // candidates can pay it (collect evidence consults its resolver — CR 701.59b —
+                        // since its pool is the whole graveyard), presented the way it would be alone.
+                        else -> {
+                            val env = SpellCostEnumeration(context, cardId)
+                            val candidates = SpellCosts.candidates(env, kickerAdditionalCost)
+                            if (!SpellCosts.canPayFrom(env, kickerAdditionalCost, candidates)) {
                                 canPayKickerAdditionalCost = false
                             } else {
-                                kickerCostInfo = AdditionalCostData(
-                                    description = cost.description,
-                                    costType = "Behold",
-                                    validBeholdTargets = beholdTargets,
-                                    beholdCount = cost.count
-                                )
+                                kickerCostInfo = SpellCosts.present(env, kickerAdditionalCost, candidates)?.second
                             }
                         }
-                        else -> {}
                     }
                 }
 
@@ -2353,7 +2048,7 @@ class CastSpellEnumerator : ActionEnumerator {
                 }
                 val targetReqs = buildList {
                     addAll(kickerBaseReqs)
-                    cardDef.script.auraTarget?.let { add(it) }
+                    cardDef.script.castAuraTarget?.let { add(it) }
                 }
 
                 // The printed name of what's being paid — "Bargained" for bargain, "Offspring" /
@@ -2610,7 +2305,7 @@ class CastSpellEnumerator : ActionEnumerator {
             }
             val targetReqs = buildList {
                 addAll(cleaveBaseReqs)
-                cardDef.script.auraTarget?.let { add(it) }
+                cardDef.script.castAuraTarget?.let { add(it) }
             }
 
             if (targetReqs.isNotEmpty()) {
@@ -2674,7 +2369,7 @@ class CastSpellEnumerator : ActionEnumerator {
      * evidence 10 rather than pay the mana cost").
      *
      * An alternative cost's two halves are one cost, so the path is offered only when *both* are
-     * payable. Routed through [SelectionCostPresentation.canPay] rather than counting candidates,
+     * payable. Routed through [SpellCosts.canPayFrom] rather than counting candidates,
      * because a sum-gated cost's pool size says nothing about whether it can be reached.
      */
     private fun canPayAdditionalCostForAlternative(
@@ -2684,10 +2379,8 @@ class CastSpellEnumerator : ActionEnumerator {
         cardId: EntityId,
         cost: AdditionalCost,
     ): Boolean {
-        val candidates = SelectionCostPresentation.candidates(
-            state, playerId, cardId, cost, context.costUtils, context.predicateEvaluator
-        )
-        return SelectionCostPresentation.canPay(state, playerId, cardId, cost, candidates)
+        val env = SpellCostEnumeration(context, cardId)
+        return SpellCosts.canPayFrom(env, cost, SpellCosts.candidates(env, cost))
     }
 
     /**
@@ -2703,10 +2396,8 @@ class CastSpellEnumerator : ActionEnumerator {
         cardId: EntityId,
         cost: AdditionalCost,
     ): AdditionalCostData? {
-        val candidates = SelectionCostPresentation.candidates(
-            state, playerId, cardId, cost, context.costUtils, context.predicateEvaluator
-        )
-        return SelectionCostPresentation.costData(state, playerId, cardId, cost, candidates)?.second
+        val env = SpellCostEnumeration(context, cardId)
+        return SpellCosts.present(env, cost, SpellCosts.candidates(env, cost))?.second
     }
 
     /**
@@ -2714,31 +2405,15 @@ class CastSpellEnumerator : ActionEnumerator {
      */
     private fun buildAdditionalCostData(
         additionalCosts: List<AdditionalCost>,
-        sacrificeTargets: List<EntityId>,
-        variableSacrificeTargets: List<EntityId>,
-        exileTargets: List<EntityId>,
-        exileMinCount: Int,
-        discardTargets: List<EntityId>,
-        discardCount: Int,
-        bounceTargets: List<EntityId> = emptyList(),
-        bounceCount: Int = 0,
-        tapTargets: List<EntityId> = emptyList(),
-        tapCount: Int = 0,
-        beholdTargets: List<EntityId> = emptyList(),
-        beholdCount: Int = 0,
-        revealTargets: List<EntityId> = emptyList(),
-        revealCount: Int = 0,
-        blightVariableCost: AdditionalCost.BlightVariable? = null,
-        blightVariableCreatures: List<EntityId> = emptyList(),
-        blightVariableMaxX: Int = 0,
-        payXLifeCost: AdditionalCost.PayXLife? = null,
-        payXLifeMaxX: Int = 0,
-        collectEvidenceCost: CostAtom.CollectEvidence? = null,
+        offer: SpellCostOffer,
         evidenceTargetWeights: Map<EntityId, Int> = emptyMap(),
         state: GameState? = null,
         payerId: EntityId? = null,
         castCardId: EntityId? = null
     ): AdditionalCostData? {
+        val collectEvidenceCost = offer.collectEvidenceCost
+        val blightVariableCost = offer.blightVariableCost
+        val payXLifeCost = offer.payXLifeCost
         // Collect evidence N as a *mandatory* cast cost. Priced through the same resolver every
         // other collect-evidence context uses, so the picker, the reachability gate and the exile
         // can't drift. What is specific here is that the threshold may not be known yet: a
@@ -2765,34 +2440,34 @@ class CastSpellEnumerator : ActionEnumerator {
             return AdditionalCostData(
                 description = blightVariableCost.description,
                 costType = "BlightVariable",
-                validBlightTargets = blightVariableCreatures,
-                blightVariableMaxX = blightVariableMaxX
+                validBlightTargets = offer.blightVariableCreatures,
+                blightVariableMaxX = offer.blightVariableMaxX
             )
         }
         if (payXLifeCost != null) {
             return AdditionalCostData(
                 description = payXLifeCost.description,
                 costType = "PayXLife",
-                payXLifeMaxX = payXLifeMaxX
+                payXLifeMaxX = offer.payXLifeMaxX
             )
         }
-        return if (variableSacrificeTargets.isNotEmpty()) {
+        return if (offer.variableSacrificeTargets.isNotEmpty()) {
             val varSacCost = additionalCosts.filterIsInstance<AdditionalCost.SacrificeCreaturesForCostReduction>().firstOrNull()
             AdditionalCostData(
                 description = varSacCost?.description ?: "You may sacrifice any number of creatures",
                 costType = "SacrificeForCostReduction",
-                validSacrificeTargets = variableSacrificeTargets,
+                validSacrificeTargets = offer.variableSacrificeTargets,
                 sacrificeCount = 0 // min 0 — sacrifice is optional
             )
-        } else if (sacrificeTargets.isNotEmpty()) {
+        } else if (offer.sacrificeTargets.isNotEmpty()) {
             val sacCost = additionalCosts.firstNotNullOfOrNull { (it as? AdditionalCost.Atom)?.atom as? CostAtom.Sacrifice }
             AdditionalCostData(
                 description = sacCost?.description?.replaceFirstChar { it.uppercase() } ?: "Sacrifice a creature",
                 costType = "SacrificePermanent",
-                validSacrificeTargets = sacrificeTargets,
+                validSacrificeTargets = offer.sacrificeTargets,
                 sacrificeCount = sacCost?.count ?: 1
             )
-        } else if (exileTargets.isNotEmpty()) {
+        } else if (offer.exileTargets.isNotEmpty()) {
             val exileCostDesc = additionalCosts
                 .filterIsInstance<AdditionalCost.ExileVariableCards>()
                 .firstOrNull()?.description
@@ -2803,37 +2478,37 @@ class CastSpellEnumerator : ActionEnumerator {
             AdditionalCostData(
                 description = exileCostDesc,
                 costType = "ExileFromGraveyard",
-                validExileTargets = exileTargets,
-                exileMinCount = exileMinCount,
-                exileMaxCount = exileTargets.size
+                validExileTargets = offer.exileTargets,
+                exileMinCount = offer.exileMinCount,
+                exileMaxCount = offer.exileTargets.size
             )
-        } else if (discardTargets.isNotEmpty()) {
+        } else if (offer.discardTargets.isNotEmpty()) {
             val discardCost = additionalCosts.firstNotNullOfOrNull { (it as? AdditionalCost.Atom)?.atom as? CostAtom.Discard }
             AdditionalCostData(
                 description = discardCost?.description?.replaceFirstChar { it.uppercase() } ?: "Discard a card",
                 costType = "DiscardCard",
-                validDiscardTargets = discardTargets,
-                discardCount = discardCount
+                validDiscardTargets = offer.discardTargets,
+                discardCount = offer.discardCount
             )
-        } else if (bounceTargets.isNotEmpty()) {
+        } else if (offer.bounceTargets.isNotEmpty()) {
             val bounceCost = additionalCosts.firstNotNullOfOrNull { (it as? AdditionalCost.Atom)?.atom as? CostAtom.ReturnToHand }
             AdditionalCostData(
                 description = bounceCost?.description?.replaceFirstChar { it.uppercase() } ?: "Return a permanent you control to its owner's hand",
                 // "BouncePermanent" is the bounce picker's costType everywhere else (activated
                 // abilities, Sneak, Web-slinging); "ReturnToHand" matches no client phase.
                 costType = "BouncePermanent",
-                validBounceTargets = bounceTargets,
-                bounceCount = bounceCount
+                validBounceTargets = offer.bounceTargets,
+                bounceCount = offer.bounceCount
             )
-        } else if (tapTargets.isNotEmpty()) {
+        } else if (offer.tapTargets.isNotEmpty()) {
             val tapCostAtom = additionalCosts.firstNotNullOfOrNull { (it as? AdditionalCost.Atom)?.atom as? CostAtom.TapPermanents }
             AdditionalCostData(
                 description = tapCostAtom?.description?.replaceFirstChar { it.uppercase() } ?: "Tap permanents you control",
                 costType = "TapPermanents",
-                validTapTargets = tapTargets,
-                tapCount = tapCount
+                validTapTargets = offer.tapTargets,
+                tapCount = offer.tapCount
             )
-        } else if (revealTargets.isNotEmpty()) {
+        } else if (offer.revealTargets.isNotEmpty()) {
             val revealCostAtom = additionalCosts.firstNotNullOfOrNull {
                 (it as? AdditionalCost.Atom)?.atom as? CostAtom.RevealFromHand
             }
@@ -2841,18 +2516,18 @@ class CastSpellEnumerator : ActionEnumerator {
                 description = revealCostAtom?.description?.replaceFirstChar { it.uppercase() }
                     ?: "Reveal a card from your hand",
                 costType = "RevealCard",
-                validRevealTargets = revealTargets,
-                revealCount = revealCount
+                validRevealTargets = offer.revealTargets,
+                revealCount = offer.revealCount
             )
-        } else if (beholdTargets.isNotEmpty()) {
+        } else if (offer.beholdTargets.isNotEmpty()) {
             val flatCosts = additionalCosts.flatMap { if (it is AdditionalCost.Composite) it.steps else listOf(it) }
             val beholdCost = flatCosts.filterIsInstance<AdditionalCost.Behold>().firstOrNull()
             val chooseCost = flatCosts.filterIsInstance<AdditionalCost.ChooseEntity>().firstOrNull()
             AdditionalCostData(
                 description = chooseCost?.description ?: beholdCost?.description ?: "Behold a card",
                 costType = if (chooseCost != null) "ChooseEntity" else "Behold",
-                validBeholdTargets = beholdTargets,
-                beholdCount = beholdCount
+                validBeholdTargets = offer.beholdTargets,
+                beholdCount = offer.beholdCount
             )
         } else null
     }
@@ -2987,69 +2662,10 @@ class CastSpellEnumerator : ActionEnumerator {
             true // base cost already checked upstream
         }
 
-        var canPayAdditionalCosts = true
-        val modeSacrificeTargets = mutableListOf<EntityId>()
-        var modeExileTargets = emptyList<EntityId>()
-        var modeExileMinCount = 0
-        var modeDiscardTargets = emptyList<EntityId>()
-        var modeDiscardCount = 0
-
         val modeAdditionalCosts = mode.additionalCosts
-        if (modeAdditionalCosts != null) {
-            for (cost in modeAdditionalCosts) {
-                when (cost) {
-                    is AdditionalCost.Atom -> when (val atom = cost.atom) {
-                        is CostAtom.Sacrifice -> {
-                            val validSacTargets = context.costUtils.findSacrificeTargets(state, playerId, atom)
-                            if (validSacTargets.size < atom.count) canPayAdditionalCosts = false
-                            modeSacrificeTargets.addAll(validSacTargets)
-                        }
-                        is CostAtom.ExileFrom -> {
-                            val validExileTargets = context.costUtils.findExileTargets(
-                                state, playerId, atom.filter, atom.zone,
-                                atom.anyPlayersZone, atom.singleZone, atom.count,
-                            )
-                            if (validExileTargets.size < atom.count) canPayAdditionalCosts = false
-                            modeExileTargets = validExileTargets
-                            modeExileMinCount = atom.count
-                        }
-                        is CostAtom.Discard -> {
-                            val handZone = ZoneKey(playerId, Zone.HAND)
-                            val handCards = state.getZone(handZone).filter { it != cardId }
-                            val predicateContext = PredicateContext(controllerId = playerId)
-                            val validDiscards = if (atom.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) {
-                                handCards
-                            } else {
-                                handCards.filter { context.predicateEvaluator.matches(state, state.projectedState, it, atom.filter, predicateContext) }
-                            }
-                            if (validDiscards.size < atom.count) canPayAdditionalCosts = false
-                            modeDiscardTargets = validDiscards
-                            modeDiscardCount = atom.count
-                        }
-                        is CostAtom.PayLife -> {
-                            // Per CR 119.4 you can't pay life unless you have that much. Mode-level
-                            // affordability gate so "discard a card or pay 3 life" modes don't
-                            // surface a Pay-3-Life action when the caster has fewer than 3 life
-                            // (Bitter Triumph). Validation in CastSpellHandler still backstops.
-                            val life = state.lifeTotal(playerId) // CR 810.9a — team's shared total
-                            if (life < atom.amount) canPayAdditionalCosts = false
-                        }
-                        else -> {}
-                    }
-                    is AdditionalCost.Forage -> {
-                        val graveyardSize = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)).size
-                        val projected = state.projectedState
-                        val hasFood = state.getBattlefield().any { permId ->
-                            state.getEntity(permId) ?: return@any false
-                            projected.getController(permId) == playerId &&
-                                projected.hasSubtype(permId, com.wingedsheep.sdk.core.Subtype.FOOD.value)
-                        }
-                        if (graveyardSize < 3 && !hasFood) canPayAdditionalCosts = false
-                    }
-                    else -> {}
-                }
-            }
-        }
+        val modeOffer = SpellCostOffer()
+        val canPayAdditionalCosts = modeAdditionalCosts == null ||
+            SpellCosts.enumerateAll(SpellCostEnumeration(context, cardId), modeAdditionalCosts, modeOffer)
 
         val modeCostInfo = if (modeAdditionalCosts != null) {
             // A forage additional cost on a mode (e.g. Feed the Cycle's forage mode) surfaces the
@@ -3060,10 +2676,7 @@ class CastSpellEnumerator : ActionEnumerator {
                     com.wingedsheep.engine.handlers.costs.ForageCostResolver.candidates(state, playerId)
                 ).firstOrNull()
             } else {
-                buildAdditionalCostData(
-                    modeAdditionalCosts, modeSacrificeTargets, emptyList(),
-                    modeExileTargets, modeExileMinCount, modeDiscardTargets, modeDiscardCount
-                )
+                buildAdditionalCostData(modeAdditionalCosts, modeOffer)
             }
         } else {
             cardLevelAdditionalCostInfo
@@ -3289,7 +2902,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
         val targetReqs = buildList {
             addAll(back.script.targetRequirements)
-            back.script.auraTarget?.let { add(it) }
+            back.script.castAuraTarget?.let { add(it) }
         }
         val autoTapPreview = if (context.skipAutoTapPreview) null else {
             context.manaSolver

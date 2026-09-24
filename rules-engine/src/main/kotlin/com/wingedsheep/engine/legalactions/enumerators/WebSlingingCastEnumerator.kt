@@ -76,7 +76,7 @@ class WebSlingingCastEnumerator : ActionEnumerator {
 
             val targetReqs = buildList {
                 addAll(cardDef.script.targetRequirements)
-                cardDef.script.auraTarget?.let { add(it) }
+                cardDef.script.castAuraTarget?.let { add(it) }
             }
             val targetReqInfos = if (targetReqs.isEmpty()) {
                 emptyList()

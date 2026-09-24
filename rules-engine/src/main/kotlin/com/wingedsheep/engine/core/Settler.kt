@@ -4,10 +4,13 @@ import com.wingedsheep.engine.event.PendingTrigger
 import com.wingedsheep.engine.event.StateTriggerPoller
 import com.wingedsheep.engine.event.TriggerDetector
 import com.wingedsheep.engine.event.TriggerProcessor
+import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.replacement.ReplacementRiders
 import com.wingedsheep.engine.mechanics.StateBasedActionChecker
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.EndTheTurnRequestedComponent
 import com.wingedsheep.engine.state.components.player.MulliganStateComponent
+import com.wingedsheep.sdk.scripting.effects.Effect
 
 /**
  * The engine's single settle boundary. [ActionProcessor] runs it once after every accepted action.
@@ -43,7 +46,12 @@ class Settler(
     private val triggerProcessor: TriggerProcessor,
     private val sbaChecker: StateBasedActionChecker,
     private val stateTriggerPoller: StateTriggerPoller,
-    private val turnManager: TurnManager
+    private val turnManager: TurnManager,
+    /**
+     * Runs a prevention effect's owed result (see [ReplacementRiders]). Combat damage isn't an
+     * effect, so the results its prevention owes are run here, before detection and SBAs.
+     */
+    private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)? = null
 ) {
 
     fun settle(executed: ExecutionResult): ExecutionResult {
@@ -53,7 +61,7 @@ class Settler(
         // no one receives priority, and no permanent can have triggered.
         if (mulligansInProgress(executed.state)) return executed
 
-        val result = endTheTurnIfRequested(executed)
+        val result = runReplacementRiders(endTheTurnIfRequested(executed))
         if (result.outcome is Outcome.Rejected) return result
         val state = result.state
         // A lone priority pass changes nothing on the board, so there is nothing to detect,
@@ -93,6 +101,13 @@ class Settler(
         if (state.getEntity(activePlayer)?.has<EndTheTurnRequestedComponent>() != true) return result
         val ended = turnManager.performEndTheTurn(state)
         return ended.copy(events = result.events + ended.events)
+    }
+
+    private fun runReplacementRiders(result: ExecutionResult): ExecutionResult {
+        val executor = effectExecutor ?: return result
+        if (result.state.pendingReplacementRiders.isEmpty() || result.outcome !is Outcome.Done) return result
+        val drained = ReplacementRiders.drain(result.state, executor)
+        return ExecutionResult(drained.state, result.events + drained.events, drained.outcome)
     }
 
     /**

@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.player.CantSearchLibrariesComponent
 import com.wingedsheep.sdk.scripting.effects.EmitLibrarySearchedEventEffect
 import kotlin.reflect.KClass
 
@@ -31,6 +32,11 @@ class EmitLibrarySearchedEventExecutor : EffectExecutor<EmitLibrarySearchedEvent
         context: EffectContext
     ): EffectResult {
         val playerId = context.controllerId
+        // A player who can't search libraries (Shadow of Doubt) didn't search, so there is no
+        // search event for "whenever a player searches their library" triggers to see.
+        if (state.getEntity(playerId)?.has<CantSearchLibrariesComponent>() == true) {
+            return EffectResult.success(state)
+        }
         val sourceName = context.sourceId
             ?.let { state.getEntity(it)?.get<CardComponent>()?.name }
             ?: "Search"

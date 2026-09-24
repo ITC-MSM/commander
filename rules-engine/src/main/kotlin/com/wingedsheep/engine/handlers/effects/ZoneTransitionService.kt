@@ -12,6 +12,8 @@ import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.mechanics.daynight.DayNightService
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.registry.TokenArtRegistry
+import com.wingedsheep.engine.handlers.effects.token.CreateTokenExecutor
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -46,6 +48,7 @@ import com.wingedsheep.engine.state.components.player.PermanentLeftBattlefieldTh
 import com.wingedsheep.engine.state.components.player.CreatureLeftBattlefieldThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PermanentsSacrificedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CreatureCardsPutIntoGraveyardThisTurnComponent
+import com.wingedsheep.engine.state.components.player.CardsPutIntoGraveyardFromLibraryThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PlayerDescendedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedArtifactThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent
@@ -157,18 +160,31 @@ data class ZoneTransitionOutcome(
  * 8. Emit ZoneChangeEvent
  * 9. Apply redirect additional effects if any
  */
-object ZoneTransitionService {
+class ZoneTransitionService(
+    /** The definitions this engine plays with; read by the battlefield-entry setup. */
+    val cardRegistry: CardRegistry,
+    /** Per-set token art, so a zone-change rider's token shows its minting set's art. */
+    tokenArtRegistry: TokenArtRegistry? = null,
+) {
 
     /**
-     * Handler used to register static abilities and replacement effects on permanents that
-     * enter the battlefield through [moveToZone] (reanimation, returns from exile, leyline
-     * starts, etc.). Wired by [com.wingedsheep.engine.core.EngineServices] at construction
-     * time. The cast pipeline ([com.wingedsheep.engine.mechanics.stack.StackResolver]) places
-     * permanents via [GameState.addToZone] directly, not [moveToZone], so it owns its own
-     * call to the handler and is unaffected by this wiring.
+     * Registers static abilities and replacement effects on permanents that enter the battlefield
+     * through [moveToZone] (reanimation, returns from exile, leyline starts, etc.). The cast
+     * pipeline ([com.wingedsheep.engine.mechanics.stack.StackResolver]) places permanents via
+     * [GameState.addToZone] directly, not [moveToZone], so it owns its own call to the handler.
      */
-    lateinit var staticAbilityHandler: StaticAbilityHandler
-    lateinit var cardRegistry: CardRegistry
+    private val staticAbilityHandler = StaticAbilityHandler(cardRegistry)
+
+    /**
+     * Mints the token of a zone-change replacement's "…instead. When you do, create a token"
+     * rider (Head of the Hunt) through the same executor an ability would, so the token gets the
+     * minting set's art and its static abilities rather than the bare generic fallback.
+     */
+    internal val riderTokenExecutor = CreateTokenExecutor(
+        staticAbilityHandler = staticAbilityHandler,
+        cardRegistry = cardRegistry,
+        tokenArtRegistry = tokenArtRegistry
+    )
 
     /** Evaluates the `unless` clause of an entering card's own [EntersTapped]. */
     private val conditionEvaluator = ConditionEvaluator()
@@ -365,7 +381,7 @@ object ZoneTransitionService {
             val extra = redirectResult.additionalEffect
             if (extra != null) {
                 val (afterExtra, extraEvents) = ZoneMovementUtils.applyReplacementAdditionalEffect(
-                    retained, extra, redirectResult.effectControllerId, entityId,
+                    this, retained, extra, redirectResult.effectControllerId, entityId,
                     sourceId = redirectResult.effectSourceId
                 )
                 retained = afterExtra
@@ -685,13 +701,11 @@ object ZoneTransitionService {
                 // battle (defense, CR 310.4b). The helper skips face-down entries itself — a
                 // face-down permanent is a nameless 2/2 creature with no printed loyalty or
                 // defense (CR 708.2a).
-                if (::cardRegistry.isInitialized) {
-                    val (entryCounterState, entryCounterEvents) = applyIntrinsicEntryCountersIfNeeded(
-                        newState, entityId, destControllerId, cardRegistry
-                    )
-                    newState = entryCounterState
-                    events.addAll(entryCounterEvents)
-                }
+                val (entryCounterState, entryCounterEvents) = ZoneMovementUtils.applyIntrinsicEntryCountersIfNeeded(
+                    newState, entityId, destControllerId, cardRegistry
+                )
+                newState = entryCounterState
+                events.addAll(entryCounterEvents)
             }
             Zone.LIBRARY -> {
                 if (effectiveLibraryPlacement is LibraryPlacement.Shuffled) {
@@ -770,9 +784,7 @@ object ZoneTransitionService {
                     // The front face's own "from anywhere" self-replacements come back with it —
                     // and, just as importantly, the back face's stop applying. A disturbed creature
                     // that is exiled by its own back-face clause reverts to a plain front face.
-                    val frontDef = if (::cardRegistry.isInitialized) {
-                        cardRegistry.getCard(dfc.frontCardDefinitionId)
-                    } else null
+                    val frontDef = cardRegistry.getCard(dfc.frontCardDefinitionId)
                     newState = newState.updateEntity(entityId) { c ->
                         val reverted = c.with(dfc.frontFaceCard)
                             .with(dfc.copy(currentFace = DoubleFacedComponent.Face.FRONT, frontFaceCard = null))
@@ -1001,6 +1013,17 @@ object ZoneTransitionService {
             }
         }
 
+        // 8d3. "Cards put into [a player's] graveyard from their library this turn" (Cruel
+        // Calculations) — mill, surveil, and every other library → graveyard move. Keyed on the
+        // owner, whose library and graveyard these are. Turn history, like 8d2.
+        if (actualDestZone == Zone.GRAVEYARD && fromZone == Zone.LIBRARY) {
+            newState = newState.updateEntity(ownerId) { playerContainer ->
+                val existing = playerContainer.get<CardsPutIntoGraveyardFromLibraryThisTurnComponent>()
+                    ?: CardsPutIntoGraveyardFromLibraryThisTurnComponent()
+                playerContainer.with(CardsPutIntoGraveyardFromLibraryThisTurnComponent(existing.count + 1))
+            }
+        }
+
         // 8e. Madness (CR 702.35a) — this move was a discard that the madness replacement diverted
         // into exile. Mark the card so only a *discarded-into-exile* card gets the CR 702.35a cast
         // offer, and publish the madness cost as a fixed alternative mana cost so the ordinary
@@ -1020,7 +1043,7 @@ object ZoneTransitionService {
             }
         }
 
-        val immediateReturns = ZoneReturnService.returnDepartedSources(newState)
+        val immediateReturns = ZoneReturnService.returnDepartedSources(this, newState)
         newState = immediateReturns.state
         events.addAll(immediateReturns.events)
         transitions.addAll(immediateReturns.transitions)
@@ -1028,7 +1051,7 @@ object ZoneTransitionService {
         // 9. Apply redirect additional effects if any
         if (redirectResult.additionalEffect != null) {
             val (updatedState, extraEvents) = ZoneMovementUtils.applyReplacementAdditionalEffect(
-                newState, redirectResult.additionalEffect, redirectResult.effectControllerId, entityId,
+                this, newState, redirectResult.additionalEffect, redirectResult.effectControllerId, entityId,
                 sourceId = redirectResult.effectSourceId
             )
             newState = updatedState
@@ -1118,28 +1141,6 @@ object ZoneTransitionService {
         discardCards(state, playerId, listOf(cardId), causedByControllerId)
 
     /**
-     * Central "these cards are being discarded because of a spell or ability" hook, mirroring
-     * [trackPermanentSacrifice]. Records the causing object's controller in
-     * [GameState.pendingDiscardCauseControllers] so the imminent `moveToZone` can offer the cause to
-     * zone-change replacements (Wilt-Leaf Liege) without every discard site threading an explicit
-     * parameter through the move.
-     *
-     * Pass null — or skip the call — for discards with no spell/ability cause: the CR 514.1
-     * hand-size discard, and discards made to pay a cost.
-     */
-    fun markDiscardCause(
-        state: GameState,
-        cardIds: List<EntityId>,
-        causedByControllerId: EntityId?
-    ): GameState {
-        if (causedByControllerId == null || cardIds.isEmpty()) return state
-        return state.copy(
-            pendingDiscardCauseControllers = state.pendingDiscardCauseControllers +
-                cardIds.associateWith { causedByControllerId }
-        )
-    }
-
-    /**
      * Move multiple cards from a player's hand to their graveyard as a single discard.
      *
      * Emits one combined `CardsDiscardedEvent` (so the client renders "You discarded X, Y"
@@ -1185,93 +1186,6 @@ object ZoneTransitionService {
         newState = trackDiscard(newState, playerId, cardIds)
         val discardEvent = CardsDiscardedEvent(playerId, cardIds, cardNames, asCyclingCost = asCyclingCost)
         return ZoneTransitionResult(newState, listOf(discardEvent) + moveEvents, transitions = transitions)
-    }
-
-    /**
-     * Central per-turn discard bookkeeping, mirroring [trackPermanentSacrifice]. Call this at every
-     * discard site (alongside emitting [CardsDiscardedEvent]). Records the discarded cards' entity
-     * ids on the discarding player's [CardsDiscardedThisTurnComponent], regardless of the card's
-     * final zone (a discard diverted by a replacement still counts). Entity ids are stable across
-     * the hand→graveyard move, so the recorded id matches the object now in the graveyard, which is
-     * what the Mayhem gate ([com.wingedsheep.engine.mechanics.Mayhem]) reads.
-     *
-     * `cardIds.size` backs `TurnTracker.CARDS_DISCARDED`; membership backs `YouDiscardedThisCardThisTurn`.
-     * Cleared per-player at the start of each turn by `TurnManager`.
-     */
-    fun trackDiscard(state: GameState, playerId: EntityId, cardIds: List<EntityId>): GameState {
-        if (cardIds.isEmpty()) return state
-        return state.updateEntity(playerId) { container ->
-            val prior = container.get<CardsDiscardedThisTurnComponent>() ?: CardsDiscardedThisTurnComponent()
-            container.with(
-                prior.copy(cardIds = prior.cardIds + cardIds, count = prior.count + cardIds.size)
-            )
-        }
-    }
-
-    /**
-     * Remove [cardId] from the discarded-this-turn *gate* list (not the monotonic count) on any
-     * player who still has it recorded. Called when the card leaves a graveyard (CR 400.7 — a later
-     * graveyard return is a new object that was not discarded), so a Mayhem spell can't be recast
-     * each time it resolves back. A no-op if no player has the id recorded.
-     */
-    fun untrackDiscardedCard(state: GameState, cardId: EntityId): GameState {
-        var newState = state
-        for (playerId in state.turnOrder) {
-            val comp = newState.getEntity(playerId)?.get<CardsDiscardedThisTurnComponent>() ?: continue
-            if (cardId !in comp.cardIds) continue
-            newState = newState.updateEntity(playerId) { container ->
-                container.with(comp.copy(cardIds = comp.cardIds - cardId))
-            }
-        }
-        return newState
-    }
-
-    /**
-     * Central per-turn sacrifice bookkeeping. Call this at every sacrifice site (alongside
-     * emitting [PermanentsSacrificedEvent], before moving the permanents to the graveyard).
-     *
-     * Two effects:
-     *  - Increments the turn-scoped [GameState.permanentsSacrificedThisTurn] counter by the
-     *    number of permanents sacrificed (feeds [CostReductionSource.PermanentsSacrificedThisTurn]
-     *    on The Balrog, Durin's Bane). Not controller-scoped: it counts every sacrifice this turn.
-     *  - Increments the controller's per-player [PermanentsSacrificedThisTurnComponent] by the
-     *    same count (controller-scoped, backs `TurnTracker.PERMANENTS_SACRIFICED` —
-     *    Sawblade Skinripper).
-     *  - Marks the controller with [SacrificedFoodThisTurnComponent] if any sacrificed permanent
-     *    was a Food (Food-sacrifice triggers, e.g. Ygra).
-     *  - Marks the controller with [SacrificedArtifactThisTurnComponent] if any sacrificed
-     *    permanent was an artifact (backs `TurnTracker.ARTIFACT_SACRIFICED` — Suspicious
-     *    Detonation, Furtive Courier).
-     *
-     * Both markers read the *projected* characteristics, so a permanent that was only a Food or
-     * only an artifact through a continuous effect still counts, and both are checked
-     * independently — one sacrifice can set both.
-     */
-    fun trackPermanentSacrifice(state: GameState, permanentIds: List<EntityId>, controllerId: EntityId): GameState {
-        if (permanentIds.isEmpty()) return state
-        var newState = state.copy(
-            permanentsSacrificedThisTurn = state.permanentsSacrificedThisTurn + permanentIds.size,
-            // Mark these as being sacrificed so the imminent moveToZone stamps wasSacrificed
-            // on each ZoneChangeEvent (CR 701.21 — read by Urza's Miter et al.).
-            pendingSacrificeIds = state.pendingSacrificeIds + permanentIds,
-        )
-        newState = newState.updateEntity(controllerId) { container ->
-            val prior = container.get<PermanentsSacrificedThisTurnComponent>()?.count ?: 0
-            container.with(PermanentsSacrificedThisTurnComponent(prior + permanentIds.size))
-        }
-        val projected = state.projectedState
-        val sacrificedCards = permanentIds.filter { newState.getEntity(it)?.has<CardComponent>() == true }
-        if (sacrificedCards.any { projected.hasSubtype(it, Subtype.FOOD.value) }) {
-            newState = newState.updateEntity(controllerId) { container ->
-                container.with(SacrificedFoodThisTurnComponent)
-            }
-        }
-        if (sacrificedCards.any { projected.hasType(it, CardType.ARTIFACT.name) }) {
-            newState = newState.updateEntity(controllerId) { container ->
-                container.with(SacrificedArtifactThisTurnComponent)
-            }
-        }
-        return newState
     }
 
     // ── Private helpers ──
@@ -1362,7 +1276,7 @@ object ZoneTransitionService {
             // replacement-application paths. Face-down entries are excluded because face-down
             // permanents have no abilities (CR 708.2). The cast pipeline owns its own call,
             // so this does not double-run for cast spells.
-            if (!options.faceDown && ::staticAbilityHandler.isInitialized) {
+            if (!options.faceDown) {
                 updated = staticAbilityHandler.addContinuousEffectComponent(updated)
                 updated = staticAbilityHandler.addReplacementEffectComponent(updated)
             }
@@ -1376,13 +1290,13 @@ object ZoneTransitionService {
         // double-faced card that arrived by any other route could not be turned over at all. Face-down
         // entries are excluded: a face-down permanent has no characteristics to flip between (CR 708.2).
         // (Playing a land bypasses this whole method, so PlayLandHandler makes the same call itself.)
-        val withDfcEntry = if (!options.faceDown && ::cardRegistry.isInitialized) {
+        val withDfcEntry = if (!options.faceDown) {
             stampDoubleFacedFrontFace(withEntity, cardRegistry, entityId)
         } else {
             withEntity
         }
 
-        val withDayboundEntry = if (!options.faceDown && ::cardRegistry.isInitialized) {
+        val withDayboundEntry = if (!options.faceDown) {
             DayNightService.applyDayboundEntry(withDfcEntry, cardRegistry, entityId)
         } else {
             withDfcEntry
@@ -1464,7 +1378,6 @@ object ZoneTransitionService {
         entityId: EntityId,
         controllerId: EntityId,
     ): Boolean {
-        if (!::cardRegistry.isInitialized) return false
         val cardDefinitionId = state.getEntity(entityId)?.get<CardComponent>()?.cardDefinitionId
             ?: return false
         val cardDef = cardRegistry.getCard(cardDefinitionId) ?: return false
@@ -1513,19 +1426,6 @@ object ZoneTransitionService {
         entityId: EntityId
     ): Pair<GameState, List<EngineGameEvent>> {
         return ZoneMovementUtils.applySagaEntryIfNeeded(state, entityId)
-    }
-
-    /**
-     * Place a permanent's intrinsic entry counters as it enters the battlefield — a planeswalker's
-     * printed loyalty (CR 306.5b) or a battle's printed defense (CR 310.4b).
-     */
-    private fun applyIntrinsicEntryCountersIfNeeded(
-        state: GameState,
-        entityId: EntityId,
-        controllerId: EntityId,
-        registry: CardRegistry
-    ): Pair<GameState, List<EngineGameEvent>> {
-        return ZoneMovementUtils.applyIntrinsicEntryCountersIfNeeded(state, entityId, controllerId, registry)
     }
 
     /**
@@ -1587,5 +1487,117 @@ object ZoneTransitionService {
             }
         }
         return state.logicalZone(entityId)?.takeIf { it.zoneType == Zone.STACK }
+    }
+
+    companion object {
+
+        /**
+         * Central "these cards are being discarded because of a spell or ability" hook, mirroring
+         * [trackPermanentSacrifice]. Records the causing object's controller in
+         * [GameState.pendingDiscardCauseControllers] so the imminent `moveToZone` can offer the cause to
+         * zone-change replacements (Wilt-Leaf Liege) without every discard site threading an explicit
+         * parameter through the move.
+         *
+         * Pass null — or skip the call — for discards with no spell/ability cause: the CR 514.1
+         * hand-size discard, and discards made to pay a cost.
+         */
+        fun markDiscardCause(
+            state: GameState,
+            cardIds: List<EntityId>,
+            causedByControllerId: EntityId?
+        ): GameState {
+            if (causedByControllerId == null || cardIds.isEmpty()) return state
+            return state.copy(
+                pendingDiscardCauseControllers = state.pendingDiscardCauseControllers +
+                    cardIds.associateWith { causedByControllerId }
+            )
+        }
+
+        /**
+         * Central per-turn discard bookkeeping, mirroring [trackPermanentSacrifice]. Call this at every
+         * discard site (alongside emitting [CardsDiscardedEvent]). Records the discarded cards' entity
+         * ids on the discarding player's [CardsDiscardedThisTurnComponent], regardless of the card's
+         * final zone (a discard diverted by a replacement still counts). Entity ids are stable across
+         * the hand→graveyard move, so the recorded id matches the object now in the graveyard, which is
+         * what the Mayhem gate ([com.wingedsheep.engine.mechanics.Mayhem]) reads.
+         *
+         * `cardIds.size` backs `TurnTracker.CARDS_DISCARDED`; membership backs `YouDiscardedThisCardThisTurn`.
+         * Cleared per-player at the start of each turn by `TurnManager`.
+         */
+        fun trackDiscard(state: GameState, playerId: EntityId, cardIds: List<EntityId>): GameState {
+            if (cardIds.isEmpty()) return state
+            return state.updateEntity(playerId) { container ->
+                val prior = container.get<CardsDiscardedThisTurnComponent>() ?: CardsDiscardedThisTurnComponent()
+                container.with(
+                    prior.copy(cardIds = prior.cardIds + cardIds, count = prior.count + cardIds.size)
+                )
+            }
+        }
+
+        /**
+         * Remove [cardId] from the discarded-this-turn *gate* list (not the monotonic count) on any
+         * player who still has it recorded. Called when the card leaves a graveyard (CR 400.7 — a later
+         * graveyard return is a new object that was not discarded), so a Mayhem spell can't be recast
+         * each time it resolves back. A no-op if no player has the id recorded.
+         */
+        fun untrackDiscardedCard(state: GameState, cardId: EntityId): GameState {
+            var newState = state
+            for (playerId in state.turnOrder) {
+                val comp = newState.getEntity(playerId)?.get<CardsDiscardedThisTurnComponent>() ?: continue
+                if (cardId !in comp.cardIds) continue
+                newState = newState.updateEntity(playerId) { container ->
+                    container.with(comp.copy(cardIds = comp.cardIds - cardId))
+                }
+            }
+            return newState
+        }
+
+        /**
+         * Central per-turn sacrifice bookkeeping. Call this at every sacrifice site (alongside
+         * emitting [PermanentsSacrificedEvent], before moving the permanents to the graveyard).
+         *
+         * Two effects:
+         *  - Increments the turn-scoped [GameState.permanentsSacrificedThisTurn] counter by the
+         *    number of permanents sacrificed (feeds [CostReductionSource.PermanentsSacrificedThisTurn]
+         *    on The Balrog, Durin's Bane). Not controller-scoped: it counts every sacrifice this turn.
+         *  - Increments the controller's per-player [PermanentsSacrificedThisTurnComponent] by the
+         *    same count (controller-scoped, backs `TurnTracker.PERMANENTS_SACRIFICED` —
+         *    Sawblade Skinripper).
+         *  - Marks the controller with [SacrificedFoodThisTurnComponent] if any sacrificed permanent
+         *    was a Food (Food-sacrifice triggers, e.g. Ygra).
+         *  - Marks the controller with [SacrificedArtifactThisTurnComponent] if any sacrificed
+         *    permanent was an artifact (backs `TurnTracker.ARTIFACT_SACRIFICED` — Suspicious
+         *    Detonation, Furtive Courier).
+         *
+         * Both markers read the *projected* characteristics, so a permanent that was only a Food or
+         * only an artifact through a continuous effect still counts, and both are checked
+         * independently — one sacrifice can set both.
+         */
+        fun trackPermanentSacrifice(state: GameState, permanentIds: List<EntityId>, controllerId: EntityId): GameState {
+            if (permanentIds.isEmpty()) return state
+            var newState = state.copy(
+                permanentsSacrificedThisTurn = state.permanentsSacrificedThisTurn + permanentIds.size,
+                // Mark these as being sacrificed so the imminent moveToZone stamps wasSacrificed
+                // on each ZoneChangeEvent (CR 701.21 — read by Urza's Miter et al.).
+                pendingSacrificeIds = state.pendingSacrificeIds + permanentIds,
+            )
+            newState = newState.updateEntity(controllerId) { container ->
+                val prior = container.get<PermanentsSacrificedThisTurnComponent>()?.count ?: 0
+                container.with(PermanentsSacrificedThisTurnComponent(prior + permanentIds.size))
+            }
+            val projected = state.projectedState
+            val sacrificedCards = permanentIds.filter { newState.getEntity(it)?.has<CardComponent>() == true }
+            if (sacrificedCards.any { projected.hasSubtype(it, Subtype.FOOD.value) }) {
+                newState = newState.updateEntity(controllerId) { container ->
+                    container.with(SacrificedFoodThisTurnComponent)
+                }
+            }
+            if (sacrificedCards.any { projected.hasType(it, CardType.ARTIFACT.name) }) {
+                newState = newState.updateEntity(controllerId) { container ->
+                    container.with(SacrificedArtifactThisTurnComponent)
+                }
+            }
+            return newState
+        }
     }
 }

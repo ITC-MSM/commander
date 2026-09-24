@@ -37,8 +37,8 @@ class DamageDealtThisTurnTest : FunSpec({
         val source = d.putCreatureOnBattlefield(d.player1, "Centaur Courser")
         val victim = d.putCreatureOnBattlefield(d.player2, "Centaur Courser")
         val before = d.state
-        d.replaceState(DamageUtils.dealDamageToTarget(d.state, victim, 2, source).state)
-        d.replaceState(DamageUtils.dealDamageToTarget(d.state, d.player2, 3, source).state)
+        d.replaceState(DamageUtils.dealDamageToTarget(d.zones, d.state, victim, 2, source).state)
+        d.replaceState(DamageUtils.dealDamageToTarget(d.zones, d.state, d.player2, 3, source).state)
         d.dealt(source) shouldBe 5
         val json = Json { serializersModule = engineSerializersModule }
         val tracker: Component = d.state.getEntity(source)!!.get<DamageDealtThisTurnComponent>()!!
@@ -48,19 +48,19 @@ class DamageDealtThisTurnTest : FunSpec({
         d.dealt(source) shouldBe 0
         d.replaceState(after.copy(turnNumber = after.turnNumber + 1))
         d.dealt(source) shouldBe 0
-        d.replaceState(DamageUtils.dealDamageToTarget(d.state, d.player2, 1, source).state)
+        d.replaceState(DamageUtils.dealDamageToTarget(d.zones, d.state, d.player2, 1, source).state)
         d.dealt(source) shouldBe 1
     }
 
     test("changing zones clears the object's damage history") {
         val d = driver()
         val source = d.putCreatureOnBattlefield(d.player1, "Centaur Courser")
-        d.replaceState(DamageUtils.dealDamageToTarget(d.state, d.player2, 2, source).state)
+        d.replaceState(DamageUtils.dealDamageToTarget(d.zones, d.state, d.player2, 2, source).state)
         d.dealt(source) shouldBe 2
         d.moveToGraveyard(source)
         d.dealt(source) shouldBe 0
         // A pending ability's departed source must not mark the new card in the graveyard.
-        d.replaceState(DamageUtils.dealDamageToTarget(d.state, d.player2, 1, source).state)
+        d.replaceState(DamageUtils.dealDamageToTarget(d.zones, d.state, d.player2, 1, source).state)
         d.dealt(source) shouldBe 0
     }
 
@@ -68,7 +68,7 @@ class DamageDealtThisTurnTest : FunSpec({
         val d = driver()
         val source = d.putCreatureOnBattlefield(d.player1, "Centaur Courser")
         d.removeSummoningSickness(source)
-        d.replaceState(DamageUtils.dealDamageToTarget(d.state, d.player2, 1, source).state)
+        d.replaceState(DamageUtils.dealDamageToTarget(d.zones, d.state, d.player2, 1, source).state)
         d.passPriorityUntil(Step.DECLARE_ATTACKERS)
         d.declareAttackers(d.player1, listOf(source), d.player2).error shouldBe null
         d.passPriorityUntil(Step.DECLARE_BLOCKERS)
